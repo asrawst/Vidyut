@@ -116,17 +116,29 @@ const InspectorPortal = ({ inspector, onLogout }) => {
     };
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)', color: 'white', width: '100%' }}>
-            
+        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)', color: 'white', width: '100%', position: 'relative' }}>
+            {/* Mobile Sidebar Backdrop */}
+            {isSidebarOpen && (
+                <div 
+                    className="sidebar-backdrop" 
+                    onClick={() => setIsSidebarOpen(false)}
+                    style={{
+                        position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+                        background: 'rgba(0, 0, 0, 0.6)', zIndex: 999, backdropFilter: 'blur(3px)',
+                        WebkitBackdropFilter: 'blur(3px)'
+                    }}
+                />
+            )}
+
             {/* Sidebar component */}
-            <aside className={`inspector-sidebar ${isSidebarOpen ? 'open' : 'collapsed'}`} style={{
+            <aside className={`inspector-sidebar ${isSidebarOpen ? 'open' : 'collapsed'} ${isSidebarOpen ? 'mobile-open' : ''}`} style={{
                 width: isSidebarOpen ? '280px' : '70px',
                 background: 'var(--bg-secondary)',
                 borderRight: '1px solid var(--glass-border)',
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'width 0.3s ease',
-                zIndex: 99,
+                zIndex: 1000,
                 position: 'relative'
             }}>
                 {/* Header branding */}
@@ -175,7 +187,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                     {navItems.map((item) => (
                         <button
                             key={item.name}
-                            onClick={() => setActiveTab(item.name)}
+                            onClick={() => { setActiveTab(item.name); if (window.innerWidth <= 768) setIsSidebarOpen(false); }}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -236,13 +248,22 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                 
                 {/* Active Tab Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                    <div>
-                        <h1 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontSize: '2.2rem', color: 'white', fontWeight: '400' }}>
-                            {activeTab}
-                        </h1>
-                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                            Field Audit Workspace / {activeTab}
-                        </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                        <button 
+                            className="mobile-sidebar-hamburger"
+                            onClick={() => setIsSidebarOpen(true)}
+                            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
+                        >
+                            <Menu size={24} />
+                        </button>
+                        <div>
+                            <h1 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontSize: '2.2rem', color: 'white', fontWeight: '400' }}>
+                                {activeTab}
+                            </h1>
+                            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                Field Audit Workspace / {activeTab}
+                            </p>
+                        </div>
                     </div>
                 </div>
 

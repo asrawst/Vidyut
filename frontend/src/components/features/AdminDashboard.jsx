@@ -3,7 +3,7 @@ import {
     User, ListCollapse, Ban, TrendingUp, Calendar, AlertTriangle, 
     History as HistoryIcon, Settings as SettingsIcon, UploadCloud, 
     Download, RefreshCw, Layers, ShieldAlert, Sparkles, MapPin, 
-    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map 
+    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X 
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LineChart, Line } from 'recharts';
 import MapComponent from './MapComponent';
@@ -25,6 +25,7 @@ const AdminDashboard = ({
     setResult
 }) => {
     const [activeTab, setActiveTab] = useState('Overview');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [localInspectionStatus, setLocalInspectionStatus] = useState({});
     const [assignedInspectors, setAssignedInspectors] = useState({});
     const [dragActive, setDragActive] = useState(false);
@@ -189,74 +190,96 @@ const AdminDashboard = ({
 
     return (
         <div className="dashboard-container">
+            {/* Mobile Sidebar Backdrop */}
+            {isSidebarOpen && (
+                <div 
+                    className="sidebar-backdrop" 
+                    onClick={() => setIsSidebarOpen(false)}
+                    style={{
+                        position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+                        background: 'rgba(0, 0, 0, 0.6)', zIndex: 999, backdropFilter: 'blur(3px)',
+                        WebkitBackdropFilter: 'blur(3px)'
+                    }}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="dashboard-sidebar">
-                <div className="sidebar-logo">
-                    <div className="discom-logo-badge">
-                        {getInitials(user?.discom)}
+            <aside className={`dashboard-sidebar ${isSidebarOpen ? 'mobile-open' : ''}`}>
+                <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                        <div className="discom-logo-badge">
+                            {getInitials(user?.discom)}
+                        </div>
+                        <div className="discom-info">
+                            <span className="discom-name" title={user?.discom}>
+                                {user?.discom || 'Discom Panel'}
+                            </span>
+                            <span className="discom-sub">
+                                {user?.state || 'Admin Portal'}
+                            </span>
+                        </div>
                     </div>
-                    <div className="discom-info">
-                        <span className="discom-name" title={user?.discom}>
-                            {user?.discom || 'Discom Panel'}
-                        </span>
-                        <span className="discom-sub">
-                            {user?.state || 'Admin Portal'}
-                        </span>
-                    </div>
+                    <button 
+                        className="mobile-sidebar-close-btn"
+                        onClick={() => setIsSidebarOpen(false)}
+                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
                 <nav className="sidebar-nav">
                     <button 
                         className={`nav-item ${activeTab === 'Overview' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('Overview')}
+                        onClick={() => { setActiveTab('Overview'); setIsSidebarOpen(false); }}
                     >
                         <Layers size={18} /> Overview
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Account Details' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('Account Details')}
+                        onClick={() => { setActiveTab('Account Details'); setIsSidebarOpen(false); }}
                     >
                         <User size={18} /> Account Details
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Transformer List' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('Transformer List')}
+                        onClick={() => { setActiveTab('Transformer List'); setIsSidebarOpen(false); }}
                     >
                         <ListCollapse size={18} /> Transformer List
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Blacklisted Consumer' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('Blacklisted Consumer')}
+                        onClick={() => { setActiveTab('Blacklisted Consumer'); setIsSidebarOpen(false); }}
                     >
                         <Ban size={18} /> Blacklisted Consumer
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Loss Recovery' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('Loss Recovery')}
+                        onClick={() => { setActiveTab('Loss Recovery'); setIsSidebarOpen(false); }}
                     >
                         <TrendingUp size={18} /> Loss Recovery
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Inspection' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('Inspection')}
+                        onClick={() => { setActiveTab('Inspection'); setIsSidebarOpen(false); }}
                     >
                         <Calendar size={18} /> Inspection
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Priority' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('Priority')}
+                        onClick={() => { setActiveTab('Priority'); setIsSidebarOpen(false); }}
                     >
                         <ShieldAlert size={18} /> Priority
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'History' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('History')}
+                        onClick={() => { setActiveTab('History'); setIsSidebarOpen(false); }}
                     >
                         <HistoryIcon size={18} /> History
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Settings' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('Settings')}
+                        onClick={() => { setActiveTab('Settings'); setIsSidebarOpen(false); }}
                     >
                         <SettingsIcon size={18} /> Settings
                     </button>
@@ -272,7 +295,16 @@ const AdminDashboard = ({
             {/* Main Content Area */}
             <main className="dashboard-main">
                 <header className="dashboard-header">
-                    <h1 className="header-title">{activeTab}</h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <button 
+                            className="mobile-sidebar-hamburger"
+                            onClick={() => setIsSidebarOpen(true)}
+                            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
+                        >
+                            <Menu size={22} />
+                        </button>
+                        <h1 className="header-title">{activeTab}</h1>
+                    </div>
                     <div className="header-meta">
                         <span className="header-role-badge">Admin Workspace</span>
                         <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
