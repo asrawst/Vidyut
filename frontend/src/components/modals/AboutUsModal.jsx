@@ -21,10 +21,10 @@ const AboutUsModal = ({ onClose }) => {
             zIndex: 1000
         }}>
             <div style={{
-                background: 'rgba(5, 5, 7, 0.6)',
+                background: 'rgba(18, 16, 14, 0.85)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: '1px solid var(--glass-border)',
                 padding: '2.5rem',
                 borderRadius: '24px',
                 width: '90%',
@@ -33,7 +33,7 @@ const AboutUsModal = ({ onClose }) => {
                 overflowY: 'auto',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
                 position: 'relative',
-                color: '#e2e8f0'
+                color: 'var(--text-secondary)'
             }}>
                 <button
                     onClick={onClose}
@@ -65,37 +65,37 @@ const AboutUsModal = ({ onClose }) => {
                 </button>
 
                 <h2 style={{
-                    fontSize: '2rem',
-                    marginBottom: '1.5rem',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
+                    fontSize: '2.2rem',
+                    marginBottom: '2rem',
+                    fontFamily: 'var(--font-heading)',
+                    color: 'white',
+                    fontWeight: '400',
                     textAlign: 'center'
-                }}>About Us</h2>
+                }}>About Vidyut</h2>
 
-                <div style={{ fontSize: '1.1rem', lineHeight: '1.7', color: '#e2e8f0', display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
+                <div style={{ fontSize: '0.95rem', lineHeight: '1.7', color: 'rgba(255,255,255,0.7)', display: 'flex', flexDirection: 'column', gap: '1.75rem', textAlign: 'left' }}>
                     <div>
-                        <h3 style={{ color: '#60a5fa', marginBottom: '0.5rem', fontSize: '1.3rem' }}>Why existing systems fall short</h3>
+                        <h3 style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-heading)', fontWeight: '400', marginBottom: '0.5rem', fontSize: '1.25rem' }}>Why existing systems fall short</h3>
                         <p>Most current electricity theft detection methods depend on manual inspections, fixed rules, or single indicators. These approaches struggle to scale, generate many false positives, and often miss complex or well-hidden cases of non-technical losses.</p>
                     </div>
 
                     <div>
-                        <h3 style={{ color: '#60a5fa', marginBottom: '0.5rem', fontSize: '1.3rem' }}>Our approach</h3>
+                        <h3 style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-heading)', fontWeight: '400', marginBottom: '0.5rem', fontSize: '1.25rem' }}>Our approach</h3>
                         <p>This system is built using a research-driven, multi-layer anomaly detection framework. Rather than relying on one signal, it analyzes electricity usage from multiple perspectives to capture different forms of suspicious behavior and reduce blind spots.</p>
                     </div>
 
                     <div>
-                        <h3 style={{ color: '#60a5fa', marginBottom: '0.5rem', fontSize: '1.3rem' }}>How the system works</h3>
+                        <h3 style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-heading)', fontWeight: '400', marginBottom: '0.5rem', fontSize: '1.25rem' }}>How the system works</h3>
                         <p>Smart-meter consumption patterns are analyzed over time to detect abnormal changes. Consumers are evaluated relative to nearby peers connected to the same transformer, providing local context. Transformer-level loss analysis captures grid-side irregularities, while voltage and power-quality signals act as physical indicators. Seasonal and contextual factors are applied to avoid false alarms.</p>
                     </div>
 
                     <div>
-                        <h3 style={{ color: '#60a5fa', marginBottom: '0.5rem', fontSize: '1.3rem' }}>What makes it different</h3>
+                        <h3 style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-heading)', fontWeight: '400', marginBottom: '0.5rem', fontSize: '1.25rem' }}>What makes it different</h3>
                         <p>All signals are normalized and combined into a single risk score that prioritizes a small set of cases for inspection. The system does not label theft; it supports explainable, risk-based decision making with humans in the loop. Location-based analysis further highlights geographic hotspots for efficient inspection planning.</p>
                     </div>
 
                     <div>
-                        <h3 style={{ color: '#60a5fa', marginBottom: '0.5rem', fontSize: '1.3rem' }}>The problem we solve</h3>
+                        <h3 style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-heading)', fontWeight: '400', marginBottom: '0.5rem', fontSize: '1.25rem' }}>The problem we solve</h3>
                         <p>The system helps utilities move from reactive checks to targeted, data-driven inspections, reducing non-technical losses and improving grid visibility while maintaining transparency and control.</p>
                     </div>
                 </div>

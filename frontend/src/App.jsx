@@ -194,41 +194,50 @@ function App() {
             display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
         }}>
             <div className="modal-content" style={{
-                background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '20px',
-                padding: '2rem', width: '500px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                background: 'rgba(18, 16, 14, 0.85)', backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid var(--glass-border)', borderRadius: '16px',
+                padding: '2.5rem', width: '500px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
                 position: 'relative', animation: 'fade-in 0.3s ease-out'
             }}>
                 <button 
                     onClick={() => setIsServicesModalOpen(false)}
-                    style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+                    style={{ 
+                        position: 'absolute', top: '1.5rem', right: '1.5rem', 
+                        background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.08)', 
+                        borderRadius: '50%', width: '36px', height: '36px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'rgba(255, 255, 255, 0.7)', cursor: 'pointer', transition: 'all 0.2s' 
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)'; }}
                 >
-                    <X size={20} />
+                    <X size={18} />
                 </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                    <Sliders style={{ color: '#3b82f6' }} size={24} />
-                    <h3 style={{ margin: 0, fontSize: '1.35rem', color: 'white', fontWeight: '600' }}>Vidyut Services</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+                    <Sliders style={{ color: 'var(--accent-blue)' }} size={22} />
+                    <h3 style={{ margin: 0, fontSize: '1.6rem', color: 'white', fontWeight: '400', fontFamily: 'var(--font-heading)' }}>Vidyut Services</h3>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        <CheckCircle size={18} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                    <div style={{ display: 'flex', gap: '0.85rem' }}>
+                        <CheckCircle size={18} style={{ color: 'var(--accent-blue)', flexShrink: 0, marginTop: '2px' }} />
                         <div>
-                            <strong style={{ color: 'white' }}>ML Anomaly Classifier</strong>
-                            <p style={{ margin: '0.25rem 0 0 0', color: 'rgba(255,255,255,0.5)' }}>Processes transformer-consumer consumption logs and detects grid bypass anomalies.</p>
+                            <strong style={{ color: 'white', fontSize: '0.95rem' }}>ML Anomaly Classifier</strong>
+                            <p style={{ margin: '0.25rem 0 0 0', color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>Processes transformer-consumer consumption logs and detects grid bypass anomalies.</p>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        <CheckCircle size={18} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
+                    <div style={{ display: 'flex', gap: '0.85rem' }}>
+                        <CheckCircle size={18} style={{ color: 'var(--accent-blue)', flexShrink: 0, marginTop: '2px' }} />
                         <div>
-                            <strong style={{ color: 'white' }}>GPS Location Mapping</strong>
-                            <p style={{ margin: '0.25rem 0 0 0', color: 'rgba(255,255,255,0.5)' }}>Pins transformer locations and matches geocoded load fluctuations dynamically.</p>
+                            <strong style={{ color: 'white', fontSize: '0.95rem' }}>GPS Location Mapping</strong>
+                            <p style={{ margin: '0.25rem 0 0 0', color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>Pins transformer locations and matches geocoded load fluctuations dynamically.</p>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        <CheckCircle size={18} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
+                    <div style={{ display: 'flex', gap: '0.85rem' }}>
+                        <CheckCircle size={18} style={{ color: 'var(--accent-blue)', flexShrink: 0, marginTop: '2px' }} />
                         <div>
-                            <strong style={{ color: 'white' }}>Loss Recovery Audit Logs</strong>
-                            <p style={{ margin: '0.25rem 0 0 0', color: 'rgba(255,255,255,0.5)' }}>Calculates Estimated T&D losses and schedules onsite inspections to recover revenue.</p>
+                            <strong style={{ color: 'white', fontSize: '0.95rem' }}>Loss Recovery Audit Logs</strong>
+                            <p style={{ margin: '0.25rem 0 0 0', color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>Calculates Estimated T&D losses and schedules onsite inspections to recover revenue.</p>
                         </div>
                     </div>
                 </div>
