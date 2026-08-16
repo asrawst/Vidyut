@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@400;500;700&display=swap');
+
+:root {
+  --bg-primary: #0a0908;       /* Deep warm black from reference image */
+  --bg-secondary: #12100e;     /* Deep warm dark brown-charcoal */
+  --text-primary: #ffffff;
+  --text-secondary: #a29d96;   /* Warm sand/grey from reference image */
+  --accent-blue: #c8a261;      /* Bright warm luxury gold/copper */
+  --accent-glow: rgba(200, 162, 97, 0.3);
+  --glass-bg: rgba(18, 16, 14, 0.85);
+  --glass-border: rgba(200, 162, 97, 0.12); /* Subtle gold glass border */
+  --card-hover: rgba(200, 162, 97, 0.06);
+  --font-heading: 'Lora', Georgia, serif;
+  --font-mono: 'Courier New', Courier, monospace;
+  /* Fallback for tech vibe */
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  /* Technical grid overlay could be added here or in App.css */
+  background-image:
+    linear-gradient(rgba(2, 2, 2, 0.9), rgba(2, 2, 2, 0.9));
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  color: var(--text-primary);
+}
