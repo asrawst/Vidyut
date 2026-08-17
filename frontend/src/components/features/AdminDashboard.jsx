@@ -174,52 +174,34 @@ const AdminDashboard = ({
         }
     }, [result, selectedFile]);
 
-    // Save inspector to Supabase DB & state
-    const handleSaveInspector = async (formattedName, badgeId, email, password = '', discom = 'Tata Power DDL') => {
+    // Save inspector to Supabase DB & state (no auth.signUp — FK constraint must be removed in Supabase)
+    const handleSaveInspector = async (formattedName, badgeId, email, _password = '', discom = 'Tata Power DDL') => {
         const generatedBadgeId = badgeId || `INS-DEL-${Math.floor(10000 + Math.random() * 90000)}`;
-        const tempPassword = password || 'Vidyut@2026';
-        
-        try {
-            // 1. Create the user inside Supabase Auth
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: email,
-                password: tempPassword
+
+        // Generate a UUID for the id column (works once FK constraint to auth.users is dropped)
+        const generatedUuid = crypto.randomUUID ? crypto.randomUUID() :
+            'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
             });
 
-            let targetUserId = null;
+        const { error } = await supabase
+            .from('inspectors')
+            .insert([{
+                id: generatedUuid,
+                display_name: formattedName,
+                badge_id: generatedBadgeId,
+                email: email,
+                discom: discom
+            }])
+            .select();
 
-            if (authError) {
-                console.error("Auth signUp error:", authError.message);
-                alert(`Cannot register inspector: ${authError.message}. Each inspector must have a unique email address (you cannot reuse your admin email).`);
-                return false;
-            } else if (authData?.user) {
-                targetUserId = authData.user.id;
-            }
-
-            if (targetUserId) {
-                // 2. Insert the profile row into public.inspectors referencing the auth user id
-                const { data: dbData, error: dbError } = await supabase
-                    .from('inspectors')
-                    .insert([{
-                        id: targetUserId,
-                        display_name: formattedName,
-                        badge_id: generatedBadgeId,
-                        email: email,
-                        discom: discom
-                    }])
-                    .select();
-
-                if (dbError) {
-                    console.error("Database insert error:", dbError.message);
-                    alert(`Database error: ${dbError.message}`);
-                    return false;
-                }
-            }
-        } catch (err) {
-            console.error("Unexpected error provisioning inspector:", err);
+        if (error) {
+            console.error("Database insert error:", error.message);
+            alert(`Failed to add inspector: ${error.message}`);
             return false;
         }
-        
+
         setInspectorsDetails(prev => [
             ...prev,
             {
