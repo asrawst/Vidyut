@@ -7,7 +7,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -22,40 +21,83 @@ serve(async (req) => {
       )
     }
 
-    // Use the service role key — has admin privileges, safe only in Edge Functions
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
-    // inviteUserByEmail creates the auth account if it doesn't exist
-    // and sends an invite email with a magic link to set password
-    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    })
+
+    const portalUrl = redirectTo || 'https://vidyut-dexter.vercel.app/inspector-portal'
+
+    // Try invite first (works for new users)
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       inspectorEmail,
-      {
-        redirectTo: redirectTo || 'https://vidyut-dexter.vercel.app/inspector-portal',
-        data: { display_name: inspectorName, role: 'inspector' }
-      }
+      { redirectTo: portalUrl, data: { display_name: inspectorName, role: 'inspector' } }
     )
 
-    if (error) {
-      console.error('Admin invite error:', error.message)
+    if (!inviteError) {
+      // Invite sent successfully
       return new Response(
-        JSON.stringify({ error: error.message }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: true, method: 'invite', userId: inviteData.user?.id }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    // If user already exists in auth, generate a password reset link instead
+    if (inviteError.message?.toLowerCase().includes('already') || inviteError.message?.toLowerCase().includes('registered')) {
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'recovery',
+        email: inspectorEmail,
+        options: { redirectTo: portalUrl }
+      })
+
+      if (linkError) {
+        console.error('Generate link error:', linkError.message)
+        return new Response(
+          JSON.stringify({ error: linkError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Send the reset link via Resend
+      const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+      if (RESEND_API_KEY && linkData?.properties?.action_link) {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${RESEND_API_KEY}` },
+          body: JSON.stringify({
+            from: 'Vidyut Portal <no-reply@vidyut.com>',
+            to: inspectorEmail,
+            subject: 'Your Vidyut Inspector Portal Access',
+            html: `
+              <h2>Hello ${inspectorName},</h2>
+              <p>Your login credentials for the Vidyut Inspector Portal have been updated.</p>
+              <p><a href="${linkData.properties.action_link}" style="background:#c8a261;color:#000;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Set Your Password & Login</a></p>
+              <p>This link expires in 24 hours.</p>
+              <br/><p>— Vidyut Operations Team</p>
+            `
+          })
+        })
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, method: 'recovery' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Any other invite error
+    console.error('Invite error:', inviteError.message)
     return new Response(
-      JSON.stringify({ success: true, userId: data.user?.id }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: inviteError.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (err) {
     console.error('Edge function error:', err)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: `Internal error: ${err.message}` }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
