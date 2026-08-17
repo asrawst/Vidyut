@@ -256,14 +256,21 @@ const AdminDashboard = ({
         if (!confirm(`Send login credentials email to ${ins.name} at ${ins.email}?`)) return;
         setSendingCredentials(prev => ({ ...prev, [ins.email]: true }));
         try {
-            const { error } = await supabase.auth.resetPasswordForEmail(ins.email, {
-                redirectTo: `${window.location.origin}/inspector-portal`
+            // Call Edge Function which uses admin API — creates auth account + sends invite email
+            const { data, error } = await supabase.functions.invoke('send-credentials-email', {
+                body: {
+                    inspectorEmail: ins.email,
+                    inspectorName: ins.name,
+                    redirectTo: `${window.location.origin}/inspector-portal`
+                }
             });
-            if (error) {
-                console.error('Credential email error:', error.message);
-                alert(`Failed to send credentials: ${error.message}`);
+
+            if (error || data?.error) {
+                const msg = data?.error || error?.message;
+                console.error('Credential email error:', msg);
+                alert(`Failed to send credentials: ${msg}`);
             } else {
-                alert(`✅ Login credentials email sent successfully to ${ins.email}!\n\n${ins.name} can now set their password and log in to the Inspector Portal.`);
+                alert(`✅ Invite email sent to ${ins.email}!\n\n${ins.name} will receive a link to set their password and log in to the Inspector Portal.`);
             }
         } catch (err) {
             console.error('Unexpected error sending credentials:', err);
