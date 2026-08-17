@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     MapPin, User, ClipboardCheck, AlertTriangle, 
     ShieldAlert, Lock, Settings, LogOut, Menu, 
@@ -7,7 +7,14 @@ import {
 import MapComponent from './MapComponent';
 
 const InspectorPortal = ({ inspector, onLogout }) => {
-    const [activeTab, setActiveTab] = useState('Current Task');
+    const [activeTab, setActiveTab] = useState(() => {
+        return localStorage.getItem('vidyut_inspector_active_tab') || 'Current Task';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('vidyut_inspector_active_tab', activeTab);
+    }, [activeTab]);
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     
     // Active Inspection Task State

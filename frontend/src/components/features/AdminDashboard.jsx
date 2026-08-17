@@ -3,13 +3,14 @@ import {
     User, ListCollapse, Ban, TrendingUp, Calendar, AlertTriangle, 
     History as HistoryIcon, Settings as SettingsIcon, UploadCloud, 
     Download, RefreshCw, Layers, ShieldAlert, Sparkles, MapPin, 
-    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X 
+    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2 
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LineChart, Line } from 'recharts';
 import MapComponent from './MapComponent';
 import { Download as DownloadPDFIcon } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { supabase } from '../../supabaseClient';
 
 // Mock Lists for tabs
 const MOCK_INSPECTORS = ['Inspector R. Sharma', 'Inspector A. Verma', 'Inspector K. Gupta', 'Inspector S. Iyer'];
@@ -24,12 +25,104 @@ const AdminDashboard = ({
     handleFetch,
     setResult
 }) => {
-    const [activeTab, setActiveTab] = useState('Overview');
+    const [activeTab, setActiveTab] = useState(() => {
+        return localStorage.getItem('vidyut_admin_active_tab') || 'Overview';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('vidyut_admin_active_tab', activeTab);
+    }, [activeTab]);
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [localInspectionStatus, setLocalInspectionStatus] = useState({});
     const [assignedInspectors, setAssignedInspectors] = useState({});
+    const [inspectorsDetails, setInspectorsDetails] = useState(() => {
+        const saved = localStorage.getItem('vidyut_inspectors_details');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        return [
+            { name: 'Inspector R. Sharma', badgeId: 'INS-DEL-88402', email: 'sharma@vidyut.com', discom: 'Tata Power DDL', created: 'Aug 10, 2026' },
+            { name: 'Inspector A. Verma', badgeId: 'INS-DEL-77301', email: 'verma@vidyut.com', discom: 'BSES Yamuna', created: 'Aug 12, 2026' },
+            { name: 'Inspector K. Gupta', badgeId: 'INS-DEL-99203', email: 'gupta@vidyut.com', discom: 'BSES Rajdhani', created: 'Aug 14, 2026' },
+            { name: 'Inspector S. Iyer', badgeId: 'INS-DEL-55104', email: 'iyer@vidyut.com', discom: 'Tata Power DDL', created: 'Aug 15, 2026' },
+        ];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('vidyut_inspectors_details', JSON.stringify(inspectorsDetails));
+    }, [inspectorsDetails]);
+    const inspectorsList = inspectorsDetails.map(ins => ins.name);
+    const [editingInspectorName, setEditingInspectorName] = useState(null);
+    const [editInspectorData, setEditInspectorData] = useState({ name: '', badgeId: '', email: '', discom: '', created: '' });
+    const [newInspector, setNewInspector] = useState({ name: '', badgeId: '', email: '', password: '' });
+    const [blacklistedConsumers, setBlacklistedConsumers] = useState([
+        { id: 'CON-88301', addr: 'B-4, Rohini Sector 11', severity: '3rd Repeated Bypass', fine: '₹45,000', status: 'Meter Removed' },
+        { id: 'CON-12499', addr: 'C-72, Shalimar Bagh', severity: 'Tampered Terminal Cover', fine: '₹12,500', status: 'Suspended Connection' },
+        { id: 'CON-77402', addr: 'G-12, Karol Bagh Main', severity: 'Direct Tap Hooking', fine: '₹60,000', status: 'Criminal Legal Action' },
+    ]);
+    const [editingConsumerId, setEditingConsumerId] = useState(null);
+    const [editConsumerData, setEditConsumerData] = useState({ id: '', addr: '', severity: '', fine: '', status: '' });
+    const [newConsumerData, setNewConsumerData] = useState({ id: '', addr: '', severity: '', fine: '', status: 'Meter Removed' });
+    const [isAddingConsumer, setIsAddingConsumer] = useState(false);
     const [dragActive, setDragActive] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [inspectionCalendar, setInspectionCalendar] = useState([
+        { consumer: 'CON-98401', zone: 'Sector 5 West', inspector: 'Inspector R. Sharma', status: 'Scheduled' },
+        { consumer: 'CON-10938', zone: 'Punjabi Bagh North', inspector: 'Inspector A. Verma', status: 'Pending Review' },
+        { consumer: 'CON-56402', zone: 'Karol Bagh St 2', inspector: 'Inspector K. Gupta', status: 'In Process' },
+        { consumer: 'CON-33201', zone: 'Rohini Sector 11', inspector: 'Inspector S. Iyer', status: 'Completed' },
+    ]);
+    const [editingCalendarId, setEditingCalendarId] = useState(null);
+    const [editCalendarData, setEditCalendarData] = useState({ consumer: '', zone: '', inspector: '', status: '' });
+    
+    const [uploadHistory, setUploadHistory] = useState(() => {
+        const saved = localStorage.getItem('vidyut_upload_history');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        return [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('vidyut_upload_history', JSON.stringify(uploadHistory));
+    }, [uploadHistory]);
+
+    // Fetch inspectors directory from Supabase on mount
+    useEffect(() => {
+        const fetchInspectors = async () => {
+            // Await a brief moment to ensure Supabase restored authentication session from localStorage
+            await new Promise(resolve => setTimeout(resolve, 600));
+
+            const { data, error } = await supabase
+                .from('inspectors')
+                .select('*')
+                .order('display_name', { ascending: true });
+
+            if (error) {
+                console.error("Error loading inspectors from Supabase:", error.message);
+            } else if (data) {
+                const formatted = data.map(ins => ({
+                    name: ins.display_name,
+                    badgeId: ins.badge_id || 'INS-GEN-01',
+                    email: ins.email,
+                    discom: ins.discom || 'Tata Power DDL',
+                    created: ins.created_at ? new Date(ins.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Aug 10, 2026'
+                }));
+                setInspectorsDetails(formatted);
+            }
+        };
+        fetchInspectors();
+    }, [user]);
+
     const reportRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -43,6 +136,186 @@ const AdminDashboard = ({
         }
     }, [result]);
 
+    // Save uploaded dataset permanently in history when result changes
+    useEffect(() => {
+        if (result) {
+            const newHist = {
+                name: selectedFile ? selectedFile.name : 'consumer_dataset.csv',
+                date: new Date().toLocaleString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    hour12: false 
+                }),
+                count: result.anomalies?.length || 0,
+                critical: result.anomalies?.filter(a => a.risk_score >= 0.85).length || 0,
+                size: selectedFile ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` : '1.2 MB',
+                data: result
+            };
+            setUploadHistory(prev => {
+                if (prev.some(h => h.name === newHist.name && h.date.split(' ')[0] === newHist.date.split(' ')[0])) {
+                    // Update result data if re-uploaded
+                    return prev.map(h => h.name === newHist.name ? { ...h, data: result } : h);
+                }
+                return [newHist, ...prev];
+            });
+        }
+    }, [result, selectedFile]);
+
+    // Save inspector to Supabase DB & state
+    const handleSaveInspector = async (formattedName, badgeId, email, password = '', discom = 'Tata Power DDL') => {
+        const generatedBadgeId = badgeId || `INS-DEL-${Math.floor(10000 + Math.random() * 90000)}`;
+        const tempPassword = password || 'Vidyut@2026';
+        
+        try {
+            // 1. Create the user inside Supabase Auth
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email: email,
+                password: tempPassword
+            });
+
+            let targetUserId = null;
+
+            if (authError) {
+                console.error("Auth signUp error:", authError.message);
+                alert(`Cannot register inspector: ${authError.message}. Each inspector must have a unique email address (you cannot reuse your admin email).`);
+                return false;
+            } else if (authData?.user) {
+                targetUserId = authData.user.id;
+            }
+
+            if (targetUserId) {
+                // 2. Insert the profile row into public.inspectors referencing the auth user id
+                const { data: dbData, error: dbError } = await supabase
+                    .from('inspectors')
+                    .insert([{
+                        id: targetUserId,
+                        display_name: formattedName,
+                        badge_id: generatedBadgeId,
+                        email: email,
+                        discom: discom
+                    }])
+                    .select();
+
+                if (dbError) {
+                    console.error("Database insert error:", dbError.message);
+                    alert(`Database error: ${dbError.message}`);
+                    return false;
+                }
+            }
+        } catch (err) {
+            console.error("Unexpected error provisioning inspector:", err);
+            return false;
+        }
+        
+        setInspectorsDetails(prev => [
+            ...prev,
+            {
+                name: formattedName,
+                badgeId: generatedBadgeId,
+                email: email,
+                discom: discom,
+                created: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            }
+        ]);
+        return true;
+    };
+
+    // Delete inspector from Supabase DB & state
+    const handleDeleteInspector = async (insToDelete) => {
+        const { error } = await supabase
+            .from('inspectors')
+            .delete()
+            .eq('email', insToDelete.email);
+
+        if (error) {
+            console.error("Database delete error:", error.message);
+            alert(`Database delete warning: ${error.message}`);
+        }
+        
+        setInspectorsDetails(prev => prev.filter(item => item.email !== insToDelete.email));
+    };
+
+    // Update inspector details in Supabase DB & state
+    const handleUpdateInspector = async (oldEmail, updatedIns) => {
+        const { error } = await supabase
+            .from('inspectors')
+            .update({
+                display_name: updatedIns.name,
+                badge_id: updatedIns.badgeId,
+                email: updatedIns.email,
+                discom: updatedIns.discom
+            })
+            .eq('email', oldEmail);
+
+        if (error) {
+            console.error("Database update error:", error.message);
+            alert(`Database update warning: ${error.message}`);
+        }
+
+        setInspectorsDetails(prev => prev.map(item => item.email === oldEmail ? updatedIns : item));
+    };
+
+    // Send login credential reset email to inspector via Supabase
+    const [sendingCredentials, setSendingCredentials] = useState({});
+    const handleSendCredentials = async (ins) => {
+        if (!confirm(`Send login credentials email to ${ins.name} at ${ins.email}?`)) return;
+        setSendingCredentials(prev => ({ ...prev, [ins.email]: true }));
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(ins.email, {
+                redirectTo: `${window.location.origin}/inspector-portal`
+            });
+            if (error) {
+                console.error('Credential email error:', error.message);
+                alert(`Failed to send credentials: ${error.message}`);
+            } else {
+                alert(`✅ Login credentials email sent successfully to ${ins.email}!\n\n${ins.name} can now set their password and log in to the Inspector Portal.`);
+            }
+        } catch (err) {
+            console.error('Unexpected error sending credentials:', err);
+            alert('An unexpected error occurred. Please try again.');
+        } finally {
+            setSendingCredentials(prev => ({ ...prev, [ins.email]: false }));
+        }
+    };
+
+    // Handle CSV download from history item
+    const handleDownloadCSV = (hist) => {
+        let anomalies = hist.data?.anomalies;
+        if (!anomalies) {
+            // Generate mock anomalies if no payload data exists
+            anomalies = Array.from({ length: hist.count || 20 }, (_, i) => ({
+                consumer_id: `CON-${90000 + i}`,
+                risk_score: (0.95 - (i * 0.02)).toFixed(2),
+                transformer_id: `TR-${100 + (i % 5)}`,
+                metrics: { energy_consumed: (250 + (i * 12)) },
+                anomaly_type: i % 2 === 0 ? 'Direct Tap Bypass' : 'Suspicious Load Drop'
+            }));
+        }
+        
+        const headers = ['Consumer ID', 'Risk Score', 'Transformer ID', 'Total Energy (kWh)', 'Anomaly Flag'];
+        const rows = anomalies.map(a => [
+            a.consumer_id,
+            a.risk_score,
+            a.transformer_id || '',
+            a.metrics?.energy_consumed || '',
+            a.anomaly_type || 'Suspicious Load Shift'
+        ]);
+        
+        const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", hist.name);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // Handle status change in table
     const handleStatusChange = (consumerId, newStatus) => {
         setLocalInspectionStatus(prev => ({
@@ -51,12 +324,27 @@ const AdminDashboard = ({
         }));
     };
 
-    // Handle inspector assignment
+    // Handle inspector assignment & sync with calendar
     const handleInspectorChange = (consumerId, inspector) => {
         setAssignedInspectors(prev => ({
             ...prev,
             [consumerId]: inspector
         }));
+
+        if (inspector) {
+            // Find consumer details in result to get zone
+            const consumerObj = result?.anomalies?.find(a => a.consumer_id === consumerId);
+            const zoneArea = consumerObj?.transformer_id ? `Transformer ${consumerObj.transformer_id}` : 'Sector 5 West';
+
+            setInspectionCalendar(prev => {
+                const exists = prev.some(item => item.consumer === consumerId);
+                if (exists) {
+                    return prev.map(item => item.consumer === consumerId ? { ...item, inspector: inspector } : item);
+                } else {
+                    return [...prev, { consumer: consumerId, zone: zoneArea, inspector: inspector, status: 'Scheduled' }];
+                }
+            });
+        }
     };
 
     // Drag-and-drop handlers for dashboard upload
@@ -266,6 +554,12 @@ const AdminDashboard = ({
                         <Calendar size={18} /> Inspection
                     </button>
                     <button 
+                        className={`nav-item ${activeTab === 'Inspector List' ? 'active' : ''}`}
+                        onClick={() => { setActiveTab('Inspector List'); setIsSidebarOpen(false); }}
+                    >
+                        <UserCheck size={18} /> Inspector List
+                    </button>
+                    <button 
                         className={`nav-item ${activeTab === 'Priority' ? 'active' : ''}`}
                         onClick={() => { setActiveTab('Priority'); setIsSidebarOpen(false); }}
                     >
@@ -367,17 +661,20 @@ const AdminDashboard = ({
                                 </div>
                             ) : (
                                 <div className="charts-grid">
-                                    {/* Pre-upload Mock Visualizations */}
+                                    {/* Pre-upload Mock Visualizations - Defaulting to 0 */}
                                     <div className="chart-card">
-                                        <h3>Risk Distribution (Sample)</h3>
-                                        <div className="chart-container-inner">
+                                        <h3>Risk Distribution</h3>
+                                        <div className="chart-container-inner" style={{ position: 'relative' }}>
+                                            <div style={{ position: 'absolute', top: '45%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none', textAlign: 'center' }}>
+                                                No Data Loaded
+                                            </div>
                                             <ResponsiveContainer width="100%" height={260}>
                                                 <PieChart>
                                                     <Pie
                                                         data={[
-                                                            { name: 'Critical Risk', value: 8, color: '#ef4444' },
-                                                            { name: 'High Risk', value: 14, color: '#f97316' },
-                                                            { name: 'Normal', value: 78, color: '#10b981' }
+                                                            { name: 'Critical Risk', value: 0, color: '#ef4444' },
+                                                            { name: 'High Risk', value: 0, color: '#f97316' },
+                                                            { name: 'Normal', value: 0, color: '#10b981' }
                                                         ]}
                                                         cx="50%"
                                                         cy="50%"
@@ -401,14 +698,17 @@ const AdminDashboard = ({
                                         </div>
                                     </div>
                                     <div className="chart-card">
-                                        <h3>Transformer Loading & Risk (Sample)</h3>
-                                        <div className="chart-container-inner">
+                                        <h3>Transformer Loading & Risk</h3>
+                                        <div className="chart-container-inner" style={{ position: 'relative' }}>
+                                            <div style={{ position: 'absolute', top: '45%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none', textAlign: 'center' }}>
+                                                No Data Loaded
+                                            </div>
                                             <ResponsiveContainer width="100%" height={260}>
                                                 <BarChart data={[
-                                                    { name: 'TR-101', critical: 3, high: 5 },
-                                                    { name: 'TR-102', critical: 1, high: 2 },
-                                                    { name: 'TR-103', critical: 4, high: 4 },
-                                                    { name: 'TR-104', critical: 0, high: 3 }
+                                                    { name: 'TR-101', critical: 0, high: 0 },
+                                                    { name: 'TR-102', critical: 0, high: 0 },
+                                                    { name: 'TR-103', critical: 0, high: 0 },
+                                                    { name: 'TR-104', critical: 0, high: 0 }
                                                 ]}>
                                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                                                     <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" style={{ fontSize: '0.75rem' }} />
@@ -585,7 +885,7 @@ const AdminDashboard = ({
                                                                     }}
                                                                 >
                                                                     <option value="">-- Assign Inspector --</option>
-                                                                    {MOCK_INSPECTORS.map(insp => (
+                                                                    {inspectorsList.map(insp => (
                                                                         <option key={insp} value={insp}>{insp}</option>
                                                                     ))}
                                                                 </select>
@@ -682,39 +982,236 @@ const AdminDashboard = ({
                     )}
 
                     {activeTab === 'Blacklisted Consumer' && (
-                        <div className="dashboard-panel">
+                        <div className="dashboard-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            {/* Add Consumer Form (Toggleable) */}
+                            {isAddingConsumer && (
+                                <div className="panel-card" style={{ animation: 'fade-in 0.3s ease-out' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                        <h3 className="panel-title" style={{ margin: 0 }}>Add Suspended / Blacklisted Consumer</h3>
+                                        <button 
+                                            onClick={() => setIsAddingConsumer(false)}
+                                            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+                                        >
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                    <form 
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+                                            if (newConsumerData.id && newConsumerData.addr) {
+                                                setBlacklistedConsumers([...blacklistedConsumers, newConsumerData]);
+                                                setNewConsumerData({ id: '', addr: '', severity: '', fine: '', status: 'Meter Removed' });
+                                                setIsAddingConsumer(false);
+                                            } else {
+                                                alert("Consumer ID and Address Block are required.");
+                                            }
+                                        }}
+                                        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem', alignItems: 'end' }}
+                                    >
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                            <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Consumer ID *</label>
+                                            <input 
+                                                type="text"
+                                                value={newConsumerData.id}
+                                                onChange={e => setNewConsumerData({ ...newConsumerData, id: e.target.value })}
+                                                placeholder="e.g. CON-88301"
+                                                required
+                                                style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#fff', outline: 'none' }}
+                                            />
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                            <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Address Block *</label>
+                                            <input 
+                                                type="text"
+                                                value={newConsumerData.addr}
+                                                onChange={e => setNewConsumerData({ ...newConsumerData, addr: e.target.value })}
+                                                placeholder="e.g. B-4, Rohini Sector 11"
+                                                required
+                                                style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#fff', outline: 'none' }}
+                                            />
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                            <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Offense Severity</label>
+                                            <input 
+                                                type="text"
+                                                value={newConsumerData.severity}
+                                                onChange={e => setNewConsumerData({ ...newConsumerData, severity: e.target.value })}
+                                                placeholder="e.g. 3rd Repeated Bypass"
+                                                style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#fff', outline: 'none' }}
+                                            />
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                            <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Fine Imposed</label>
+                                            <input 
+                                                type="text"
+                                                value={newConsumerData.fine}
+                                                onChange={e => setNewConsumerData({ ...newConsumerData, fine: e.target.value })}
+                                                placeholder="e.g. ₹45,000"
+                                                style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#fff', outline: 'none' }}
+                                            />
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                            <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Enforcement Status</label>
+                                            <select 
+                                                value={newConsumerData.status}
+                                                onChange={e => setNewConsumerData({ ...newConsumerData, status: e.target.value })}
+                                                style={{ padding: '0.6rem 0.8rem', background: 'rgba(18,16,14,0.9)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#fff', outline: 'none' }}
+                                            >
+                                                <option value="Meter Removed">Meter Removed</option>
+                                                <option value="Suspended Connection">Suspended Connection</option>
+                                                <option value="Criminal Legal Action">Criminal Legal Action</option>
+                                                <option value="Under Probation">Under Probation</option>
+                                            </select>
+                                        </div>
+                                        <button 
+                                            type="submit"
+                                            style={{ padding: '0.65rem 1.25rem', background: 'white', color: 'black', fontWeight: '600', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                                        >
+                                            Save Consumer
+                                        </button>
+                                    </form>
+                                </div>
+                            )}
+
+                            {/* Blacklist Table */}
                             <div className="panel-card">
-                                <h3 className="panel-title">Suspended & Blacklisted Consumers</h3>
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <thead>
-                                        <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Consumer ID</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Address Block</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Offense Severity</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Fine Imposed</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {[
-                                            { id: 'CON-88301', addr: 'B-4, Rohini Sector 11', severity: '3rd Repeated Bypass', fine: '₹45,000', status: 'Meter Removed' },
-                                            { id: 'CON-12499', addr: 'C-72, Shalimar Bagh', severity: 'Tampered Terminal Cover', fine: '₹12,500', status: 'Suspended Connection' },
-                                            { id: 'CON-77402', addr: 'G-12, Karol Bagh Main', severity: 'Direct Tap Hooking', fine: '₹60,000', status: 'Criminal Legal Action' },
-                                        ].map((c, i) => (
-                                            <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                                <td style={{ padding: '1rem', fontWeight: '600' }}>{c.id}</td>
-                                                <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{c.addr}</td>
-                                                <td style={{ padding: '1rem', color: '#f97316', fontWeight: '500' }}>{c.severity}</td>
-                                                <td style={{ padding: '1rem', fontWeight: '700' }}>{c.fine}</td>
-                                                <td style={{ padding: '1rem' }}>
-                                                    <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>
-                                                        {c.status}
-                                                    </span>
-                                                </td>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <h3 className="panel-title" style={{ margin: 0 }}>Suspended & Blacklisted Consumers</h3>
+                                    {!isAddingConsumer && (
+                                        <button 
+                                            onClick={() => setIsAddingConsumer(true)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                                background: 'rgba(200, 162, 97, 0.15)', border: '1px solid rgba(200, 162, 97, 0.3)',
+                                                color: 'var(--accent-blue)', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer',
+                                                fontWeight: '600', fontSize: '0.85rem', transition: 'all 0.2s'
+                                            }}
+                                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(200, 162, 97, 0.25)'}
+                                            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(200, 162, 97, 0.15)'}
+                                        >
+                                            <Plus size={16} /> Add Consumer
+                                        </button>
+                                    )}
+                                </div>
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Consumer ID</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Address Block</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Offense Severity</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Fine Imposed</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Status</th>
+                                                <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Actions</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {blacklistedConsumers.map((c, i) => (
+                                                <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                    {editingConsumerId === c.id ? (
+                                                        <>
+                                                            {/* Inline Editing Mode */}
+                                                            <td style={{ padding: '1rem', fontWeight: '600' }}>{c.id}</td>
+                                                            <td style={{ padding: '0.5rem 1rem' }}>
+                                                                <input 
+                                                                    type="text" 
+                                                                    value={editConsumerData.addr}
+                                                                    onChange={e => setEditConsumerData({ ...editConsumerData, addr: e.target.value })}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                />
+                                                            </td>
+                                                            <td style={{ padding: '0.5rem 1rem' }}>
+                                                                <input 
+                                                                    type="text" 
+                                                                    value={editConsumerData.severity}
+                                                                    onChange={e => setEditConsumerData({ ...editConsumerData, severity: e.target.value })}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                />
+                                                            </td>
+                                                            <td style={{ padding: '0.5rem 1rem' }}>
+                                                                <input 
+                                                                    type="text" 
+                                                                    value={editConsumerData.fine}
+                                                                    onChange={e => setEditConsumerData({ ...editConsumerData, fine: e.target.value })}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                />
+                                                            </td>
+                                                            <td style={{ padding: '0.5rem 1rem' }}>
+                                                                <select 
+                                                                    value={editConsumerData.status}
+                                                                    onChange={e => setEditConsumerData({ ...editConsumerData, status: e.target.value })}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(18,16,14,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem' }}
+                                                                >
+                                                                    <option value="Meter Removed">Meter Removed</option>
+                                                                    <option value="Suspended Connection">Suspended Connection</option>
+                                                                    <option value="Criminal Legal Action">Criminal Legal Action</option>
+                                                                    <option value="Under Probation">Under Probation</option>
+                                                                </select>
+                                                            </td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            setBlacklistedConsumers(blacklistedConsumers.map(item => item.id === c.id ? editConsumerData : item));
+                                                                            setEditingConsumerId(null);
+                                                                        }}
+                                                                        style={{ padding: '0.3rem 0.6rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600' }}
+                                                                    >
+                                                                        Save
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => setEditingConsumerId(null)}
+                                                                        style={{ padding: '0.3rem 0.6rem', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {/* Normal Static Mode */}
+                                                            <td style={{ padding: '1rem', fontWeight: '600' }}>{c.id}</td>
+                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{c.addr}</td>
+                                                            <td style={{ padding: '1rem', color: '#f97316', fontWeight: '500' }}>{c.severity}</td>
+                                                            <td style={{ padding: '1rem', fontWeight: '700' }}>{c.fine}</td>
+                                                            <td style={{ padding: '1rem' }}>
+                                                                <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                                                    {c.status}
+                                                                </span>
+                                                            </td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            setEditingConsumerId(c.id);
+                                                                            setEditConsumerData(c);
+                                                                        }}
+                                                                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                                        title="Edit"
+                                                                    >
+                                                                        <Edit2 size={16} />
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            if (confirm(`Are you sure you want to delete blacklisted consumer ${c.id}?`)) {
+                                                                                setBlacklistedConsumers(blacklistedConsumers.filter(item => item.id !== c.id));
+                                                                            }
+                                                                        }}
+                                                                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                                        title="Delete"
+                                                                    >
+                                                                        <Trash2 size={16} />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -765,46 +1262,448 @@ const AdminDashboard = ({
                     )}
 
                     {activeTab === 'Inspection' && (
-                        <div className="dashboard-panel">
-                            <div className="panel-card">
+                        <div className="dashboard-panel" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem' }}>
+                            {/* Calendar List (Editable) */}
+                            <div className="panel-card" style={{ height: 'fit-content' }}>
                                 <h3 className="panel-title">Field Inspection Calendar</h3>
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <thead>
-                                        <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Consumer ID</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Zone Area</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Assigned Inspector</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Scheduled Date</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {[
-                                            { consumer: 'CON-98401', zone: 'Sector 5 West', inspector: 'Inspector R. Sharma', date: 'Aug 18, 2026', status: 'Scheduled' },
-                                            { consumer: 'CON-10938', zone: 'Punjabi Bagh North', inspector: 'Inspector A. Verma', date: 'Aug 19, 2026', status: 'Pending Review' },
-                                            { consumer: 'CON-56402', zone: 'Karol Bagh St 2', inspector: 'Inspector K. Gupta', date: 'Aug 20, 2026', status: 'In Process' },
-                                            { consumer: 'CON-33201', zone: 'Rohini Sector 11', inspector: 'Inspector S. Iyer', date: 'Aug 15, 2026', status: 'Completed' },
-                                        ].map((ins, idx) => (
-                                            <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                                <td style={{ padding: '1rem', fontWeight: '600' }}>{ins.consumer}</td>
-                                                <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.zone}</td>
-                                                <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.inspector}</td>
-                                                <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.date}</td>
-                                                <td style={{ padding: '1rem' }}>
-                                                    <span style={{ 
-                                                        color: ins.status === 'Completed' ? '#10b981' : ins.status === 'In Process' ? '#c8a261' : '#f59e0b',
-                                                        background: ins.status === 'Completed' ? 'rgba(16,185,129,0.1)' : ins.status === 'In Process' ? 'rgba(200,162,97,0.15)' : 'rgba(245,158,11,0.1)',
-                                                        padding: '0.2rem 0.5rem', 
-                                                        borderRadius: '4px',
-                                                        fontSize: '0.8rem'
-                                                    }}>
-                                                        {ins.status}
-                                                    </span>
-                                                </td>
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Consumer ID</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Zone Area</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Assigned Inspector</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Status</th>
+                                                <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Actions</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {inspectionCalendar.map((ins, idx) => (
+                                                <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                    {editingCalendarId === ins.consumer ? (
+                                                        <>
+                                                            {/* Inline Calendar Edit */}
+                                                            <td style={{ padding: '1rem', fontWeight: '600' }}>{ins.consumer}</td>
+                                                            <td style={{ padding: '0.5rem 1rem' }}>
+                                                                <input 
+                                                                    type="text"
+                                                                    value={editCalendarData.zone}
+                                                                    onChange={e => setEditCalendarData({ ...editCalendarData, zone: e.target.value })}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                />
+                                                            </td>
+                                                            <td style={{ padding: '0.5rem 1rem' }}>
+                                                                <select 
+                                                                    value={editCalendarData.inspector}
+                                                                    onChange={e => setEditCalendarData({ ...editCalendarData, inspector: e.target.value })}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(18,16,14,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem' }}
+                                                                >
+                                                                    <option value="">-- Unassigned --</option>
+                                                                    {inspectorsList.map(insp => (
+                                                                        <option key={insp} value={insp}>{insp}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                            <td style={{ padding: '0.5rem 1rem' }}>
+                                                                <select 
+                                                                    value={editCalendarData.status}
+                                                                    onChange={e => setEditCalendarData({ ...editCalendarData, status: e.target.value })}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(18,16,14,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem' }}
+                                                                >
+                                                                    <option value="Scheduled">Scheduled</option>
+                                                                    <option value="Pending Review">Pending Review</option>
+                                                                    <option value="In Process">In Process</option>
+                                                                    <option value="Completed">Completed</option>
+                                                                </select>
+                                                            </td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            setInspectionCalendar(inspectionCalendar.map(item => item.consumer === ins.consumer ? editCalendarData : item));
+                                                                            setEditingCalendarId(null);
+                                                                        }}
+                                                                        style={{ padding: '0.3rem 0.6rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600' }}
+                                                                    >
+                                                                        Save
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => setEditingCalendarId(null)}
+                                                                        style={{ padding: '0.3rem 0.6rem', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {/* Normal Static Calendar View */}
+                                                            <td style={{ padding: '1rem', fontWeight: '600' }}>{ins.consumer}</td>
+                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.zone}</td>
+                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.inspector || <span style={{ color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>Unassigned</span>}</td>
+                                                            <td style={{ padding: '1rem' }}>
+                                                                <span style={{ 
+                                                                    color: ins.status === 'Completed' ? '#10b981' : ins.status === 'In Process' ? '#c8a261' : '#f59e0b',
+                                                                    background: ins.status === 'Completed' ? 'rgba(16,185,129,0.1)' : ins.status === 'In Process' ? 'rgba(200,162,97,0.15)' : 'rgba(245,158,11,0.1)',
+                                                                    padding: '0.2rem 0.5rem', 
+                                                                    borderRadius: '4px',
+                                                                    fontSize: '0.8rem'
+                                                                }}>
+                                                                    {ins.status}
+                                                                </span>
+                                                            </td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            setEditingCalendarId(ins.consumer);
+                                                                            setEditCalendarData(ins);
+                                                                        }}
+                                                                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                                        title="Edit"
+                                                                    >
+                                                                        <Edit2 size={16} />
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            if (confirm(`Remove consumer ${ins.consumer} from inspection calendar?`)) {
+                                                                                setInspectionCalendar(inspectionCalendar.filter(item => item.consumer !== ins.consumer));
+                                                                            }
+                                                                        }}
+                                                                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                                        title="Delete"
+                                                                    >
+                                                                        <Trash2 size={16} />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Generate Inspector Credential Form */}
+                            <div className="panel-card" style={{ height: 'fit-content' }}>
+                                <h3 className="panel-title">Generate Inspector Credential</h3>
+                                <form 
+                                    onSubmit={async (e) => {
+                                        e.preventDefault();
+                                        if (newInspector.name && newInspector.email && newInspector.password) {
+                                            const formattedName = `Inspector ${newInspector.name}`;
+                                            if (inspectorsList.includes(formattedName)) {
+                                                alert("Inspector name already exists!");
+                                                return;
+                                            }
+                                            const success = await handleSaveInspector(formattedName, newInspector.badgeId, newInspector.email, newInspector.password, 'Tata Power DDL');
+                                            if (success) {
+                                                alert(`Account credentials generated successfully for ${formattedName} (Badge ID: ${newInspector.badgeId || 'INS-GEN-01'}). Credentials synced to Supabase database.`);
+                                                setNewInspector({ name: '', badgeId: '', email: '', password: '' });
+                                            }
+                                        } else {
+                                            alert("Please fill in name, email and password.");
+                                        }
+                                    }}
+                                    style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+                                >
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Inspector Full Name *</label>
+                                        <input 
+                                            type="text"
+                                            value={newInspector.name}
+                                            onChange={e => setNewInspector({ ...newInspector, name: e.target.value })}
+                                            placeholder="e.g. R. Sharma"
+                                            required
+                                            style={{
+                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
+                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
+                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Badge Identification ID</label>
+                                        <input 
+                                            type="text"
+                                            value={newInspector.badgeId}
+                                            onChange={e => setNewInspector({ ...newInspector, badgeId: e.target.value })}
+                                            placeholder="e.g. INS-DEL-88402"
+                                            style={{
+                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
+                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
+                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Email Address *</label>
+                                        <input 
+                                            type="email"
+                                            value={newInspector.email}
+                                            onChange={e => setNewInspector({ ...newInspector, email: e.target.value })}
+                                            placeholder="e.g. inspector@vidyut.com"
+                                            required
+                                            style={{
+                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
+                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
+                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Temporary Access Password *</label>
+                                        <input 
+                                            type="password"
+                                            value={newInspector.password}
+                                            onChange={e => setNewInspector({ ...newInspector, password: e.target.value })}
+                                            placeholder="••••••••"
+                                            required
+                                            style={{
+                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
+                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
+                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
+                                        />
+                                    </div>
+
+                                    <button 
+                                        type="submit"
+                                        style={{
+                                            background: 'white', color: 'black', padding: '0.75rem 1.5rem', 
+                                            borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer', alignSelf: 'flex-start', marginTop: '0.5rem'
+                                        }}
+                                    >
+                                        Generate Inspector Credential
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'Inspector List' && (
+                        <div className="dashboard-panel" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem' }}>
+                            {/* Inspectors directory */}
+                            <div className="panel-card" style={{ height: 'fit-content' }}>
+                                <h3 className="panel-title">Field Inspectors Directory</h3>
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Inspector Name</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Badge ID</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Email</th>
+                                                <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Credentials</th>
+                                                <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {inspectorsDetails.map((ins, idx) => (
+                                                <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                    {editingInspectorName === ins.name ? (
+                                                        <>
+                                                            <td style={{ padding: '0.5rem 1rem' }}>
+                                                                <input 
+                                                                    type="text"
+                                                                    value={editInspectorData.name}
+                                                                    onChange={e => setEditInspectorData({ ...editInspectorData, name: e.target.value })}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                />
+                                                            </td>
+                                                            <td style={{ padding: '0.5rem 1rem' }}>
+                                                                <input 
+                                                                    type="text"
+                                                                    value={editInspectorData.badgeId}
+                                                                    onChange={e => setEditInspectorData({ ...editInspectorData, badgeId: e.target.value })}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                />
+                                                            </td>
+                                                            <td style={{ padding: '0.5rem 1rem' }}>
+                                                                <input 
+                                                                    type="email"
+                                                                    value={editInspectorData.email}
+                                                                    onChange={e => setEditInspectorData({ ...editInspectorData, email: e.target.value })}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                />
+                                                            </td>
+                                                            <td style={{ padding: '1rem' }}>{/* Credentials column placeholder in edit mode */}</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            handleUpdateInspector(ins.email, editInspectorData);
+                                                                            setEditingInspectorName(null);
+                                                                        }}
+                                                                        style={{ padding: '0.3rem 0.6rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600' }}
+                                                                    >
+                                                                        Save
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => setEditingInspectorName(null)}
+                                                                        style={{ padding: '0.3rem 0.6rem', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <td style={{ padding: '1rem', fontWeight: '600' }}>{ins.name}</td>
+                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.badgeId}</td>
+                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.email}</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                                <button
+                                                                    onClick={() => handleSendCredentials(ins)}
+                                                                    disabled={sendingCredentials[ins.email]}
+                                                                    style={{
+                                                                        padding: '0.35rem 0.75rem',
+                                                                        background: sendingCredentials[ins.email] ? 'rgba(200,162,97,0.2)' : 'rgba(200,162,97,0.15)',
+                                                                        color: sendingCredentials[ins.email] ? 'rgba(200,162,97,0.5)' : '#c8a261',
+                                                                        border: '1px solid rgba(200,162,97,0.3)',
+                                                                        borderRadius: '6px',
+                                                                        cursor: sendingCredentials[ins.email] ? 'not-allowed' : 'pointer',
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: '600',
+                                                                        whiteSpace: 'nowrap',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.3rem',
+                                                                        margin: '0 auto'
+                                                                    }}
+                                                                    title={`Send login credentials to ${ins.email}`}
+                                                                >
+                                                                    <Mail size={13} />
+                                                                    {sendingCredentials[ins.email] ? 'Sending...' : 'Send Credentials'}
+                                                                </button>
+                                                            </td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            setEditingInspectorName(ins.name);
+                                                                            setEditInspectorData(ins);
+                                                                        }}
+                                                                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                                        title="Edit"
+                                                                    >
+                                                                        <Edit2 size={16} />
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            if (confirm(`Are you sure you want to remove ${ins.name} from the inspectors directory?`)) {
+                                                                                handleDeleteInspector(ins);
+                                                                            }
+                                                                        }}
+                                                                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                                        title="Delete"
+                                                                    >
+                                                                        <Trash2 size={16} />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Add Inspector Card */}
+                            <div className="panel-card" style={{ height: 'fit-content' }}>
+                                <h3 className="panel-title">Add Field Inspector Record</h3>
+                                <form 
+                                    onSubmit={async (e) => {
+                                        e.preventDefault();
+                                        if (newInspector.name && newInspector.email) {
+                                            const formattedName = newInspector.name.startsWith('Inspector ') ? newInspector.name : `Inspector ${newInspector.name}`;
+                                            if (inspectorsList.includes(formattedName)) {
+                                                alert("Inspector name already exists!");
+                                                return;
+                                            }
+                                            const success = await handleSaveInspector(formattedName, newInspector.badgeId, newInspector.email, '', 'Tata Power DDL');
+                                            if (success) {
+                                                alert(`Inspector ${formattedName} added successfully to portal records.`);
+                                                setNewInspector({ name: '', badgeId: '', email: '', password: '' });
+                                            }
+                                        } else {
+                                            alert("Please enter Name and Email Address.");
+                                        }
+                                    }}
+                                    style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+                                >
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Full Name *</label>
+                                        <input 
+                                            type="text"
+                                            value={newInspector.name}
+                                            onChange={e => setNewInspector({ ...newInspector, name: e.target.value })}
+                                            placeholder="e.g. S. Iyer"
+                                            required
+                                            style={{
+                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
+                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
+                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Badge Identification ID</label>
+                                        <input 
+                                            type="text"
+                                            value={newInspector.badgeId}
+                                            onChange={e => setNewInspector({ ...newInspector, badgeId: e.target.value })}
+                                            placeholder="e.g. INS-DEL-55104"
+                                            style={{
+                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
+                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
+                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Email Address *</label>
+                                        <input 
+                                            type="email"
+                                            value={newInspector.email}
+                                            onChange={e => setNewInspector({ ...newInspector, email: e.target.value })}
+                                            placeholder="e.g. iyer@vidyut.com"
+                                            required
+                                            style={{
+                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
+                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
+                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
+                                        />
+                                    </div>
+
+                                    <button 
+                                        type="submit"
+                                        style={{
+                                            background: 'white', color: 'black', padding: '0.75rem 1.5rem', 
+                                            borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer', alignSelf: 'flex-start', marginTop: '0.5rem'
+                                        }}
+                                    >
+                                        Add Inspector Record
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     )}
@@ -844,7 +1743,25 @@ const AdminDashboard = ({
                     {activeTab === 'History' && (
                         <div className="dashboard-panel">
                             <div className="panel-card">
-                                <h3 className="panel-title">Analysis Files History</h3>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <h3 className="panel-title" style={{ margin: 0 }}>Analysis Files History</h3>
+                                    {uploadHistory.length > 0 && (
+                                        <button 
+                                            onClick={() => {
+                                                if (confirm("Are you sure you want to clear all history records?")) {
+                                                    setUploadHistory([]);
+                                                }
+                                            }}
+                                            style={{
+                                                background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                color: '#ef4444', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer',
+                                                fontWeight: '600', fontSize: '0.8rem'
+                                            }}
+                                        >
+                                            Clear All History
+                                        </button>
+                                    )}
+                                </div>
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                     <thead>
                                         <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
@@ -856,32 +1773,59 @@ const AdminDashboard = ({
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {[
-                                            { name: 'delhi_north_consumers_q2.csv', date: 'Aug 10, 2026 14:22', count: 184, critical: 12, size: '2.4 MB' },
-                                            { name: 'karol_bagh_meters_may.csv', date: 'Jul 24, 2026 09:41', count: 95, critical: 8, size: '1.1 MB' },
-                                            { name: 'sector_9_consumers_test.csv', date: 'Jun 12, 2026 18:05', count: 50, critical: 2, size: '640 KB' },
-                                        ].map((hist, i) => (
+                                        {uploadHistory.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="5" style={{ padding: '3rem 1rem', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>
+                                                    No analysis history logs found. Upload a CSV dataset on the Overview tab to initiate an analysis.
+                                                </td>
+                                            </tr>
+                                        ) : uploadHistory.map((hist, i) => (
                                             <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                                                 <td style={{ padding: '1rem', fontWeight: '500' }}>{hist.name}</td>
                                                 <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{hist.date}</td>
                                                 <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{hist.count} consumers</td>
                                                 <td style={{ padding: '1rem', color: '#ef4444', fontWeight: '600' }}>{hist.critical}</td>
                                                 <td style={{ padding: '1rem' }}>
-                                                    <button 
-                                                        style={{ 
-                                                            background: 'rgba(200, 162, 97, 0.15)', 
-                                                            border: 'none', 
-                                                            color: 'var(--accent-blue)', 
-                                                            padding: '0.25rem 0.75rem', 
-                                                            borderRadius: '6px', 
-                                                            fontSize: '0.8rem',
-                                                            cursor: 'pointer',
-                                                            fontWeight: '600'
-                                                        }}
-                                                        onClick={() => alert(`Simulating loading results from: ${hist.name}`)}
-                                                    >
-                                                        Review
-                                                    </button>
+                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                        <button 
+                                                            style={{ 
+                                                                background: 'rgba(200, 162, 97, 0.15)', 
+                                                                border: 'none', 
+                                                                color: 'var(--accent-blue)', 
+                                                                padding: '0.25rem 0.75rem', 
+                                                                borderRadius: '6px', 
+                                                                fontSize: '0.8rem',
+                                                                cursor: 'pointer',
+                                                                fontWeight: '600'
+                                                            }}
+                                                            onClick={() => {
+                                                                if (hist.data) {
+                                                                    setResult(hist.data);
+                                                                    setActiveTab('Overview');
+                                                                } else {
+                                                                    alert("No dynamic payload saved for this older record. Loading default visualizers instead.");
+                                                                    setActiveTab('Overview');
+                                                                }
+                                                            }}
+                                                        >
+                                                            Review
+                                                        </button>
+                                                        <button 
+                                                            style={{ 
+                                                                background: 'rgba(255, 255, 255, 0.08)', 
+                                                                border: '1px solid rgba(255,255,255,0.1)', 
+                                                                color: 'white', 
+                                                                padding: '0.25rem 0.75rem', 
+                                                                borderRadius: '6px', 
+                                                                fontSize: '0.8rem',
+                                                                cursor: 'pointer',
+                                                                fontWeight: '600'
+                                                            }}
+                                                            onClick={() => handleDownloadCSV(hist)}
+                                                        >
+                                                            Download
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}

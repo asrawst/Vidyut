@@ -25,9 +25,18 @@ const dataset = {
 function App() {
   const [files, setFiles] = useState({});
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [user, setUser] = useState(null);
-  const [inspector, setInspector] = useState(null);
+  const [result, setResult] = useState(() => {
+    const saved = localStorage.getItem('vidyut_result');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('vidyut_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [inspector, setInspector] = useState(() => {
+    const saved = localStorage.getItem('vidyut_inspector');
+    return saved ? JSON.parse(saved) : null;
+  });
   
   // Modals state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -36,6 +45,31 @@ function App() {
   const [isInspectorModalOpen, setIsInspectorModalOpen] = useState(false);
   const [insEmail, setInsEmail] = useState('');
   const [insPassword, setInsPassword] = useState('');
+
+  // Persist authentication and results in localStorage
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('vidyut_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('vidyut_user');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (inspector) {
+      localStorage.setItem('vidyut_inspector', JSON.stringify(inspector));
+    } else {
+      localStorage.removeItem('vidyut_inspector');
+    }
+  }, [inspector]);
+
+  useEffect(() => {
+    if (result) {
+      localStorage.setItem('vidyut_result', JSON.stringify(result));
+    } else {
+      localStorage.removeItem('vidyut_result');
+    }
+  }, [result]);
 
   /**
    * Handles file uploads.

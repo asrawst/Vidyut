@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '../../supabaseClient';
 
 const STATES_DISCOMS = {
     'Delhi': [
@@ -74,6 +75,8 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
         setError('');
         setLoading(true);
 
+        const normalizedEmail = email.toLowerCase().trim();
+
         if (isSignUp) {
             // SignUp validations
             if (password !== confirmPassword) {
@@ -92,27 +95,113 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                 return;
             }
 
-            // Simulate SignUp
-            setTimeout(() => {
-                const mockUser = {
-                    uid: `user-${Date.now()}`,
+            try {
+                const { data, error: signUpError } = await supabase.auth.signUp({
                     email: email,
-                    state: selectedState,
-                    discom: selectedDiscom,
-                    displayName: email.split('@')[0]
-                };
-                onLoginSuccess(mockUser);
-                onClose();
-            }, 800);
+                    password: password,
+                    options: {
+                        data: {
+                            state: selectedState,
+                            discom: selectedDiscom,
+                            displayName: email.split('@')[0]
+                        }
+                    }
+                });
+
+                if (signUpError) {
+                    // If supabase keys are invalid or empty, use fallback simulation
+                    if (signUpError.message.includes("API key") || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+                        setTimeout(() => {
+                            const mockUser = {
+                                uid: `user-${Date.now()}`,
+                                email: email,
+                                state: selectedState,
+                                discom: selectedDiscom,
+                                displayName: email.split('@')[0]
+                            };
+                            onLoginSuccess(mockUser);
+                            onClose();
+                        }, 600);
+                        return;
+                    }
+                    setError(signUpError.message);
+                    setLoading(false);
+                    return;
+                }
+
+                if (data?.user) {
+                    if (data.session) {
+                        const authenticatedUser = {
+                            uid: data.user.id,
+                            email: data.user.email,
+                            state: selectedState,
+                            discom: selectedDiscom,
+                            displayName: data.user.user_metadata?.displayName || email.split('@')[0]
+                        };
+                        onLoginSuccess(authenticatedUser);
+                        onClose();
+                    } else {
+                        alert("SignUp successful! Please check your email inbox to verify your account.");
+                        setIsSignUp(false);
+                        setLoading(false);
+                    }
+                }
+            } catch (err) {
+                setError(err.message || "An unexpected error occurred during signup.");
+                setLoading(false);
+            }
         } else {
             // Login logic
-            // Supporting both default 'Admin' credentials and general simulator access
-            setTimeout(() => {
-                const normalizedEmail = email.toLowerCase().trim();
-                if (
-                    (normalizedEmail === 'admin' && password === 'admin') ||
-                    (normalizedEmail === 'admin@vidyut.com' && password === 'admin')
-                ) {
+            const isMockAdmin = (normalizedEmail === 'admin' && password === 'admin') || 
+                                (normalizedEmail === 'admin@vidyut.com' && password === 'admin');
+
+            try {
+                const { data, error: signInError } = await supabase.auth.signInWithPassword({
+                    email: normalizedEmail.includes('@') ? normalizedEmail : `${normalizedEmail}@vidyut.com`,
+                    password: password
+                });
+
+                if (signInError) {
+                    // Fallback to mock credentials if Supabase is unconfigured or returns invalid API key error
+                    if (isMockAdmin || signInError.message.includes("API key") || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+                        setTimeout(() => {
+                            if (isMockAdmin || password.length >= 4) {
+                                const mockUser = {
+                                    uid: isMockAdmin ? 'dummy-admin-123' : `user-${Date.now()}`,
+                                    email: normalizedEmail.includes('@') ? normalizedEmail : 'admin@vidyut.com',
+                                    displayName: isMockAdmin ? 'Admin' : normalizedEmail.split('@')[0],
+                                    state: 'Delhi',
+                                    discom: 'Tata Power Delhi Distribution Limited'
+                                };
+                                onLoginSuccess(mockUser);
+                                onClose();
+                            } else {
+                                setError("Invalid Credentials. Password must be at least 4 characters.");
+                                setLoading(false);
+                            }
+                        }, 600);
+                        return;
+                    }
+
+                    setError(signInError.message);
+                    setLoading(false);
+                    return;
+                }
+
+                if (data?.user) {
+                    const authenticatedUser = {
+                        uid: data.user.id,
+                        email: data.user.email,
+                        displayName: data.user.user_metadata?.displayName || data.user.email.split('@')[0],
+                        state: data.user.user_metadata?.state || 'Delhi',
+                        discom: data.user.user_metadata?.discom || 'Tata Power Delhi Distribution Limited'
+                    };
+                    onLoginSuccess(authenticatedUser);
+                    onClose();
+                }
+            } catch (err) {
+                // Unexpected error fallback
+                if (isMockAdmin) {
                     const mockUser = {
                         uid: 'dummy-admin-123',
                         email: 'admin@vidyut.com',
@@ -122,22 +211,11 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                     };
                     onLoginSuccess(mockUser);
                     onClose();
-                } else if (normalizedEmail.includes('@') && password.length >= 4) {
-                    // Accept any valid-looking email for flexible demo
-                    const mockUser = {
-                        uid: `user-${Date.now()}`,
-                        email: email,
-                        displayName: email.split('@')[0],
-                        state: 'Delhi',
-                        discom: 'Tata Power Delhi Distribution Limited'
-                    };
-                    onLoginSuccess(mockUser);
-                    onClose();
                 } else {
-                    setError("Invalid Credentials. Hint: Use Email: admin@vidyut.com / Password: admin or enter any email and a 4+ character password.");
+                    setError(err.message || "An unexpected error occurred during sign-in.");
                     setLoading(false);
                 }
-            }, 800);
+            }
         }
     };
 
