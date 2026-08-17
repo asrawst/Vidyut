@@ -96,11 +96,10 @@ const AdminDashboard = ({
         localStorage.setItem('vidyut_upload_history', JSON.stringify(uploadHistory));
     }, [uploadHistory]);
 
-    // Fetch inspectors directory from Supabase on mount
+    // Fetch inspectors directory from Supabase — fires only once auth session is confirmed
     useEffect(() => {
-        const fetchInspectors = async () => {
-            // Await a brief moment to ensure Supabase restored authentication session from localStorage
-            await new Promise(resolve => setTimeout(resolve, 600));
+        const fetchInspectors = async (session) => {
+            if (!session) return; // Don't query if not authenticated
 
             const { data, error } = await supabase
                 .from('inspectors')
@@ -120,8 +119,19 @@ const AdminDashboard = ({
                 setInspectorsDetails(formatted);
             }
         };
-        fetchInspectors();
-    }, [user]);
+
+        // Get the current session immediately (handles page refresh on Vercel)
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            fetchInspectors(session);
+        });
+
+        // Also listen for future auth state changes (login events)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            fetchInspectors(session);
+        });
+
+        return () => subscription.unsubscribe(); // Cleanup listener on unmount
+    }, []);
 
     const reportRef = useRef(null);
     const fileInputRef = useRef(null);
