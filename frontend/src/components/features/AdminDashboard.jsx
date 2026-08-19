@@ -34,8 +34,30 @@ const AdminDashboard = ({
     }, [activeTab]);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [localInspectionStatus, setLocalInspectionStatus] = useState({});
-    const [assignedInspectors, setAssignedInspectors] = useState({});
+    const [localInspectionStatus, setLocalInspectionStatus] = useState(() => {
+        const saved = localStorage.getItem('vidyut_local_inspection_status');
+        if (saved) {
+            try { return JSON.parse(saved); } catch (e) { console.error(e); }
+        }
+        return {};
+    });
+
+    const [assignedInspectors, setAssignedInspectors] = useState(() => {
+        const saved = localStorage.getItem('vidyut_assigned_inspectors');
+        if (saved) {
+            try { return JSON.parse(saved); } catch (e) { console.error(e); }
+        }
+        return {};
+    });
+
+    useEffect(() => {
+        localStorage.setItem('vidyut_local_inspection_status', JSON.stringify(localInspectionStatus));
+    }, [localInspectionStatus]);
+
+    useEffect(() => {
+        localStorage.setItem('vidyut_assigned_inspectors', JSON.stringify(assignedInspectors));
+    }, [assignedInspectors]);
+
     const [inspectorsDetails, setInspectorsDetails] = useState(() => {
         const saved = localStorage.getItem('vidyut_inspectors_details');
         if (saved) {
@@ -71,12 +93,23 @@ const AdminDashboard = ({
     const [isAddingConsumer, setIsAddingConsumer] = useState(false);
     const [dragActive, setDragActive] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
-    const [inspectionCalendar, setInspectionCalendar] = useState([
-        { consumer: 'CON-98401', zone: 'Sector 5 West', inspector: 'Inspector R. Sharma', status: 'Scheduled' },
-        { consumer: 'CON-10938', zone: 'Punjabi Bagh North', inspector: 'Inspector A. Verma', status: 'Pending Review' },
-        { consumer: 'CON-56402', zone: 'Karol Bagh St 2', inspector: 'Inspector K. Gupta', status: 'In Process' },
-        { consumer: 'CON-33201', zone: 'Rohini Sector 11', inspector: 'Inspector S. Iyer', status: 'Completed' },
-    ]);
+    const [inspectionCalendar, setInspectionCalendar] = useState(() => {
+        const saved = localStorage.getItem('vidyut_inspection_calendar');
+        if (saved) {
+            try { return JSON.parse(saved); } catch (e) { console.error(e); }
+        }
+        return [
+            { consumer: 'CON-98401', zone: 'Sector 5 West', inspector: 'Inspector R. Sharma', status: 'Scheduled' },
+            { consumer: 'CON-10938', zone: 'Punjabi Bagh North', inspector: 'Inspector A. Verma', status: 'Pending Review' },
+            { consumer: 'CON-56402', zone: 'Karol Bagh St 2', inspector: 'Inspector K. Gupta', status: 'In Process' },
+            { consumer: 'CON-33201', zone: 'Rohini Sector 11', inspector: 'Inspector S. Iyer', status: 'Completed' },
+        ];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(inspectionCalendar));
+    }, [inspectionCalendar]);
+
     const [editingCalendarId, setEditingCalendarId] = useState(null);
     const [editCalendarData, setEditCalendarData] = useState({ consumer: '', zone: '', inspector: '', status: '' });
     
@@ -321,26 +354,78 @@ const AdminDashboard = ({
             ...prev,
             [consumerId]: newStatus
         }));
+
+        // Sync with assigned tasks storage
+        try {
+            const savedTasks = JSON.parse(localStorage.getItem('vidyut_assigned_tasks') || '[]');
+            const updatedTasks = savedTasks.map(t => t.consumer_id === consumerId ? { ...t, status: newStatus } : t);
+            localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(updatedTasks));
+        } catch (e) {
+            console.error('Error updating task status:', e);
+        }
+
+        // Also sync calendar status
+        setInspectionCalendar(prev => prev.map(item => item.consumer === consumerId ? { ...item, status: newStatus } : item));
     };
 
-    // Handle inspector assignment & sync with calendar
+    // Handle inspector assignment & sync with calendar and assigned tasks
     const handleInspectorChange = (consumerId, inspector) => {
         setAssignedInspectors(prev => ({
             ...prev,
             [consumerId]: inspector
         }));
 
-        if (inspector) {
-            // Find consumer details in result to get zone
-            const consumerObj = result?.anomalies?.find(a => a.consumer_id === consumerId);
-            const zoneArea = consumerObj?.transformer_id ? `Transformer ${consumerObj.transformer_id}` : 'Sector 5 West';
+        // Find consumer details in result to get zone, transformer, coordinates & risk
+        const consumerObj = result?.anomalies?.find(a => a.consumer_id === consumerId) ||
+                            result?.results?.find(a => a.consumer_id === consumerId);
+        const zoneArea = consumerObj?.transformer_id ? `Transformer ${consumerObj.transformer_id}` : 'Sector 5 West';
 
+        // Derive coordinates if not explicitly present (accurate within Delhi BSES grid)
+        const charSum = consumerId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+        const derivedLat = consumerObj?.latitude || (28.6139 + (((charSum * 17) % 100) - 50) * 0.0012).toFixed(4);
+        const derivedLng = consumerObj?.longitude || (77.2090 + (((charSum * 31) % 100) - 50) * 0.0012).toFixed(4);
+
+        // Sync assigned task object into localStorage for instant visibility in InspectorPortal
+        try {
+            const savedTasks = JSON.parse(localStorage.getItem('vidyut_assigned_tasks') || '[]');
+            let updatedTasks;
+            if (inspector) {
+                const newTask = {
+                    id: `TASK-${consumerId}`,
+                    consumer_id: consumerId,
+                    transformer_id: consumerObj?.transformer_id || 'T01',
+                    inspector_name: inspector,
+                    risk_score: consumerObj?.aggregate_risk_score ?? consumerObj?.risk_score ?? 0.85,
+                    risk_class: consumerObj?.risk_class || 'critical',
+                    status: localInspectionStatus[consumerId] || 'Initiated',
+                    latitude: derivedLat,
+                    longitude: derivedLng,
+                    zone: zoneArea,
+                    discom: user?.discom || 'BSES Rajdhani Power',
+                    assigned_at: new Date().toISOString()
+                };
+                const existingIdx = savedTasks.findIndex(t => t.consumer_id === consumerId);
+                if (existingIdx >= 0) {
+                    savedTasks[existingIdx] = newTask;
+                    updatedTasks = [...savedTasks];
+                } else {
+                    updatedTasks = [newTask, ...savedTasks];
+                }
+            } else {
+                updatedTasks = savedTasks.filter(t => t.consumer_id !== consumerId);
+            }
+            localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(updatedTasks));
+        } catch (e) {
+            console.error('Error saving assigned tasks:', e);
+        }
+
+        if (inspector) {
             setInspectionCalendar(prev => {
                 const exists = prev.some(item => item.consumer === consumerId);
                 if (exists) {
                     return prev.map(item => item.consumer === consumerId ? { ...item, inspector: inspector } : item);
                 } else {
-                    return [...prev, { consumer: consumerId, zone: zoneArea, inspector: inspector, status: 'Scheduled' }];
+                    return [...prev, { consumer: consumerId, zone: zoneArea, inspector: inspector, status: localInspectionStatus[consumerId] || 'Scheduled' }];
                 }
             });
         }

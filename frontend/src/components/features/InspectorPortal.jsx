@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
     MapPin, User, ClipboardCheck, AlertTriangle, 
     ShieldAlert, Lock, Settings, LogOut, Menu, 
-    X, CheckCircle, Navigation, Map, Shield 
+    X, CheckCircle, Navigation, Map, Shield, Zap, Activity, Radio, ChevronRight
 } from 'lucide-react';
 import MapComponent from './MapComponent';
 
@@ -17,9 +17,73 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     
+    // Assigned Tasks from Admin Dashboard
+    const [allAssignedTasks, setAllAssignedTasks] = useState(() => {
+        const saved = localStorage.getItem('vidyut_assigned_tasks');
+        if (saved) {
+            try { return JSON.parse(saved); } catch (e) { console.error(e); }
+        }
+        return [];
+    });
+
+    // Real-time synchronization across browser tabs/storage
+    useEffect(() => {
+        const handleStorageChange = () => {
+            const saved = localStorage.getItem('vidyut_assigned_tasks');
+            if (saved) {
+                try { setAllAssignedTasks(JSON.parse(saved)); } catch (e) { console.error(e); }
+            }
+        };
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
+    // Filter tasks belonging to THIS logged-in inspector
+    const myTasks = useMemo(() => {
+        if (!allAssignedTasks || allAssignedTasks.length === 0) return [];
+        const cleanDisplayName = (inspector?.displayName || '').replace(/^Inspector\s+/i, '').trim().toLowerCase();
+        const cleanEmail = (inspector?.email || '').toLowerCase();
+
+        return allAssignedTasks.filter(t => {
+            const taskInsp = (t.inspector_name || '').replace(/^Inspector\s+/i, '').trim().toLowerCase();
+            return (
+                taskInsp === cleanDisplayName ||
+                (cleanDisplayName && taskInsp.includes(cleanDisplayName)) ||
+                (cleanDisplayName && cleanDisplayName.includes(taskInsp)) ||
+                (t.inspector_email && t.inspector_email.toLowerCase() === cleanEmail)
+            );
+        });
+    }, [allAssignedTasks, inspector]);
+
+    const [selectedConsumerId, setSelectedConsumerId] = useState(null);
+
+    // Active Task Object
+    const currentTask = useMemo(() => {
+        if (myTasks.length === 0) return null;
+        if (selectedConsumerId) {
+            const found = myTasks.find(t => t.consumer_id === selectedConsumerId);
+            if (found) return found;
+        }
+        return myTasks[0];
+    }, [myTasks, selectedConsumerId]);
+
     // Active Inspection Task State
     const [inspectionStatus, setInspectionStatus] = useState('Initiate'); // 'Initiate', 'Inprocess', 'Completed'
-    const [selectedConsumer, setSelectedConsumer] = useState('CON-98401');
+    
+    // Synchronize stepper status with active task status
+    useEffect(() => {
+        if (currentTask) {
+            const rawStatus = (currentTask.status || '').toLowerCase();
+            if (rawStatus.includes('comp')) {
+                setInspectionStatus('Completed');
+            } else if (rawStatus.includes('proc') || rawStatus.includes('inprocess')) {
+                setInspectionStatus('Inprocess');
+            } else {
+                setInspectionStatus('Initiate');
+            }
+        }
+    }, [currentTask]);
+
     const [checkList, setCheckList] = useState({
         hookingCheck: false,
         sealIntact: false,
@@ -29,28 +93,60 @@ const InspectorPortal = ({ inspector, onLogout }) => {
     const [auditNotes, setAuditNotes] = useState('');
 
     // Dynamic Lists (states so inspector actions update them)
-    const [pastInspections, setPastInspections] = useState([
-        { id: 'INS-8849', consumer: 'CON-33201', zone: 'Rohini Sector 11', date: 'Aug 15, 2026', type: 'Meter Audit', result: 'Completed' },
-        { id: 'INS-8842', consumer: 'CON-45219', zone: 'Sector 5 West', date: 'Aug 12, 2026', type: 'Hooking Inspection', result: 'Completed' },
-        { id: 'INS-8831', consumer: 'CON-22108', zone: 'Sector 5 West', date: 'Aug 09, 2026', type: 'Seal Inspection', result: 'Completed' }
-    ]);
+    const [pastInspections, setPastInspections] = useState(() => {
+        const saved = localStorage.getItem('vidyut_inspector_past_inspections');
+        if (saved) {
+            try { return JSON.parse(saved); } catch (e) { console.error(e); }
+        }
+        return [
+            { id: 'INS-8849', consumer: 'CON-33201', zone: 'Rohini Sector 11', date: 'Aug 15, 2026', type: 'Meter Audit', result: 'Completed' },
+            { id: 'INS-8842', consumer: 'CON-45219', zone: 'Sector 5 West', date: 'Aug 12, 2026', type: 'Hooking Inspection', result: 'Completed' },
+            { id: 'INS-8831', consumer: 'CON-22108', zone: 'Sector 5 West', date: 'Aug 09, 2026', type: 'Seal Inspection', result: 'Completed' }
+        ];
+    });
 
-    const [challans, setChallans] = useState([
-        { id: 'CH-2026-01', consumer: 'CON-45219', anomaly: 'Direct Line Hooking', load: '4.5 kW', penalty: '₹25,000', status: 'Issued' }
-    ]);
+    useEffect(() => {
+        localStorage.setItem('vidyut_inspector_past_inspections', JSON.stringify(pastInspections));
+    }, [pastInspections]);
+
+    const [challans, setChallans] = useState(() => {
+        const saved = localStorage.getItem('vidyut_inspector_challans');
+        if (saved) {
+            try { return JSON.parse(saved); } catch (e) { console.error(e); }
+        }
+        return [
+            { id: 'CH-2026-01', consumer: 'CON-45219', anomaly: 'Direct Line Hooking', load: '4.5 kW', penalty: '₹25,000', status: 'Issued' }
+        ];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('vidyut_inspector_challans', JSON.stringify(challans));
+    }, [challans]);
 
     // Forms states
     const [challanForm, setChallanForm] = useState({ consumerId: '', anomaly: 'Bypassing meter', load: '', penalty: '', details: '' });
     const [complaintForm, setComplaintForm] = useState({ category: 'Meter Damage', severity: 'Medium', details: '' });
 
-    // Mock active coordinates map data
-    const mockMapData = {
-        results: [
-            { consumer_id: 'CON-98401', latitude: '28.6139', longitude: '77.2090', risk_class: 'critical', aggregate_risk_score: 0.92 },
-            { consumer_id: 'CON-10938', latitude: '28.6250', longitude: '77.2200', risk_class: 'high', aggregate_risk_score: 0.78 },
-            { consumer_id: 'CON-56402', latitude: '28.6050', longitude: '77.2000', risk_class: 'critical', aggregate_risk_score: 0.85 }
-        ]
-    };
+    // Dynamic map dataset built from assigned tasks
+    const activeMapData = useMemo(() => {
+        if (myTasks.length > 0) {
+            return {
+                results: myTasks.map(t => ({
+                    consumer_id: t.consumer_id,
+                    transformer_id: t.transformer_id,
+                    latitude: t.latitude,
+                    longitude: t.longitude,
+                    risk_class: t.risk_class || 'critical',
+                    aggregate_risk_score: t.risk_score || 0.85
+                }))
+            };
+        }
+        return {
+            results: [
+                { consumer_id: 'CON-98401', transformer_id: 'T01', latitude: '28.6139', longitude: '77.2090', risk_class: 'critical', aggregate_risk_score: 0.92 }
+            ]
+        };
+    }, [myTasks]);
 
     // Sidebar items matching the blueprint exactly
     const navItems = [
@@ -75,6 +171,33 @@ const InspectorPortal = ({ inspector, onLogout }) => {
             return { bg: 'var(--accent-blue)', border: 'var(--accent-blue)', color: '#000000', pulse: true }; // Active
         } else {
             return { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.3)' }; // Pending
+        }
+    };
+
+    // Update status in local state & localStorage for admin synchronization
+    const updateTaskStatus = (newStepStatus) => {
+        setInspectionStatus(newStepStatus);
+        if (!currentTask) return;
+
+        const tableStatus = newStepStatus === 'Inprocess' ? 'In Process' : newStepStatus === 'Completed' ? 'Completed' : 'Initiated';
+
+        try {
+            const savedTasks = JSON.parse(localStorage.getItem('vidyut_assigned_tasks') || '[]');
+            const updated = savedTasks.map(t => t.consumer_id === currentTask.consumer_id ? { ...t, status: tableStatus } : t);
+            localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(updated));
+            setAllAssignedTasks(updated);
+
+            // Sync with localInspectionStatus for Admin Dashboard overview
+            const savedStatus = JSON.parse(localStorage.getItem('vidyut_local_inspection_status') || '{}');
+            savedStatus[currentTask.consumer_id] = tableStatus;
+            localStorage.setItem('vidyut_local_inspection_status', JSON.stringify(savedStatus));
+
+            // Sync with calendar
+            const savedCal = JSON.parse(localStorage.getItem('vidyut_inspection_calendar') || '[]');
+            const updatedCal = savedCal.map(c => c.consumer === currentTask.consumer_id ? { ...c, status: tableStatus } : c);
+            localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(updatedCal));
+        } catch (e) {
+            console.error('Error updating task status:', e);
         }
     };
 
@@ -106,20 +229,21 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
     const completeInspection = () => {
         if (!checkList.sealIntact && !checkList.hookingCheck && !checkList.bypassDetected) {
-            alert('Please perform checks before completing the audit');
+            alert('Please perform checklist verification before completing the audit');
             return;
         }
-        setInspectionStatus('Completed');
+        updateTaskStatus('Completed');
+
         // Add to past inspections list dynamically
         const newRecord = {
             id: `INS-${Math.floor(1000 + Math.random() * 9000)}`,
-            consumer: selectedConsumer,
-            zone: 'Sector 5 West',
+            consumer: currentTask?.consumer_id || 'C0057',
+            zone: currentTask?.zone || `Transformer ${currentTask?.transformer_id || 'T01'}`,
             date: 'Today',
-            type: 'Field Hooking Check',
+            type: 'Field Hooking & Seal Audit',
             result: 'Completed Audit'
         };
-        setPastInspections([newRecord, ...pastInspections]);
+        setPastInspections(prev => [newRecord, ...prev]);
     };
 
     return (
@@ -281,197 +405,329 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                 {/* CURRENT TASK VIEW */}
                 {activeTab === 'Current Task' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                        {/* Map Panel */}
-                        <div style={{ 
-                            background: 'var(--glass-bg)', 
-                            border: '1px solid var(--glass-border)', 
-                            borderRadius: '16px', 
-                            padding: '1.5rem',
-                            position: 'relative'
-                        }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Map size={18} style={{ color: 'var(--accent-blue)' }} />
-                                    Map: Assigned Route & Meter Pins
-                                </h3>
-                                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.05)', padding: '0.3rem 0.6rem', borderRadius: '4px' }}>
-                                    Target: {selectedConsumer} (Sector 5 West)
-                                </div>
-                            </div>
-                            
-                            {/* Leaflet Map integration */}
-                            <div style={{ height: '380px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
-                                <MapComponent data={mockMapData} />
-                            </div>
-                        </div>
-
-                        {/* Interactive Inspection Stepper */}
-                        <div style={{ 
-                            background: 'var(--glass-bg)', 
-                            border: '1px solid var(--glass-border)', 
-                            borderRadius: '16px', 
-                            padding: '2rem'
-                        }}>
-                            <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: 'white' }}>
-                                Active Audit Status Stepper
-                            </h3>
-                            
-                            {/* Stepper progress layout */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', marginBottom: '2.5rem', padding: '0 3rem' }}>
-                                {/* Horizontal connecting lines */}
-                                <div style={{ 
-                                    position: 'absolute', top: '20px', left: '10%', right: '10%', height: '3px', 
-                                    background: 'rgba(255,255,255,0.08)', zIndex: 1 
+                        {currentTask ? (
+                            <>
+                                {/* Task Overview Card */}
+                                <div style={{
+                                    background: 'linear-gradient(135deg, rgba(200, 162, 97, 0.08) 0%, rgba(20, 18, 15, 0.6) 100%)',
+                                    border: '1px solid rgba(200, 162, 97, 0.25)',
+                                    borderRadius: '16px',
+                                    padding: '1.5rem',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '1.25rem'
                                 }}>
-                                    <div style={{ 
-                                        width: inspectionStatus === 'Initiate' ? '0%' : inspectionStatus === 'Inprocess' ? '50%' : '100%', 
-                                        height: '100%', background: 'var(--accent-blue)', transition: 'width 0.3s ease' 
-                                    }} />
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                                        <div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
+                                                <span style={{ 
+                                                    background: 'rgba(200, 162, 97, 0.2)', color: '#c8a261', 
+                                                    padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.5px' 
+                                                }}>
+                                                    ACTIVE ASSIGNMENT
+                                                </span>
+                                                <span style={{
+                                                    background: (currentTask.risk_class || '').toLowerCase().includes('crit') ? 'rgba(239, 68, 68, 0.15)' : 'rgba(249, 115, 22, 0.15)',
+                                                    color: (currentTask.risk_class || '').toLowerCase().includes('crit') ? '#ef4444' : '#f97316',
+                                                    padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase'
+                                                }}>
+                                                    {(((currentTask.risk_score || 0.85)) * 100).toFixed(0)}% {currentTask.risk_class || 'Critical'} Risk
+                                                </span>
+                                            </div>
+                                            <h2 style={{ margin: 0, fontSize: '1.6rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+                                                Consumer <span style={{ color: 'var(--accent-blue)' }}>{currentTask.consumer_id}</span>
+                                            </h2>
+                                            <p style={{ margin: '0.25rem 0 0', color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.85rem' }}>
+                                                Mapped to <strong>Transformer {currentTask.transformer_id}</strong> &bull; {currentTask.zone || 'Distribution Zone'} &bull; {inspector?.discom || 'DISCOM Grid'}
+                                            </p>
+                                        </div>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <span style={{ 
+                                                padding: '0.4rem 0.85rem', 
+                                                borderRadius: '6px', 
+                                                background: inspectionStatus === 'Completed' ? 'rgba(16, 185, 129, 0.15)' : inspectionStatus === 'Inprocess' ? 'rgba(200, 162, 97, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                                                color: inspectionStatus === 'Completed' ? '#10b981' : inspectionStatus === 'Inprocess' ? '#c8a261' : 'rgba(255, 255, 255, 0.8)',
+                                                border: `1px solid ${inspectionStatus === 'Completed' ? 'rgba(16, 185, 129, 0.3)' : inspectionStatus === 'Inprocess' ? 'rgba(200, 162, 97, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                                                fontSize: '0.85rem', fontWeight: '600'
+                                            }}>
+                                                Status: {inspectionStatus === 'Inprocess' ? 'In Process' : inspectionStatus}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Task Switcher if inspector has multiple assigned consumers */}
+                                    {myTasks.length > 1 && (
+                                        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.75rem' }}>
+                                            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '0.5rem' }}>
+                                                Switch Assigned Audit ({myTasks.length} total):
+                                            </span>
+                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                {myTasks.map(t => (
+                                                    <button
+                                                        key={t.consumer_id}
+                                                        onClick={() => setSelectedConsumerId(t.consumer_id)}
+                                                        style={{
+                                                            padding: '0.35rem 0.75rem',
+                                                            borderRadius: '6px',
+                                                            background: currentTask.consumer_id === t.consumer_id ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
+                                                            color: currentTask.consumer_id === t.consumer_id ? '#000000' : 'rgba(255, 255, 255, 0.8)',
+                                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: '600',
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.35rem'
+                                                        }}
+                                                    >
+                                                        <span>{t.consumer_id} (Tr: {t.transformer_id})</span>
+                                                        <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>&bull; {(((t.risk_score || 0.85)) * 100).toFixed(0)}%</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Step: Initiate */}
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, position: 'relative' }}>
-                                    <div style={{ 
-                                        width: '42px', height: '42px', borderRadius: '50%', background: getStepStyle('Initiate').bg,
-                                        border: `2px solid ${getStepStyle('Initiate').border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        color: getStepStyle('Initiate').color, fontWeight: '700', transition: 'all 0.3s'
-                                    }}>
-                                        1
+                                {/* Map Panel */}
+                                <div style={{ 
+                                    background: 'var(--glass-bg)', 
+                                    border: '1px solid var(--glass-border)', 
+                                    borderRadius: '16px', 
+                                    padding: '1.5rem',
+                                    position: 'relative'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                        <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <Map size={18} style={{ color: 'var(--accent-blue)' }} />
+                                            Map: Assigned Route & Meter Coordinates
+                                        </h3>
+                                        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', background: 'rgba(255,255,255,0.05)', padding: '0.35rem 0.75rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                            GPS: {currentTask.latitude}&deg; N, {currentTask.longitude}&deg; E
+                                        </div>
                                     </div>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem', color: 'white' }}>Initiate</span>
+                                    
+                                    {/* Leaflet Map with real coordinates */}
+                                    <div style={{ height: '380px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                        <MapComponent data={activeMapData} />
+                                    </div>
                                 </div>
 
-                                {/* Step: In Process */}
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, position: 'relative' }}>
-                                    <div style={{ 
-                                        width: '42px', height: '42px', borderRadius: '50%', background: getStepStyle('Inprocess').bg,
-                                        border: `2px solid ${getStepStyle('Inprocess').border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        color: getStepStyle('Inprocess').color, fontWeight: '700', transition: 'all 0.3s'
-                                    }}>
-                                        2
-                                    </div>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem', color: 'white' }}>Inprocess</span>
-                                </div>
+                                {/* Interactive Inspection Stepper */}
+                                <div style={{ 
+                                    background: 'var(--glass-bg)', 
+                                    border: '1px solid var(--glass-border)', 
+                                    borderRadius: '16px', 
+                                    padding: '2rem'
+                                }}>
+                                    <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: 'white' }}>
+                                        Field Audit Status Stepper
+                                    </h3>
+                                    
+                                    {/* Stepper progress layout */}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', marginBottom: '2.5rem', padding: '0 3rem' }}>
+                                        {/* Horizontal connecting lines */}
+                                        <div style={{ 
+                                            position: 'absolute', top: '20px', left: '10%', right: '10%', height: '3px', 
+                                            background: 'rgba(255,255,255,0.08)', zIndex: 1 
+                                        }}>
+                                            <div style={{ 
+                                                width: inspectionStatus === 'Initiate' ? '0%' : inspectionStatus === 'Inprocess' ? '50%' : '100%', 
+                                                height: '100%', background: 'var(--accent-blue)', transition: 'width 0.3s ease' 
+                                            }} />
+                                        </div>
 
-                                {/* Step: Completed */}
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, position: 'relative' }}>
-                                    <div style={{ 
-                                        width: '42px', height: '42px', borderRadius: '50%', background: getStepStyle('Completed').bg,
-                                        border: `2px solid ${getStepStyle('Completed').border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        color: getStepStyle('Completed').color, fontWeight: '700', transition: 'all 0.3s'
-                                    }}>
-                                        3
+                                        {/* Step: Initiate */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, position: 'relative' }}>
+                                            <div style={{ 
+                                                width: '42px', height: '42px', borderRadius: '50%', background: getStepStyle('Initiate').bg,
+                                                border: `2px solid ${getStepStyle('Initiate').border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                color: getStepStyle('Initiate').color, fontWeight: '700', transition: 'all 0.3s'
+                                            }}>
+                                                1
+                                            </div>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem', color: 'white' }}>Initiate</span>
+                                        </div>
+
+                                        {/* Step: In Process */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, position: 'relative' }}>
+                                            <div style={{ 
+                                                width: '42px', height: '42px', borderRadius: '50%', background: getStepStyle('Inprocess').bg,
+                                                border: `2px solid ${getStepStyle('Inprocess').border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                color: getStepStyle('Inprocess').color, fontWeight: '700', transition: 'all 0.3s'
+                                            }}>
+                                                2
+                                            </div>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem', color: 'white' }}>In Process</span>
+                                        </div>
+
+                                        {/* Step: Completed */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, position: 'relative' }}>
+                                            <div style={{ 
+                                                width: '42px', height: '42px', borderRadius: '50%', background: getStepStyle('Completed').bg,
+                                                border: `2px solid ${getStepStyle('Completed').border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                color: getStepStyle('Completed').color, fontWeight: '700', transition: 'all 0.3s'
+                                            }}>
+                                                3
+                                            </div>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem', color: 'white' }}>Completed</span>
+                                        </div>
                                     </div>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem', color: 'white' }}>Completed</span>
+
+                                    {/* Dynamic Stepper Action Controls */}
+                                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+                                        {inspectionStatus === 'Initiate' && (
+                                            <div style={{ textAlign: 'center' }}>
+                                                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
+                                                    Confirm you have arrived at the geolocated installation site for consumer <strong style={{ color: 'white' }}>{currentTask.consumer_id}</strong> on <strong>Transformer {currentTask.transformer_id}</strong> ({currentTask.zone}).
+                                                </p>
+                                                <button
+                                                    onClick={() => updateTaskStatus('Inprocess')}
+                                                    style={{
+                                                        background: '#ffffff', color: '#000000', padding: '0.75rem 2.2rem', 
+                                                        borderRadius: '8px', fontWeight: '600', cursor: 'pointer', border: 'none',
+                                                        fontSize: '0.95rem'
+                                                    }}
+                                                >
+                                                    Start On-Site Audit
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {inspectionStatus === 'Inprocess' && (
+                                            <div style={{ width: '100%', maxWidth: '520px' }}>
+                                                <h4 style={{ color: 'white', margin: '0 0 1rem 0', fontSize: '0.95rem' }}>
+                                                    Audit Checklist for Consumer {currentTask.consumer_id} (Transformer {currentTask.transformer_id})
+                                                </h4>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={checkList.sealIntact}
+                                                            onChange={e => setCheckList({...checkList, sealIntact: e.target.checked})}
+                                                        /> Meter Seals Untouched
+                                                    </label>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={checkList.hookingCheck}
+                                                            onChange={e => setCheckList({...checkList, hookingCheck: e.target.checked})}
+                                                        /> Checked for Pole Hooking
+                                                    </label>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={checkList.bypassDetected}
+                                                            onChange={e => setCheckList({...checkList, bypassDetected: e.target.checked})}
+                                                        /> No Shunt/Bypass Found
+                                                    </label>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={checkList.terminalSecure}
+                                                            onChange={e => setCheckList({...checkList, terminalSecure: e.target.checked})}
+                                                        /> Terminal Box Secured
+                                                    </label>
+                                                </div>
+
+                                                <textarea
+                                                    placeholder="On-site audit findings (e.g. bypass cable discovered on Phase B, terminal seal replaced etc.)"
+                                                    value={auditNotes}
+                                                    onChange={e => setAuditNotes(e.target.value)}
+                                                    style={{
+                                                        width: '100%', height: '80px', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
+                                                        borderRadius: '8px', color: 'white', padding: '0.75rem', fontSize: '0.85rem', outline: 'none', marginBottom: '1.25rem',
+                                                        resize: 'vertical'
+                                                    }}
+                                                />
+
+                                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                                                    <button
+                                                        onClick={completeInspection}
+                                                        style={{
+                                                            background: '#ffffff', color: '#000000', padding: '0.75rem 2rem', 
+                                                            borderRadius: '8px', fontWeight: '600', cursor: 'pointer', border: 'none',
+                                                            fontSize: '0.95rem'
+                                                        }}
+                                                    >
+                                                        Submit Inspection Details
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {inspectionStatus === 'Completed' && (
+                                            <div style={{ textAlign: 'center' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem', color: '#10b981' }}>
+                                                    <CheckCircle size={36} />
+                                                </div>
+                                                <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1rem', fontWeight: '600', margin: '0 0 0.25rem' }}>
+                                                    Audit Completed for Consumer {currentTask.consumer_id}!
+                                                </p>
+                                                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', margin: '0 0 1.5rem' }}>
+                                                    Audit logs and transformer verification have been synchronized with DISCOM central database.
+                                                </p>
+                                                <button
+                                                    onClick={() => {
+                                                        const remainingTasks = myTasks.filter(t => t.consumer_id !== currentTask.consumer_id);
+                                                        if (remainingTasks.length > 0) {
+                                                            setSelectedConsumerId(remainingTasks[0].consumer_id);
+                                                        } else {
+                                                            updateTaskStatus('Initiate');
+                                                        }
+                                                        setCheckList({ sealIntact: false, hookingCheck: false, bypassDetected: false, terminalSecure: false });
+                                                        setAuditNotes('');
+                                                    }}
+                                                    style={{
+                                                        background: 'transparent', border: '1px solid var(--accent-blue)', color: 'var(--accent-blue)',
+                                                        padding: '0.65rem 1.75rem', borderRadius: '8px', fontWeight: '600', cursor: 'pointer',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                >
+                                                    {myTasks.filter(t => (t.status || '').toLowerCase() !== 'completed').length > 1 ? 'Next Assigned Task' : 'Reset Inspection Stepper'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
+                            </>
+                        ) : (
+                            /* Standby State when no task is assigned */
+                            <div style={{ 
+                                background: 'var(--glass-bg)', 
+                                border: '1px solid var(--glass-border)', 
+                                borderRadius: '16px', 
+                                padding: '3.5rem 2rem',
+                                textAlign: 'center',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <div style={{
+                                    width: '64px', height: '64px', borderRadius: '50%',
+                                    background: 'rgba(200, 162, 97, 0.1)', border: '1px solid rgba(200, 162, 97, 0.2)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    color: '#c8a261', marginBottom: '1.25rem'
+                                }}>
+                                    <MapPin size={28} />
+                                </div>
+                                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.35rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+                                    No Active Field Audits Assigned
+                                </h3>
+                                <p style={{ maxWidth: '500px', margin: '0 0 1.5rem 0', color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                    You are currently on standby for <strong>{inspector?.discom || 'your DISCOM'}</strong>. Once your administrator uploads consumption logs and assigns anomaly audit tasks to <strong>{inspector?.displayName || 'your account'}</strong>, the route, meter pins, and transformer mapping will automatically appear here.
+                                </p>
+                                <span style={{
+                                    background: 'rgba(16, 185, 129, 0.1)', color: '#10b981',
+                                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                                    padding: '0.35rem 0.9rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600'
+                                }}>
+                                    Status: Connected & Standby
+                                </span>
                             </div>
-
-                            {/* Dynamic Stepper Action Controls */}
-                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
-                                {inspectionStatus === 'Initiate' && (
-                                    <div style={{ textAlign: 'center' }}>
-                                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                                            Confirm you have arrived at the geolocated installation site for consumer <strong>{selectedConsumer}</strong>.
-                                        </p>
-                                        <button
-                                            onClick={() => setInspectionStatus('Inprocess')}
-                                            style={{
-                                                background: '#ffffff', color: '#000000', padding: '0.75rem 2rem', 
-                                                borderRadius: '8px', fontWeight: '600', cursor: 'pointer'
-                                            }}
-                                        >
-                                            Start On-Site Audit
-                                        </button>
-                                    </div>
-                                )}
-
-                                {inspectionStatus === 'Inprocess' && (
-                                    <div style={{ width: '100%', maxWidth: '500px' }}>
-                                        <h4 style={{ color: 'white', margin: '0 0 1rem 0', fontSize: '0.95rem' }}>Audit Check List & Seals</h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={checkList.sealIntact}
-                                                    onChange={e => setCheckList({...checkList, sealIntact: e.target.checked})}
-                                                /> Meter Seals Untouched
-                                            </label>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={checkList.hookingCheck}
-                                                    onChange={e => setCheckList({...checkList, hookingCheck: e.target.checked})}
-                                                /> Checked for Pole Hooking
-                                            </label>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={checkList.bypassDetected}
-                                                    onChange={e => setCheckList({...checkList, bypassDetected: e.target.checked})}
-                                                /> No Shunt/Bypass Found
-                                            </label>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={checkList.terminalSecure}
-                                                    onChange={e => setCheckList({...checkList, terminalSecure: e.target.checked})}
-                                                /> Terminal Box Secured
-                                            </label>
-                                        </div>
-
-                                        <textarea
-                                            placeholder="On-site notes (e.g. shunt resistance found, seal replaced etc.)"
-                                            value={auditNotes}
-                                            onChange={e => setAuditNotes(e.target.value)}
-                                            style={{
-                                                width: '100%', height: '80px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)',
-                                                borderRadius: '8px', color: 'white', padding: '0.75rem', fontSize: '0.85rem', outline: 'none', marginBottom: '1.25rem'
-                                            }}
-                                        />
-
-                                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                                            <button
-                                                onClick={completeInspection}
-                                                style={{
-                                                    background: '#ffffff', color: '#000000', padding: '0.75rem 2rem', 
-                                                    borderRadius: '8px', fontWeight: '600', cursor: 'pointer'
-                                                }}
-                                            >
-                                                Submit Inspection Details
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {inspectionStatus === 'Completed' && (
-                                    <div style={{ textAlign: 'center' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem', color: '#10b981' }}>
-                                            <CheckCircle size={32} />
-                                        </div>
-                                        <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.95rem', fontWeight: '500' }}>
-                                            Inspection Audit Filed Successfully!
-                                        </p>
-                                        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', marginTop: '0.25rem', marginBottom: '1.25rem' }}>
-                                            Audit logs have been synced with DISCOM central server database.
-                                        </p>
-                                        <button
-                                            onClick={() => {
-                                                setInspectionStatus('Initiate');
-                                                setSelectedConsumer(selectedConsumer === 'CON-98401' ? 'CON-10938' : 'CON-98401');
-                                                setCheckList({ sealIntact: false, hookingCheck: false, bypassDetected: false, terminalSecure: false });
-                                                setAuditNotes('');
-                                            }}
-                                            style={{
-                                                background: 'transparent', border: '1px solid var(--accent-blue)', color: 'var(--accent-blue)',
-                                                padding: '0.6rem 1.5rem', borderRadius: '8px', fontWeight: '600', cursor: 'pointer'
-                                            }}
-                                        >
-                                            Next Assigned Task
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        )}
                     </div>
                 )}
 
@@ -480,10 +736,10 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                     <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '2rem', maxWidth: '600px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
                             <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-blue) 0%, #9c7446 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: '600', color: 'white' }}>
-                                {inspector?.displayName?.charAt(0) || 'R'}
+                                {inspector?.displayName?.charAt(0) || 'I'}
                             </div>
                             <div>
-                                <h3 style={{ margin: 0, color: 'white', fontSize: '1.35rem' }}>{inspector?.displayName || 'Inspector Ravi Shankar'}</h3>
+                                <h3 style={{ margin: 0, color: 'white', fontSize: '1.35rem' }}>{inspector?.displayName || 'Field Inspector'}</h3>
                                 <p style={{ margin: '0.25rem 0 0 0', color: 'var(--accent-blue)', fontSize: '0.85rem', fontWeight: '600' }}>Senior Field Inspector</p>
                             </div>
                         </div>
@@ -491,10 +747,10 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                             <div style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Badge ID</span>
-                                <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: '500' }}>INS-DEL-88402</span>
+                                <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: '500' }}>{inspector?.badgeId || 'INS-DEL-88402'}</span>
                             </div>
                             <div style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Email Address</span>
+                                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Email</span>
                                 <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: '500' }}>{inspector?.email}</span>
                             </div>
                             <div style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>

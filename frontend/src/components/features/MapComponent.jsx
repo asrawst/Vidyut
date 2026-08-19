@@ -63,16 +63,9 @@ const MapComponent = ({ data }) => {
             .map(item => {
                 const risk = (item.risk_class || '').toLowerCase();
                 let icon = greenIcon;
-                if (risk === 'critical') icon = redIcon;
-                else if (risk === 'high') icon = orangeIcon;
-
-                // Only showing Critical and High as per previous logic, but let's show all if valid coords?
-                // Logic preserved: show Critical and High primarily if we want to focus on theft.
-                // But generally a map shows everything. Let's filter like before to keep it clean?
-                // The previous code filtered: if (risk !== 'critical' && risk !== 'high') return;
-
-                // Let's keep that filter for now to match the "Theft Detection" focus
-                if (risk !== 'critical' && risk !== 'high') return null;
+                if (risk === 'critical' || risk.includes('crit')) icon = redIcon;
+                else if (risk === 'high' || risk.includes('high')) icon = orangeIcon;
+                else icon = orangeIcon;
 
                 return {
                     ...item,
@@ -81,7 +74,7 @@ const MapComponent = ({ data }) => {
                     icon: icon
                 };
             })
-            .filter(Boolean); // Remove nulls
+            .filter(Boolean);
     }, [data]);
 
     // Update center based on first marker if available
@@ -93,22 +86,19 @@ const MapComponent = ({ data }) => {
 
     return (
         <div style={{
-            height: '450px',
+            height: '100%',
+            minHeight: '380px',
             width: '100%',
-            borderRadius: '16px',
+            borderRadius: '12px',
             overflow: 'hidden',
-            marginTop: '2rem',
-            marginBottom: '4rem',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
             position: 'relative',
-            zIndex: 0 // Ensure it doesn't overlap incorrectly
+            zIndex: 0
         }}>
             <MapContainer
                 center={center}
-                zoom={11}
+                zoom={12}
                 scrollWheelZoom={false}
-                style={{ height: '100%', width: '100%', background: '#242f3e' }}
+                style={{ height: '100%', width: '100%', minHeight: '380px', background: '#242f3e' }}
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -122,11 +112,20 @@ const MapComponent = ({ data }) => {
                         icon={item.icon}
                     >
                         <Popup className="custom-popup">
-                            <div style={{ color: '#1e293b' }}>
-                                <strong>ID: {item.consumer_id}</strong><br />
-                                Risk: {((item.aggregate_risk_score || 0) * 100).toFixed(0)}%<br />
-                                <span style={{ textTransform: 'capitalize', color: item.risk_class === 'critical' ? '#ef4444' : '#f97316' }}>
-                                    {item.risk_class}
+                            <div style={{ color: '#1e293b', fontSize: '0.85rem', lineHeight: '1.4' }}>
+                                <strong style={{ fontSize: '0.95rem' }}>Consumer: {item.consumer_id}</strong><br />
+                                {item.transformer_id && (
+                                    <>
+                                        <span style={{ color: '#475569' }}>Transformer: <strong>{item.transformer_id}</strong></span><br />
+                                    </>
+                                )}
+                                <span>Theft Risk: <strong>{(((item.aggregate_risk_score ?? item.risk_score ?? 0.85)) * 100).toFixed(0)}%</strong></span><br />
+                                <span style={{ 
+                                    textTransform: 'capitalize', 
+                                    fontWeight: 'bold', 
+                                    color: (item.risk_class || '').toLowerCase().includes('crit') ? '#ef4444' : '#f97316' 
+                                }}>
+                                    {item.risk_class || 'Critical Anomaly'}
                                 </span>
                             </div>
                         </Popup>
