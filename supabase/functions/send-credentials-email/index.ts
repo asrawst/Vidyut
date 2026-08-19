@@ -28,7 +28,8 @@ serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    const portalUrl = redirectTo || 'https://vidyut-dexter.vercel.app/inspector-portal'
+    // Always prefer the production Vercel URL so redirect works regardless of origin
+    const portalUrl = 'https://vidyut-dexter.vercel.app/inspector-portal'
 
     // Try invite first (works for new users)
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
