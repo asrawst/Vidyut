@@ -478,7 +478,7 @@ const AdminDashboard = ({
     return (
         <div className="dashboard-container">
             {/* Mobile Sidebar Backdrop */}
-            {isSidebarOpen && (
+            {isSidebarOpen && window.innerWidth <= 768 && (
                 <div 
                     className="sidebar-backdrop" 
                     onClick={() => setIsSidebarOpen(false)}

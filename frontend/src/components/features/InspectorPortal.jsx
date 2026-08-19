@@ -124,7 +124,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)', color: 'white', width: '100%', position: 'relative' }}>
-            {/* Mobile Sidebar Backdrop — only shown on mobile */}
+            {/* Mobile Sidebar Backdrop */}
             {isSidebarOpen && window.innerWidth <= 768 && (
                 <div 
                     className="sidebar-backdrop" 
@@ -194,14 +194,14 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                     {navItems.map((item) => (
                         <button
                             key={item.name}
+                            title={isSidebarOpen ? undefined : item.name}
                             onClick={() => { setActiveTab(item.name); if (window.innerWidth <= 768) setIsSidebarOpen(false); }}
-                            title={!isSidebarOpen ? item.name : undefined}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: isSidebarOpen ? 'flex-start' : 'center',
                                 gap: '0.85rem',
-                                padding: '0.75rem 0.9rem',
+                                padding: isSidebarOpen ? '0.75rem 0.9rem' : '0.75rem 0',
                                 background: activeTab === item.name ? 'rgba(200, 162, 97, 0.12)' : 'none',
                                 border: activeTab === item.name ? '1px solid rgba(200, 162, 97, 0.2)' : 'none',
                                 color: activeTab === item.name ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.6)',
@@ -219,36 +219,34 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                 </nav>
 
                 {/* Footer credentials & logout */}
-                <div style={{ padding: '1rem', borderTop: '1px solid var(--glass-border)' }}>
+                <div style={{ padding: isSidebarOpen ? '1rem' : '0.75rem 0.5rem', borderTop: '1px solid var(--glass-border)' }}>
                     {isSidebarOpen && (
                         <div style={{ marginBottom: '1rem', padding: '0 0.5rem' }}>
                             <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'white' }}>
                                 {inspector?.displayName || 'Inspector Ravi'}
                             </div>
                             <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginTop: '2px' }}>
-                                {inspector?.discom}
+                                {inspector?.discom || 'Tata Power DDL'}
                             </div>
                         </div>
                     )}
                     <button
                         onClick={onLogout}
-                        title={!isSidebarOpen ? 'Logout' : undefined}
+                        title={isSidebarOpen ? undefined : 'Logout'}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: isSidebarOpen ? 'flex-start' : 'center',
                             gap: '0.85rem',
-                            padding: '0.75rem 0.9rem',
-                            background: 'rgba(239, 68, 68, 0.12)',
-                            border: '1px solid rgba(239, 68, 68, 0.25)',
+                            padding: isSidebarOpen ? '0.75rem 0.9rem' : '0.75rem 0',
+                            background: 'rgba(239, 68, 68, 0.08)',
+                            border: '1px solid rgba(239, 68, 68, 0.15)',
                             color: '#ef4444',
                             borderRadius: '8px',
                             width: '100%',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease'
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.2)'}
-                        onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.12)'}
                     >
                         <LogOut size={18} />
                         {isSidebarOpen && <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>Logout</span>}
