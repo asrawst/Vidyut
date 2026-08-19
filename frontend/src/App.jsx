@@ -8,8 +8,14 @@ import LoginModal from './components/modals/LoginModal';
 import AboutUsModal from './components/modals/AboutUsModal';
 import AdminDashboard from './components/features/AdminDashboard';
 import InspectorPortal from './components/features/InspectorPortal';
+import { createClient } from '@supabase/supabase-js';
 import { Sliders, CheckCircle, Smartphone, AlertCircle, X, ShieldAlert, Award } from 'lucide-react';
 import './App.css';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 const dataset = {
   id: 'source',
@@ -45,6 +51,8 @@ function App() {
   const [isInspectorModalOpen, setIsInspectorModalOpen] = useState(false);
   const [insEmail, setInsEmail] = useState('');
   const [insPassword, setInsPassword] = useState('');
+  const [insLoginLoading, setInsLoginLoading] = useState(false);
+  const [insLoginError, setInsLoginError] = useState('');
 
   // Persist authentication and results in localStorage
   useEffect(() => {
@@ -324,19 +332,51 @@ function App() {
 
                 {/* Form */}
                 <form 
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
-                    if (insEmail.includes('@') && insPassword.length >= 4) {
+                    setInsLoginError('');
+                    setInsLoginLoading(true);
+                    try {
+                      // Step 1: Authenticate with Supabase
+                      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                        email: insEmail,
+                        password: insPassword
+                      });
+
+                      if (authError) {
+                        setInsLoginError('Invalid email or password.');
+                        return;
+                      }
+
+                      // Step 2: Verify this user exists in the inspectors table
+                      const { data: inspectorRow, error: dbError } = await supabase
+                        .from('inspectors')
+                        .select('display_name, badge_id, email, discom')
+                        .eq('email', insEmail)
+                        .single();
+
+                      if (dbError || !inspectorRow) {
+                        // Valid auth user but NOT a registered inspector — sign out and reject
+                        await supabase.auth.signOut();
+                        setInsLoginError('Access denied. Your account is not registered as a field inspector.');
+                        return;
+                      }
+
+                      // Step 3: Login successful — set inspector session
                       setInspector({
                         email: insEmail,
-                        displayName: insEmail.split('@')[0].toUpperCase(),
-                        discom: 'Tata Power DDL'
+                        displayName: inspectorRow.display_name || insEmail.split('@')[0].toUpperCase(),
+                        badgeId: inspectorRow.badge_id,
+                        discom: inspectorRow.discom || 'Tata Power DDL'
                       });
                       setIsInspectorModalOpen(false);
                       setInsEmail('');
                       setInsPassword('');
-                    } else {
-                      alert("Hint: Enter any email containing '@' and a password of at least 4 characters.");
+                      setInsLoginError('');
+                    } catch (err) {
+                      setInsLoginError('An unexpected error occurred. Please try again.');
+                    } finally {
+                      setInsLoginLoading(false);
                     }
                   }}
                   style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
@@ -385,17 +425,25 @@ function App() {
                         />
                     </div>
 
+                    {insLoginError && (
+                        <p style={{ margin: 0, padding: '0.6rem 0.9rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', color: '#f87171', fontSize: '0.82rem', lineHeight: '1.4' }}>
+                            {insLoginError}
+                        </p>
+                    )}
+
                     <button
                         type="submit"
+                        disabled={insLoginLoading}
                         style={{
                             marginTop: '1rem', padding: '0.85rem', borderRadius: '8px', border: 'none',
-                            background: '#ffffff', color: '#000000', fontSize: '0.95rem', fontWeight: '600',
-                            cursor: 'pointer', transition: 'all 0.2s'
+                            background: insLoginLoading ? 'rgba(255,255,255,0.4)' : '#ffffff',
+                            color: '#000000', fontSize: '0.95rem', fontWeight: '600',
+                            cursor: insLoginLoading ? 'not-allowed' : 'pointer', transition: 'all 0.2s'
                         }}
-                        onMouseOver={(e) => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                        onMouseOver={(e) => { if (!insLoginLoading) { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)'; }}}
                         onMouseOut={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
                     >
-                        Continue
+                        {insLoginLoading ? 'Verifying...' : 'Login to Inspector Portal'}
                     </button>
                 </form>
             </div>
