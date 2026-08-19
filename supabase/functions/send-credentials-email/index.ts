@@ -116,6 +116,12 @@ serve(async (req) => {
       </html>
     `
 
+    // NOTE: Resend free plan only allows sending to your own verified email.
+    // ADMIN_EMAIL env var is your verified Resend email (as.singhaditya08@gmail.com).
+    // Once you verify a domain on resend.com/domains, remove ADMIN_EMAIL and use `to: inspectorEmail` directly.
+    const ADMIN_EMAIL = Deno.env.get('ADMIN_EMAIL') || 'as.singhaditya08@gmail.com'
+    const sendTo = ADMIN_EMAIL  // Change to `inspectorEmail` after domain verification
+
     const resendRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -124,8 +130,8 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: 'Vidyut Portal <onboarding@resend.dev>',
-        to: inspectorEmail,
-        subject: `Your Vidyut Inspector Portal Login Credentials`,
+        to: sendTo,
+        subject: `Inspector Credentials Generated — ${inspectorName} (${inspectorEmail})`,
         html: emailHtml
       })
     })
