@@ -235,11 +235,49 @@ const AdminDashboard = ({
                     });
                 }
             })
+        // Load upload history from Supabase DB
+        const fetchUploadHistory = async () => {
+            try {
+                const { data: histData, error: histErr } = await supabase
+                    .from('upload_history')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (histData && !histErr && histData.length > 0) {
+                    const formatted = histData.map(h => ({
+                        id: h.id,
+                        name: h.filename,
+                        date: new Date(h.uploaded_on || h.created_at).toLocaleString('en-US', {
+                            month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
+                        }),
+                        count: h.consumers_count || 0,
+                        critical: h.critical_count || 0,
+                        anomalies: h.anomalies_count || 0,
+                        loss: h.loss_calculated || '₹0',
+                        data: h.analysis_data
+                    }));
+                    setUploadHistory(formatted);
+                    localStorage.setItem('vidyut_upload_history', JSON.stringify(formatted));
+                }
+            } catch (err) {
+                console.error("Error loading upload history:", err);
+            }
+        };
+
+        fetchUploadHistory();
+
+        // Subscribe to real-time upload history changes
+        const histChannel = supabase
+            .channel('admin_upload_history_channel')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'upload_history' }, () => {
+                fetchUploadHistory();
+            })
             .subscribe();
 
         return () => {
             subscription.unsubscribe();
             supabase.removeChannel(tasksChannel);
+            supabase.removeChannel(histChannel);
         };
     }, []);
 
@@ -265,32 +303,62 @@ const AdminDashboard = ({
         }
     }, [result]);
 
-    // Save uploaded dataset permanently in history when result changes
+    // Save uploaded dataset permanently in Supabase DB & history state when result changes
     useEffect(() => {
-        if (result) {
-            const newHist = {
-                name: selectedFile ? selectedFile.name : 'consumer_dataset.csv',
-                date: new Date().toLocaleString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric', 
-                    hour: '2-digit', 
-                    minute: '2-digit', 
-                    hour12: false 
-                }),
-                count: result.anomalies?.length || 0,
-                critical: result.anomalies?.filter(a => a.risk_score >= 0.85).length || 0,
-                size: selectedFile ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` : '1.2 MB',
-                data: result
-            };
-            setUploadHistory(prev => {
-                if (prev.some(h => h.name === newHist.name && h.date.split(' ')[0] === newHist.date.split(' ')[0])) {
-                    // Update result data if re-uploaded
-                    return prev.map(h => h.name === newHist.name ? { ...h, data: result } : h);
-                }
-                return [newHist, ...prev];
-            });
-        }
+        if (!result) return;
+
+        const criticalCount = result.summary?.critical_cases ?? 
+                              (result.anomalies || []).filter(a => (a.risk_class || '').toLowerCase().includes('crit')).length ?? 0;
+        const totalConsumers = result.summary?.total_consumers || (result.results?.length) || (result.anomalies?.length) || 0;
+        const anomaliesCount = result.summary?.anomalies_detected || result.anomalies?.length || 0;
+        const lossText = result.summary?.total_loss_calculated ? `₹${result.summary.total_loss_calculated.toString().replace(/,/g, '')}` : '₹0';
+        const fileName = selectedFile ? selectedFile.name : `consumer_dataset_${new Date().toISOString().slice(0, 10)}.csv`;
+
+        const newHist = {
+            name: fileName,
+            date: new Date().toLocaleString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: false 
+            }),
+            count: totalConsumers,
+            critical: criticalCount,
+            anomalies: anomaliesCount,
+            loss: lossText,
+            size: selectedFile ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` : '1.2 MB',
+            data: result
+        };
+
+        // 1. Sync history log directly into Supabase database
+        const saveHistoryToDB = async () => {
+            try {
+                await supabase.from('upload_history').insert([{
+                    filename: fileName,
+                    uploaded_on: new Date().toISOString(),
+                    consumers_count: totalConsumers,
+                    critical_count: criticalCount,
+                    anomalies_count: anomaliesCount,
+                    loss_calculated: lossText,
+                    grid_health: result.summary?.grid_health_score || 80,
+                    discom: user?.discom || 'BSES Rajdhani Power',
+                    analysis_data: result
+                }]);
+            } catch (err) {
+                console.error("Error writing upload history to Supabase:", err);
+            }
+        };
+
+        saveHistoryToDB();
+
+        setUploadHistory(prev => {
+            const filtered = prev.filter(h => h.name !== newHist.name);
+            const nextList = [newHist, ...filtered];
+            localStorage.setItem('vidyut_upload_history', JSON.stringify(nextList));
+            return nextList;
+        });
     }, [result, selectedFile]);
 
     // Save inspector to Supabase DB & state (no auth.signUp — FK constraint must be removed in Supabase)
@@ -399,36 +467,35 @@ const AdminDashboard = ({
         }
     };
 
-    // Handle CSV download from history item
+    // Handle CSV download from history item with real full dataset
     const handleDownloadCSV = (hist) => {
-        let anomalies = hist.data?.anomalies;
-        if (!anomalies) {
-            // Generate mock anomalies if no payload data exists
-            anomalies = Array.from({ length: hist.count || 20 }, (_, i) => ({
-                consumer_id: `CON-${90000 + i}`,
-                risk_score: (0.95 - (i * 0.02)).toFixed(2),
-                transformer_id: `TR-${100 + (i % 5)}`,
-                metrics: { energy_consumed: (250 + (i * 12)) },
-                anomaly_type: i % 2 === 0 ? 'Direct Tap Bypass' : 'Suspicious Load Drop'
-            }));
+        const dataset = hist.data || hist.analysis_data;
+        const allRecords = dataset?.results || dataset?.anomalies || [];
+        
+        if (!allRecords || allRecords.length === 0) {
+            alert('No anomaly records available to download for this dataset.');
+            return;
         }
-        
-        const headers = ['Consumer ID', 'Risk Score', 'Transformer ID', 'Total Energy (kWh)', 'Anomaly Flag'];
-        const rows = anomalies.map(a => [
-            a.consumer_id,
-            a.risk_score,
-            a.transformer_id || '',
-            a.metrics?.energy_consumed || '',
-            a.anomaly_type || 'Suspicious Load Shift'
+
+        const headers = ['Consumer ID', 'Transformer ID', 'Risk Score', 'Risk Class', 'Latitude', 'Longitude', 'Energy Consumed (kWh)', 'Field Status'];
+        const rows = allRecords.map(item => [
+            `"${item.consumer_id || ''}"`,
+            `"${item.transformer_id || ''}"`,
+            `"${(((item.aggregate_risk_score ?? item.risk_score ?? 0.85)) * 100).toFixed(0)}%"`,
+            `"${item.risk_class || 'anomaly'}"`,
+            `"${item.latitude || ''}"`,
+            `"${item.longitude || ''}"`,
+            `"${item.energy_consumed || item.metrics?.energy_consumed || ''}"`,
+            `"${localInspectionStatus[item.consumer_id] || 'Initiated'}"`
         ]);
-        
+
         const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", hist.name || 'analysis_history.csv');
+        link.setAttribute("download", hist.name || hist.filename || `vidyut_analysis_${new Date().toISOString().slice(0,10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -1998,9 +2065,15 @@ const AdminDashboard = ({
                                     <h3 className="panel-title" style={{ margin: 0 }}>Analysis Files History</h3>
                                     {uploadHistory.length > 0 && (
                                         <button 
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 if (confirm("Are you sure you want to clear all history records?")) {
                                                     setUploadHistory([]);
+                                                    localStorage.removeItem('vidyut_upload_history');
+                                                    try {
+                                                        await supabase.from('upload_history').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                                                    } catch (e) {
+                                                        console.error(e);
+                                                    }
                                                 }
                                             }}
                                             style={{
@@ -2026,8 +2099,10 @@ const AdminDashboard = ({
                                     <tbody>
                                         {uploadHistory.length === 0 ? (
                                             <tr>
-                                                <td colSpan="5" style={{ padding: '3rem 1rem', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>
-                                                    No analysis history logs found. Upload a CSV dataset on the Overview tab to initiate an analysis.
+                                                <td colSpan="5" style={{ padding: '3.5rem 1rem', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>
+                                                    <Activity size={32} style={{ margin: '0 auto 0.75rem auto', opacity: 0.35, display: 'block' }} />
+                                                    <div style={{ fontSize: '0.95rem', fontWeight: '500', color: 'rgba(255,255,255,0.6)' }}>No Analysis History Logs Found</div>
+                                                    <div style={{ fontSize: '0.8rem', marginTop: '0.35rem', color: 'rgba(255,255,255,0.35)' }}>Upload a CSV dataset on the Overview tab and click Fetch & Analyse to record dynamic logs.</div>
                                                 </td>
                                             </tr>
                                         ) : uploadHistory.map((hist, i) => (
@@ -2035,7 +2110,9 @@ const AdminDashboard = ({
                                                 <td style={{ padding: '1rem', fontWeight: '500' }}>{hist.name}</td>
                                                 <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{hist.date}</td>
                                                 <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{hist.count} consumers</td>
-                                                <td style={{ padding: '1rem', color: '#ef4444', fontWeight: '600' }}>{hist.critical}</td>
+                                                <td style={{ padding: '1rem', color: (hist.critical > 0) ? '#ef4444' : '#10b981', fontWeight: '600' }}>
+                                                    {hist.critical} {hist.critical === 1 ? 'critical' : 'critical'}
+                                                </td>
                                                 <td style={{ padding: '1rem' }}>
                                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                         <button 
