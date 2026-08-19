@@ -163,7 +163,54 @@ const AdminDashboard = ({
             fetchInspectors(session);
         });
 
-        return () => subscription.unsubscribe(); // Cleanup listener on unmount
+        // Load all active inspection tasks from Supabase DB for instant sync
+        const fetchTasksFromSupabase = async () => {
+            try {
+                const { data: tasksData, error: tasksErr } = await supabase
+                    .from('inspection_tasks')
+                    .select('*');
+                if (tasksData && !tasksErr) {
+                    const assignedMap = {};
+                    const statusMap = {};
+                    tasksData.forEach(t => {
+                        assignedMap[t.consumer_id] = t.inspector_name;
+                        statusMap[t.consumer_id] = t.status;
+                    });
+                    setAssignedInspectors(prev => ({ ...prev, ...assignedMap }));
+                    setLocalInspectionStatus(prev => ({ ...prev, ...statusMap }));
+                    localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(tasksData));
+                }
+            } catch (err) {
+                console.error("Error loading tasks from Supabase:", err);
+            }
+        };
+
+        fetchTasksFromSupabase();
+
+        // Subscribe to real-time status updates pushed from Inspector Portal
+        const tasksChannel = supabase
+            .channel('admin_tasks_realtime_channel')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'inspection_tasks' }, (payload) => {
+                if (payload.new) {
+                    const updated = payload.new;
+                    setLocalInspectionStatus(prev => ({
+                        ...prev,
+                        [updated.consumer_id]: updated.status
+                    }));
+                    if (updated.inspector_name) {
+                        setAssignedInspectors(prev => ({
+                            ...prev,
+                            [updated.consumer_id]: updated.inspector_name
+                        }));
+                    }
+                }
+            })
+            .subscribe();
+
+        return () => {
+            subscription.unsubscribe();
+            supabase.removeChannel(tasksChannel);
+        };
     }, []);
 
     const reportRef = useRef(null);
@@ -368,8 +415,8 @@ const AdminDashboard = ({
         setInspectionCalendar(prev => prev.map(item => item.consumer === consumerId ? { ...item, status: newStatus } : item));
     };
 
-    // Handle inspector assignment & sync with calendar and assigned tasks
-    const handleInspectorChange = (consumerId, inspector) => {
+    // Handle inspector assignment & sync with calendar, localStorage and Supabase DB
+    const handleInspectorChange = async (consumerId, inspector) => {
         setAssignedInspectors(prev => ({
             ...prev,
             [consumerId]: inspector
@@ -382,52 +429,82 @@ const AdminDashboard = ({
 
         // Derive coordinates if not explicitly present (accurate within Delhi BSES grid)
         const charSum = consumerId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-        const derivedLat = consumerObj?.latitude || (28.6139 + (((charSum * 17) % 100) - 50) * 0.0012).toFixed(4);
-        const derivedLng = consumerObj?.longitude || (77.2090 + (((charSum * 31) % 100) - 50) * 0.0012).toFixed(4);
+        const derivedLat = (consumerObj?.latitude || (28.6139 + (((charSum * 17) % 100) - 50) * 0.0012)).toString();
+        const derivedLng = (consumerObj?.longitude || (77.2090 + (((charSum * 31) % 100) - 50) * 0.0012)).toString();
 
-        // Sync assigned task object into localStorage for instant visibility in InspectorPortal
-        try {
-            const savedTasks = JSON.parse(localStorage.getItem('vidyut_assigned_tasks') || '[]');
-            let updatedTasks;
-            if (inspector) {
-                const newTask = {
-                    id: `TASK-${consumerId}`,
-                    consumer_id: consumerId,
-                    transformer_id: consumerObj?.transformer_id || 'T01',
-                    inspector_name: inspector,
-                    risk_score: consumerObj?.aggregate_risk_score ?? consumerObj?.risk_score ?? 0.85,
-                    risk_class: consumerObj?.risk_class || 'critical',
-                    status: localInspectionStatus[consumerId] || 'Initiated',
-                    latitude: derivedLat,
-                    longitude: derivedLng,
-                    zone: zoneArea,
-                    discom: user?.discom || 'BSES Rajdhani Power',
-                    assigned_at: new Date().toISOString()
-                };
-                const existingIdx = savedTasks.findIndex(t => t.consumer_id === consumerId);
-                if (existingIdx >= 0) {
-                    savedTasks[existingIdx] = newTask;
-                    updatedTasks = [...savedTasks];
-                } else {
-                    updatedTasks = [newTask, ...savedTasks];
-                }
-            } else {
-                updatedTasks = savedTasks.filter(t => t.consumer_id !== consumerId);
-            }
-            localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(updatedTasks));
-        } catch (e) {
-            console.error('Error saving assigned tasks:', e);
-        }
+        const inspectorInfo = inspectorsDetails.find(ins => ins.name === inspector);
+        const inspectorEmail = inspectorInfo?.email || '';
 
         if (inspector) {
+            const taskPayload = {
+                consumer_id: consumerId,
+                transformer_id: consumerObj?.transformer_id || 'T01',
+                inspector_name: inspector,
+                inspector_email: inspectorEmail,
+                risk_score: consumerObj?.aggregate_risk_score ?? consumerObj?.risk_score ?? 0.85,
+                risk_class: consumerObj?.risk_class || 'critical',
+                status: localInspectionStatus[consumerId] || 'Initiated',
+                latitude: derivedLat,
+                longitude: derivedLng,
+                zone: zoneArea,
+                discom: user?.discom || 'BSES Rajdhani Power',
+                assigned_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            // 1. Sync to Supabase DB (guarantees cross-device/portal availability)
+            try {
+                const { error: dbErr } = await supabase
+                    .from('inspection_tasks')
+                    .upsert(taskPayload, { onConflict: 'consumer_id' });
+                if (dbErr) console.error("Supabase task save error:", dbErr.message);
+            } catch (err) {
+                console.error("Error saving task to Supabase:", err);
+            }
+
+            // 2. Local storage cache update
+            try {
+                const savedTasks = JSON.parse(localStorage.getItem('vidyut_assigned_tasks') || '[]');
+                const existingIdx = savedTasks.findIndex(t => t.consumer_id === consumerId);
+                let updatedTasks;
+                if (existingIdx >= 0) {
+                    savedTasks[existingIdx] = { ...savedTasks[existingIdx], ...taskPayload };
+                    updatedTasks = [...savedTasks];
+                } else {
+                    updatedTasks = [taskPayload, ...savedTasks];
+                }
+                localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(updatedTasks));
+            } catch (e) {
+                console.error('Error saving assigned tasks locally:', e);
+            }
+
+            // 3. Update Calendar view
             setInspectionCalendar(prev => {
                 const exists = prev.some(item => item.consumer === consumerId);
-                if (exists) {
-                    return prev.map(item => item.consumer === consumerId ? { ...item, inspector: inspector } : item);
-                } else {
-                    return [...prev, { consumer: consumerId, zone: zoneArea, inspector: inspector, status: localInspectionStatus[consumerId] || 'Scheduled' }];
-                }
+                const updated = exists
+                    ? prev.map(item => item.consumer === consumerId ? { ...item, inspector: inspector } : item)
+                    : [...prev, { consumer: consumerId, zone: zoneArea, inspector: inspector, status: localInspectionStatus[consumerId] || 'Scheduled' }];
+                localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(updated));
+                return updated;
             });
+        } else {
+            // Unassigned: Remove from Supabase and local cache
+            try {
+                await supabase
+                    .from('inspection_tasks')
+                    .delete()
+                    .eq('consumer_id', consumerId);
+            } catch (err) {
+                console.error("Error deleting task from Supabase:", err);
+            }
+
+            try {
+                const savedTasks = JSON.parse(localStorage.getItem('vidyut_assigned_tasks') || '[]');
+                const updatedTasks = savedTasks.filter(t => t.consumer_id !== consumerId);
+                localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(updatedTasks));
+            } catch (e) {
+                console.error(e);
+            }
         }
     };
 
@@ -948,15 +1025,37 @@ const AdminDashboard = ({
                                                                 </span>
                                                             </td>
                                                             <td style={{ padding: '1rem' }}>
-                                                                <select
-                                                                    value={localInspectionStatus[item.consumer_id] || 'Initiated'}
-                                                                    onChange={(e) => handleStatusChange(item.consumer_id, e.target.value)}
-                                                                    className="table-select"
-                                                                >
-                                                                    <option value="Initiated">Initiated</option>
-                                                                    <option value="In Process">In Process</option>
-                                                                    <option value="Completed">Completed</option>
-                                                                </select>
+                                                                {(() => {
+                                                                    const currentStatus = localInspectionStatus[item.consumer_id] || 'Initiated';
+                                                                    const isCompleted = (currentStatus || '').toLowerCase() === 'completed';
+                                                                    const isInProcess = (currentStatus || '').toLowerCase().includes('process');
+                                                                    
+                                                                    return (
+                                                                        <span 
+                                                                            title="Status is updated directly by field inspector from portal"
+                                                                            style={{
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '0.45rem',
+                                                                                fontSize: '0.78rem',
+                                                                                fontWeight: '600',
+                                                                                padding: '0.35rem 0.75rem',
+                                                                                borderRadius: '6px',
+                                                                                background: isCompleted ? 'rgba(16, 185, 129, 0.15)' : isInProcess ? 'rgba(200, 162, 97, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                                                                                color: isCompleted ? '#10b981' : isInProcess ? '#c8a261' : 'rgba(255, 255, 255, 0.65)',
+                                                                                border: `1px solid ${isCompleted ? 'rgba(16, 185, 129, 0.3)' : isInProcess ? 'rgba(200, 162, 97, 0.3)' : 'rgba(255, 255, 255, 0.08)'}`
+                                                                            }}
+                                                                        >
+                                                                            <span style={{
+                                                                                width: '6px',
+                                                                                height: '6px',
+                                                                                borderRadius: '50%',
+                                                                                background: isCompleted ? '#10b981' : isInProcess ? '#c8a261' : 'rgba(255, 255, 255, 0.4)'
+                                                                            }} />
+                                                                            {currentStatus}
+                                                                        </span>
+                                                                    );
+                                                                })()}
                                                             </td>
                                                             <td style={{ padding: '1rem' }}>
                                                                 <select

@@ -5,6 +5,7 @@ import {
     X, CheckCircle, Navigation, Map, Shield, Zap, Activity, Radio, ChevronRight
 } from 'lucide-react';
 import MapComponent from './MapComponent';
+import { supabase } from '../../supabaseClient';
 
 const InspectorPortal = ({ inspector, onLogout }) => {
     const [activeTab, setActiveTab] = useState(() => {
@@ -17,7 +18,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     
-    // Assigned Tasks from Admin Dashboard
+    // Assigned Tasks from Supabase Database & localStorage
     const [allAssignedTasks, setAllAssignedTasks] = useState(() => {
         const saved = localStorage.getItem('vidyut_assigned_tasks');
         if (saved) {
@@ -26,8 +27,35 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         return [];
     });
 
-    // Real-time synchronization across browser tabs/storage
+    // Fetch live tasks directly from Supabase DB on mount & sync in real-time
     useEffect(() => {
+        const fetchTasksFromDB = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('inspection_tasks')
+                    .select('*')
+                    .order('assigned_at', { ascending: false });
+                
+                if (data && !error) {
+                    setAllAssignedTasks(data);
+                    localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(data));
+                }
+            } catch (err) {
+                console.error("Error fetching tasks from Supabase in InspectorPortal:", err);
+            }
+        };
+
+        fetchTasksFromDB();
+
+        // Subscribe to live task assignments & updates from Supabase Realtime
+        const channel = supabase
+            .channel('inspector_portal_realtime_tasks')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'inspection_tasks' }, () => {
+                fetchTasksFromDB();
+            })
+            .subscribe();
+
+        // Storage listener for same-browser tabs
         const handleStorageChange = () => {
             const saved = localStorage.getItem('vidyut_assigned_tasks');
             if (saved) {
@@ -35,8 +63,12 @@ const InspectorPortal = ({ inspector, onLogout }) => {
             }
         };
         window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+
+        return () => {
+            supabase.removeChannel(channel);
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, [inspector]);
 
     // Filter tasks belonging to THIS logged-in inspector
     const myTasks = useMemo(() => {
@@ -46,11 +78,12 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
         return allAssignedTasks.filter(t => {
             const taskInsp = (t.inspector_name || '').replace(/^Inspector\s+/i, '').trim().toLowerCase();
+            const taskEmail = (t.inspector_email || '').toLowerCase();
             return (
                 taskInsp === cleanDisplayName ||
                 (cleanDisplayName && taskInsp.includes(cleanDisplayName)) ||
                 (cleanDisplayName && cleanDisplayName.includes(taskInsp)) ||
-                (t.inspector_email && t.inspector_email.toLowerCase() === cleanEmail)
+                (cleanEmail && taskEmail === cleanEmail)
             );
         });
     }, [allAssignedTasks, inspector]);
@@ -174,13 +207,28 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         }
     };
 
-    // Update status in local state & localStorage for admin synchronization
-    const updateTaskStatus = (newStepStatus) => {
+    // Update status in Supabase DB, local state & localStorage for admin synchronization
+    const updateTaskStatus = async (newStepStatus) => {
         setInspectionStatus(newStepStatus);
         if (!currentTask) return;
 
         const tableStatus = newStepStatus === 'Inprocess' ? 'In Process' : newStepStatus === 'Completed' ? 'Completed' : 'Initiated';
 
+        // 1. Sync live update to Supabase DB
+        try {
+            const { error: updErr } = await supabase
+                .from('inspection_tasks')
+                .update({ 
+                    status: tableStatus, 
+                    updated_at: new Date().toISOString() 
+                })
+                .eq('consumer_id', currentTask.consumer_id);
+            if (updErr) console.error("Error updating task status in Supabase:", updErr.message);
+        } catch (err) {
+            console.error("Supabase update exception:", err);
+        }
+
+        // 2. Update local state & localStorage cache
         try {
             const savedTasks = JSON.parse(localStorage.getItem('vidyut_assigned_tasks') || '[]');
             const updated = savedTasks.map(t => t.consumer_id === currentTask.consumer_id ? { ...t, status: tableStatus } : t);
@@ -197,7 +245,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
             const updatedCal = savedCal.map(c => c.consumer === currentTask.consumer_id ? { ...c, status: tableStatus } : c);
             localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(updatedCal));
         } catch (e) {
-            console.error('Error updating task status:', e);
+            console.error('Error updating task status locally:', e);
         }
     };
 
