@@ -124,8 +124,8 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)', color: 'white', width: '100%', position: 'relative' }}>
-            {/* Mobile Sidebar Backdrop */}
-            {isSidebarOpen && (
+            {/* Mobile Sidebar Backdrop — only shown on mobile */}
+            {isSidebarOpen && window.innerWidth <= 768 && (
                 <div 
                     className="sidebar-backdrop" 
                     onClick={() => setIsSidebarOpen(false)}
@@ -195,9 +195,11 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                         <button
                             key={item.name}
                             onClick={() => { setActiveTab(item.name); if (window.innerWidth <= 768) setIsSidebarOpen(false); }}
+                            title={!isSidebarOpen ? item.name : undefined}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyContent: isSidebarOpen ? 'flex-start' : 'center',
                                 gap: '0.85rem',
                                 padding: '0.75rem 0.9rem',
                                 background: activeTab === item.name ? 'rgba(200, 162, 97, 0.12)' : 'none',
@@ -224,25 +226,29 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                 {inspector?.displayName || 'Inspector Ravi'}
                             </div>
                             <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginTop: '2px' }}>
-                                {inspector?.discom || 'Tata Power DDL'}
+                                {inspector?.discom}
                             </div>
                         </div>
                     )}
                     <button
                         onClick={onLogout}
+                        title={!isSidebarOpen ? 'Logout' : undefined}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
+                            justifyContent: isSidebarOpen ? 'flex-start' : 'center',
                             gap: '0.85rem',
                             padding: '0.75rem 0.9rem',
-                            background: 'rgba(239, 68, 68, 0.08)',
-                            border: '1px solid rgba(239, 68, 68, 0.15)',
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            border: '1px solid rgba(239, 68, 68, 0.25)',
                             color: '#ef4444',
                             borderRadius: '8px',
                             width: '100%',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease'
                         }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.2)'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.12)'}
                     >
                         <LogOut size={18} />
                         {isSidebarOpen && <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>Logout</span>}
