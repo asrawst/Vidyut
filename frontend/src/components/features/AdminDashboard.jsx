@@ -179,6 +179,27 @@ const AdminDashboard = ({
                     setAssignedInspectors(prev => ({ ...prev, ...assignedMap }));
                     setLocalInspectionStatus(prev => ({ ...prev, ...statusMap }));
                     localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(tasksData));
+
+                    // Sync Inspection Tab (Field Inspection Calendar) with DB tasks
+                    setInspectionCalendar(prev => {
+                        const newCalendar = [...prev];
+                        tasksData.forEach(task => {
+                            const idx = newCalendar.findIndex(c => c.consumer === task.consumer_id);
+                            const item = {
+                                consumer: task.consumer_id,
+                                zone: task.zone || (task.transformer_id ? `Transformer ${task.transformer_id}` : 'Sector 5 West'),
+                                inspector: task.inspector_name,
+                                status: task.status || 'Initiated'
+                            };
+                            if (idx >= 0) {
+                                newCalendar[idx] = item;
+                            } else {
+                                newCalendar.push(item);
+                            }
+                        });
+                        localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(newCalendar));
+                        return newCalendar;
+                    });
                 }
             } catch (err) {
                 console.error("Error loading tasks from Supabase:", err);
@@ -203,6 +224,26 @@ const AdminDashboard = ({
                             [updated.consumer_id]: updated.inspector_name
                         }));
                     }
+
+                    // Realtime sync to Inspection Tab Calendar
+                    setInspectionCalendar(prev => {
+                        const idx = prev.findIndex(c => c.consumer === updated.consumer_id);
+                        const item = {
+                            consumer: updated.consumer_id,
+                            zone: updated.zone || (updated.transformer_id ? `Transformer ${updated.transformer_id}` : 'Sector 5 West'),
+                            inspector: updated.inspector_name,
+                            status: updated.status
+                        };
+                        const nextList = idx >= 0 ? prev.map((c, i) => i === idx ? item : c) : [...prev, item];
+                        localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(nextList));
+                        return nextList;
+                    });
+                } else if (payload.old && payload.eventType === 'DELETE') {
+                    setInspectionCalendar(prev => {
+                        const nextList = prev.filter(c => c.consumer !== payload.old.consumer_id);
+                        localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(nextList));
+                        return nextList;
+                    });
                 }
             })
             .subscribe();
@@ -215,6 +256,15 @@ const AdminDashboard = ({
 
     const reportRef = useRef(null);
     const fileInputRef = useRef(null);
+    const mapRef = useRef(null);
+    const [focusedConsumerId, setFocusedConsumerId] = useState(null);
+
+    const handleFocusConsumerOnMap = (consumerId) => {
+        setFocusedConsumerId(consumerId);
+        if (mapRef.current) {
+            mapRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
 
     // Auto scroll to report when result is populated
     useEffect(() => {
@@ -1036,10 +1086,14 @@ const AdminDashboard = ({
                                     </div>
 
                                     {/* Map Component */}
-                                    <div className="map-card">
+                                    <div className="map-card" ref={mapRef}>
                                         <h3><MapPin size={20} style={{ color: '#ef4444' }} /> Geographic Anomaly Mapping</h3>
                                         <div style={{ height: '420px', width: '100%', borderRadius: '12px', overflow: 'hidden' }}>
-                                            <MapComponent data={result} />
+                                            <MapComponent 
+                                                data={result} 
+                                                focusedConsumerId={focusedConsumerId}
+                                                onSelectConsumer={setFocusedConsumerId}
+                                            />
                                         </div>
                                     </div>
 
@@ -1060,8 +1114,31 @@ const AdminDashboard = ({
                                                 </thead>
                                                 <tbody>
                                                     {result.anomalies.map((item, idx) => (
-                                                        <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: idx % 2 === 0 ? 'rgba(0,0,0,0.1)' : 'transparent' }}>
-                                                            <td style={{ padding: '1rem', fontWeight: '500', fontSize: '0.9rem' }}>{item.consumer_id}</td>
+                                                        <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: item.consumer_id === focusedConsumerId ? 'rgba(200, 162, 97, 0.08)' : (idx % 2 === 0 ? 'rgba(0,0,0,0.1)' : 'transparent') }}>
+                                                            <td style={{ padding: '1rem', fontWeight: '500', fontSize: '0.9rem' }}>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleFocusConsumerOnMap(item.consumer_id)}
+                                                                    title="Click to find and zoom to this pin on map"
+                                                                    style={{
+                                                                        background: item.consumer_id === focusedConsumerId ? 'rgba(200, 162, 97, 0.25)' : 'rgba(255,255,255,0.04)',
+                                                                        border: item.consumer_id === focusedConsumerId ? '1px solid #c8a261' : '1px solid rgba(255,255,255,0.1)',
+                                                                        color: item.consumer_id === focusedConsumerId ? '#c8a261' : '#ffffff',
+                                                                        padding: '0.3rem 0.65rem',
+                                                                        borderRadius: '6px',
+                                                                        cursor: 'pointer',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.45rem',
+                                                                        fontWeight: '600',
+                                                                        fontSize: '0.85rem',
+                                                                        transition: 'all 0.2s ease'
+                                                                    }}
+                                                                >
+                                                                    <MapPin size={13} style={{ color: item.consumer_id === focusedConsumerId ? '#c8a261' : 'rgba(255,255,255,0.5)' }} />
+                                                                    {item.consumer_id}
+                                                                </button>
+                                                            </td>
                                                             <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>{item.transformer_id}</td>
                                                             <td style={{ padding: '1rem', fontWeight: '600', color: item.risk_class === 'critical' ? '#ef4444' : '#f97316', fontSize: '0.9rem' }}>
                                                                 {((item.aggregate_risk_score || 0) * 100).toFixed(0)}%
@@ -1549,9 +1626,26 @@ const AdminDashboard = ({
                                                             <td style={{ padding: '1rem', textAlign: 'center' }}>
                                                                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                                                                     <button 
-                                                                        onClick={() => {
-                                                                            setInspectionCalendar(inspectionCalendar.map(item => item.consumer === ins.consumer ? editCalendarData : item));
+                                                                        onClick={async () => {
+                                                                            setInspectionCalendar(prev => {
+                                                                                const next = prev.map(item => item.consumer === ins.consumer ? editCalendarData : item);
+                                                                                localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(next));
+                                                                                return next;
+                                                                            });
                                                                             setEditingCalendarId(null);
+                                                                            try {
+                                                                                await supabase
+                                                                                    .from('inspection_tasks')
+                                                                                    .update({
+                                                                                        zone: editCalendarData.zone,
+                                                                                        inspector_name: editCalendarData.inspector,
+                                                                                        status: editCalendarData.status,
+                                                                                        updated_at: new Date().toISOString()
+                                                                                    })
+                                                                                    .eq('consumer_id', ins.consumer);
+                                                                            } catch (e) {
+                                                                                console.error(e);
+                                                                            }
                                                                         }}
                                                                         style={{ padding: '0.3rem 0.6rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600' }}
                                                                     >
@@ -1573,15 +1667,34 @@ const AdminDashboard = ({
                                                             <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.zone}</td>
                                                             <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.inspector || <span style={{ color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>Unassigned</span>}</td>
                                                             <td style={{ padding: '1rem' }}>
-                                                                <span style={{ 
-                                                                    color: ins.status === 'Completed' ? '#10b981' : ins.status === 'In Process' ? '#c8a261' : '#f59e0b',
-                                                                    background: ins.status === 'Completed' ? 'rgba(16,185,129,0.1)' : ins.status === 'In Process' ? 'rgba(200,162,97,0.15)' : 'rgba(245,158,11,0.1)',
-                                                                    padding: '0.2rem 0.5rem', 
-                                                                    borderRadius: '4px',
-                                                                    fontSize: '0.8rem'
-                                                                }}>
-                                                                    {ins.status}
-                                                                </span>
+                                                                {(() => {
+                                                                    const currentStatus = ins.status || 'Initiated';
+                                                                    const isCompleted = (currentStatus || '').toLowerCase() === 'completed';
+                                                                    const isInProcess = (currentStatus || '').toLowerCase().includes('process');
+
+                                                                    return (
+                                                                        <span style={{ 
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '0.45rem',
+                                                                            fontSize: '0.8rem',
+                                                                            fontWeight: '600',
+                                                                            padding: '0.3rem 0.65rem',
+                                                                            borderRadius: '6px',
+                                                                            color: isCompleted ? '#10b981' : isInProcess ? '#c8a261' : '#f59e0b',
+                                                                            background: isCompleted ? 'rgba(16,185,129,0.15)' : isInProcess ? 'rgba(200,162,97,0.15)' : 'rgba(245,158,11,0.12)',
+                                                                            border: `1px solid ${isCompleted ? 'rgba(16,185,129,0.3)' : isInProcess ? 'rgba(200,162,97,0.3)' : 'rgba(245,158,11,0.25)'}`
+                                                                        }}>
+                                                                            <span style={{
+                                                                                width: '6px',
+                                                                                height: '6px',
+                                                                                borderRadius: '50%',
+                                                                                background: isCompleted ? '#10b981' : isInProcess ? '#c8a261' : '#f59e0b'
+                                                                            }} />
+                                                                            {currentStatus}
+                                                                        </span>
+                                                                    );
+                                                                })()}
                                                             </td>
                                                             <td style={{ padding: '1rem', textAlign: 'center' }}>
                                                                 <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
@@ -1596,9 +1709,21 @@ const AdminDashboard = ({
                                                                         <Edit2 size={16} />
                                                                     </button>
                                                                     <button 
-                                                                        onClick={() => {
+                                                                        onClick={async () => {
                                                                             if (confirm(`Remove consumer ${ins.consumer} from inspection calendar?`)) {
-                                                                                setInspectionCalendar(inspectionCalendar.filter(item => item.consumer !== ins.consumer));
+                                                                                setInspectionCalendar(prev => {
+                                                                                    const next = prev.filter(item => item.consumer !== ins.consumer);
+                                                                                    localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(next));
+                                                                                    return next;
+                                                                                });
+                                                                                try {
+                                                                                    await supabase
+                                                                                        .from('inspection_tasks')
+                                                                                        .delete()
+                                                                                        .eq('consumer_id', ins.consumer);
+                                                                                } catch (e) {
+                                                                                    console.error(e);
+                                                                                }
                                                                             }
                                                                         }}
                                                                         style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}

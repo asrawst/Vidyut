@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -19,7 +19,22 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 // Custom Icons for different risk levels
-const createCustomIcon = (color) => {
+const createCustomIcon = (color, isTarget = false) => {
+    if (isTarget) {
+        return new L.DivIcon({
+            className: 'custom-marker-target',
+            html: `
+                <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;">
+                    <div style="position: absolute; width: 26px; height: 26px; border-radius: 50%; background: ${color}40; border: 2px solid ${color}; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                    <div style="background-color: ${color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px ${color}; z-index: 10;"></div>
+                </div>
+            `,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+            popupAnchor: [0, -14]
+        });
+    }
+
     return new L.DivIcon({
         className: 'custom-marker',
         html: `<div style="background-color: ${color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>`,
@@ -29,12 +44,39 @@ const createCustomIcon = (color) => {
     });
 };
 
-const redIcon = createCustomIcon('#ef4444');   // Critical
-const orangeIcon = createCustomIcon('#f97316'); // High
-const greenIcon = createCustomIcon('#10b981');  // Normal (if needed)
+const redIcon = createCustomIcon('#ef4444');
+const orangeIcon = createCustomIcon('#f97316');
+const greenIcon = createCustomIcon('#10b981');
 
-const MapComponent = ({ data }) => {
+// Controller component to zoom and pan the map when a consumer is selected
+function MapController({ focusedConsumerId, markers, markerRefs }) {
+    const map = useMap();
+
+    useEffect(() => {
+        if (!focusedConsumerId || !markers || markers.length === 0) return;
+        const target = markers.find(m => m.consumer_id === focusedConsumerId);
+        if (target && !isNaN(target.lat) && !isNaN(target.lng)) {
+            map.flyTo([target.lat, target.lng], 16, {
+                animate: true,
+                duration: 1.2
+            });
+
+            // Automatically open the popup for the selected pin
+            const markerInstance = markerRefs.current[target.consumer_id];
+            if (markerInstance) {
+                setTimeout(() => {
+                    markerInstance.openPopup();
+                }, 600);
+            }
+        }
+    }, [focusedConsumerId, markers, map, markerRefs]);
+
+    return null;
+}
+
+const MapComponent = ({ data, focusedConsumerId, onSelectConsumer }) => {
     const [center, setCenter] = useState([28.6139, 77.2090]); // Default New Delhi
+    const markerRefs = useRef({});
 
     // Filter and process data
     const markers = useMemo(() => {
@@ -62,27 +104,33 @@ const MapComponent = ({ data }) => {
             })
             .map(item => {
                 const risk = (item.risk_class || '').toLowerCase();
-                let icon = greenIcon;
-                if (risk === 'critical' || risk.includes('crit')) icon = redIcon;
-                else if (risk === 'high' || risk.includes('high')) icon = orangeIcon;
-                else icon = orangeIcon;
+                const isSelected = item.consumer_id === focusedConsumerId;
+                let color = '#f97316';
+                if (risk === 'critical' || risk.includes('crit')) color = '#ef4444';
+                else if (risk === 'high' || risk.includes('high')) color = '#f97316';
+                else color = '#10b981';
+
+                const icon = isSelected 
+                    ? createCustomIcon(color, true)
+                    : (color === '#ef4444' ? redIcon : color === '#10b981' ? greenIcon : orangeIcon);
 
                 return {
                     ...item,
                     lat: parseFloat(item.latitude),
                     lng: parseFloat(item.longitude),
-                    icon: icon
+                    icon: icon,
+                    isSelected
                 };
             })
             .filter(Boolean);
-    }, [data]);
+    }, [data, focusedConsumerId]);
 
-    // Update center based on first marker if available
+    // Update center based on first marker if available and no focused consumer
     useEffect(() => {
-        if (markers.length > 0) {
+        if (!focusedConsumerId && markers.length > 0) {
             setCenter([markers[0].lat, markers[0].lng]);
         }
-    }, [markers]);
+    }, [markers, focusedConsumerId]);
 
     return (
         <div style={{
@@ -94,6 +142,14 @@ const MapComponent = ({ data }) => {
             position: 'relative',
             zIndex: 0
         }}>
+            <style>{`
+                @keyframes ping {
+                    75%, 100% {
+                        transform: scale(2);
+                        opacity: 0;
+                    }
+                }
+            `}</style>
             <MapContainer
                 center={center}
                 zoom={12}
@@ -105,11 +161,25 @@ const MapComponent = ({ data }) => {
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 />
 
+                <MapController 
+                    focusedConsumerId={focusedConsumerId} 
+                    markers={markers} 
+                    markerRefs={markerRefs} 
+                />
+
                 {markers.map((item) => (
                     <Marker
                         key={item.consumer_id}
                         position={[item.lat, item.lng]}
                         icon={item.icon}
+                        ref={(el) => {
+                            if (el) markerRefs.current[item.consumer_id] = el;
+                        }}
+                        eventHandlers={{
+                            click: () => {
+                                if (onSelectConsumer) onSelectConsumer(item.consumer_id);
+                            }
+                        }}
                     >
                         <Popup className="custom-popup">
                             <div style={{ color: '#1e293b', fontSize: '0.85rem', lineHeight: '1.5' }}>
