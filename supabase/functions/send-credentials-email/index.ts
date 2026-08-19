@@ -39,7 +39,7 @@ serve(async (req) => {
     })
 
     const password = generatePassword()
-    const portalUrl = 'https://vidyut-dexter.vercel.app'
+    const portalUrl = 'https://vidyut-dexter.vercel.app/'
 
     // Step 1: Check if user already exists in auth
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
