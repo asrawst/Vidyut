@@ -117,7 +117,10 @@ const AdminDashboard = ({
         const saved = localStorage.getItem('vidyut_upload_history');
         if (saved) {
             try {
-                return JSON.parse(saved);
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) {
+                    return parsed.filter(item => item.name && !item.name.startsWith('consumer_dataset_'));
+                }
             } catch (e) {
                 console.error(e);
             }
@@ -246,18 +249,20 @@ const AdminDashboard = ({
                     .order('created_at', { ascending: false });
 
                 if (histData && !histErr) {
-                    const formatted = histData.map(h => ({
-                        id: h.id,
-                        name: h.filename,
-                        date: new Date(h.uploaded_on || h.created_at).toLocaleString('en-US', {
-                            month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
-                        }),
-                        count: h.consumers_count || 0,
-                        critical: h.critical_count || 0,
-                        anomalies: h.anomalies_count || 0,
-                        loss: h.loss_calculated || '₹0',
-                        data: h.analysis_data
-                    }));
+                    const formatted = histData
+                        .filter(h => h.filename && !h.filename.startsWith('consumer_dataset_'))
+                        .map(h => ({
+                            id: h.id,
+                            name: h.filename,
+                            date: new Date(h.uploaded_on || h.created_at).toLocaleString('en-US', {
+                                month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
+                            }),
+                            count: h.consumers_count || 0,
+                            critical: h.critical_count || 0,
+                            anomalies: h.anomalies_count || 0,
+                            loss: h.loss_calculated || '₹0',
+                            data: h.analysis_data
+                        }));
                     setUploadHistory(formatted);
                     localStorage.setItem('vidyut_upload_history', JSON.stringify(formatted));
                 }
@@ -286,6 +291,7 @@ const AdminDashboard = ({
     const fileInputRef = useRef(null);
     const mapRef = useRef(null);
     const [focusedConsumerId, setFocusedConsumerId] = useState(null);
+    const lastSavedSignatureRef = useRef(null);
 
     const handleFocusConsumerOnMap = (consumerId) => {
         setFocusedConsumerId(consumerId);
@@ -304,16 +310,22 @@ const AdminDashboard = ({
         }
     }, [result]);
 
-    // Save uploaded dataset permanently in Supabase DB & history state when result changes
+    // Save ONLY the original uploaded dataset to Supabase DB & history state
     useEffect(() => {
-        if (!result) return;
+        const actualFile = selectedFile || files?.source;
+        // Only save when an actual uploaded file was analyzed
+        if (!result || !actualFile || !actualFile.name) return;
+
+        const signature = `${actualFile.name}_${actualFile.size || 0}_${result.summary?.total_loss_calculated || result.anomalies?.length || 0}`;
+        if (lastSavedSignatureRef.current === signature) return;
+        lastSavedSignatureRef.current = signature;
 
         const criticalCount = result.summary?.critical_cases ?? 
                               (result.anomalies || []).filter(a => (a.risk_class || '').toLowerCase().includes('crit')).length ?? 0;
         const totalConsumers = result.summary?.total_consumers || (result.results?.length) || (result.anomalies?.length) || 0;
         const anomaliesCount = result.summary?.anomalies_detected || result.anomalies?.length || 0;
         const lossText = result.summary?.total_loss_calculated ? `₹${result.summary.total_loss_calculated.toString().replace(/,/g, '')}` : '₹0';
-        const fileName = selectedFile ? selectedFile.name : `consumer_dataset_${new Date().toISOString().slice(0, 10)}.csv`;
+        const fileName = actualFile.name;
 
         const newHist = {
             name: fileName,
@@ -329,13 +341,14 @@ const AdminDashboard = ({
             critical: criticalCount,
             anomalies: anomaliesCount,
             loss: lossText,
-            size: selectedFile ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` : '1.2 MB',
+            size: actualFile.size ? `${(actualFile.size / (1024 * 1024)).toFixed(1)} MB` : '1.2 MB',
             data: result
         };
 
-        // 1. Sync history log directly into Supabase database
+        // 1. Sync history log directly into Supabase database (replace older entry with same name if any)
         const saveHistoryToDB = async () => {
             try {
+                await supabase.from('upload_history').delete().eq('filename', fileName);
                 await supabase.from('upload_history').insert([{
                     filename: fileName,
                     uploaded_on: new Date().toISOString(),
@@ -355,12 +368,12 @@ const AdminDashboard = ({
         saveHistoryToDB();
 
         setUploadHistory(prev => {
-            const filtered = prev.filter(h => h.name !== newHist.name);
+            const filtered = prev.filter(h => h.name !== fileName && !h.name.startsWith('consumer_dataset_'));
             const nextList = [newHist, ...filtered];
             localStorage.setItem('vidyut_upload_history', JSON.stringify(nextList));
             return nextList;
         });
-    }, [result, selectedFile]);
+    }, [result, selectedFile, files]);
 
     // Save inspector to Supabase DB & state (no auth.signUp — FK constraint must be removed in Supabase)
     const handleSaveInspector = async (formattedName, badgeId, email, _password = '', discom = user?.discom || 'DISCOM') => {
