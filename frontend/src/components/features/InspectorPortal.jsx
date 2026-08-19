@@ -129,13 +129,14 @@ const InspectorPortal = ({ inspector, onLogout }) => {
     const [pastInspections, setPastInspections] = useState(() => {
         const saved = localStorage.getItem('vidyut_inspector_past_inspections');
         if (saved) {
-            try { return JSON.parse(saved); } catch (e) { console.error(e); }
+            try { 
+                const parsed = JSON.parse(saved); 
+                if (Array.isArray(parsed)) {
+                    return parsed.filter(item => !item.consumer.startsWith('CON-'));
+                }
+            } catch (e) { console.error(e); }
         }
-        return [
-            { id: 'INS-8849', consumer: 'CON-33201', zone: 'Rohini Sector 11', date: 'Aug 15, 2026', type: 'Meter Audit', result: 'Completed' },
-            { id: 'INS-8842', consumer: 'CON-45219', zone: 'Sector 5 West', date: 'Aug 12, 2026', type: 'Hooking Inspection', result: 'Completed' },
-            { id: 'INS-8831', consumer: 'CON-22108', zone: 'Sector 5 West', date: 'Aug 09, 2026', type: 'Seal Inspection', result: 'Completed' }
-        ];
+        return [];
     });
 
     useEffect(() => {
@@ -145,11 +146,14 @@ const InspectorPortal = ({ inspector, onLogout }) => {
     const [challans, setChallans] = useState(() => {
         const saved = localStorage.getItem('vidyut_inspector_challans');
         if (saved) {
-            try { return JSON.parse(saved); } catch (e) { console.error(e); }
+            try { 
+                const parsed = JSON.parse(saved); 
+                if (Array.isArray(parsed)) {
+                    return parsed.filter(item => !item.consumer.startsWith('CON-'));
+                }
+            } catch (e) { console.error(e); }
         }
-        return [
-            { id: 'CH-2026-01', consumer: 'CON-45219', anomaly: 'Direct Line Hooking', load: '4.5 kW', penalty: '₹25,000', status: 'Issued' }
-        ];
+        return [];
     });
 
     useEffect(() => {
@@ -175,9 +179,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
             };
         }
         return {
-            results: [
-                { consumer_id: 'CON-98401', transformer_id: 'T01', latitude: '28.6139', longitude: '77.2090', risk_class: 'critical', aggregate_risk_score: 0.92 }
-            ]
+            results: []
         };
     }, [myTasks]);
 

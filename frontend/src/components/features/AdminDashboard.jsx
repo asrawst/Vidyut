@@ -96,14 +96,14 @@ const AdminDashboard = ({
     const [inspectionCalendar, setInspectionCalendar] = useState(() => {
         const saved = localStorage.getItem('vidyut_inspection_calendar');
         if (saved) {
-            try { return JSON.parse(saved); } catch (e) { console.error(e); }
+            try { 
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) {
+                    return parsed.filter(item => !item.consumer.startsWith('CON-'));
+                }
+            } catch (e) { console.error(e); }
         }
-        return [
-            { consumer: 'CON-98401', zone: 'Sector 5 West', inspector: 'Inspector R. Sharma', status: 'Scheduled' },
-            { consumer: 'CON-10938', zone: 'Punjabi Bagh North', inspector: 'Inspector A. Verma', status: 'Pending Review' },
-            { consumer: 'CON-56402', zone: 'Karol Bagh St 2', inspector: 'Inspector K. Gupta', status: 'In Process' },
-            { consumer: 'CON-33201', zone: 'Rohini Sector 11', inspector: 'Inspector S. Iyer', status: 'Completed' },
-        ];
+        return [];
     });
 
     useEffect(() => {
@@ -180,26 +180,15 @@ const AdminDashboard = ({
                     setLocalInspectionStatus(prev => ({ ...prev, ...statusMap }));
                     localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(tasksData));
 
-                    // Sync Inspection Tab (Field Inspection Calendar) with DB tasks
-                    setInspectionCalendar(prev => {
-                        const newCalendar = [...prev];
-                        tasksData.forEach(task => {
-                            const idx = newCalendar.findIndex(c => c.consumer === task.consumer_id);
-                            const item = {
-                                consumer: task.consumer_id,
-                                zone: task.zone || (task.transformer_id ? `Transformer ${task.transformer_id}` : 'Sector 5 West'),
-                                inspector: task.inspector_name,
-                                status: task.status || 'Initiated'
-                            };
-                            if (idx >= 0) {
-                                newCalendar[idx] = item;
-                            } else {
-                                newCalendar.push(item);
-                            }
-                        });
-                        localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(newCalendar));
-                        return newCalendar;
-                    });
+                    // Sync Inspection Tab (Field Inspection Calendar) strictly with real DB tasks
+                    const realCalendar = tasksData.map(task => ({
+                        consumer: task.consumer_id,
+                        zone: task.zone || (task.transformer_id ? `Transformer ${task.transformer_id}` : 'Delhi Grid Area'),
+                        inspector: task.inspector_name,
+                        status: task.status || 'Initiated'
+                    }));
+                    setInspectionCalendar(realCalendar);
+                    localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(realCalendar));
                 }
             } catch (err) {
                 console.error("Error loading tasks from Supabase:", err);
@@ -1585,9 +1574,18 @@ const AdminDashboard = ({
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {inspectionCalendar.map((ins, idx) => (
-                                                <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                                    {editingCalendarId === ins.consumer ? (
+                                            {inspectionCalendar.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="5" style={{ textAlign: 'center', padding: '3.5rem 1rem', color: 'rgba(255,255,255,0.4)' }}>
+                                                        <Calendar size={32} style={{ margin: '0 auto 0.75rem auto', opacity: 0.35, display: 'block' }} />
+                                                        <div style={{ fontSize: '0.95rem', fontWeight: '500', color: 'rgba(255,255,255,0.6)' }}>No Field Inspections Scheduled</div>
+                                                        <div style={{ fontSize: '0.8rem', marginTop: '0.35rem', color: 'rgba(255,255,255,0.35)' }}>Assign an inspector to any detected anomaly in the Overview tab to schedule an inspection.</div>
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                inspectionCalendar.map((ins, idx) => (
+                                                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                        {editingCalendarId === ins.consumer ? (
                                                         <>
                                                             {/* Inline Calendar Edit */}
                                                             <td style={{ padding: '1rem', fontWeight: '600' }}>{ins.consumer}</td>
@@ -1736,7 +1734,7 @@ const AdminDashboard = ({
                                                         </>
                                                     )}
                                                 </tr>
-                                            ))}
+                                            )))}
                                         </tbody>
                                     </table>
                                 </div>
