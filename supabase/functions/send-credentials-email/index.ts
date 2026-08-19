@@ -6,13 +6,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Generate a strong random password: Vidyut + 4 digits + special char
+function generatePassword(): string {
+  const digits = Math.floor(1000 + Math.random() * 9000)
+  const specials = ['@', '#', '!', '$', '&']
+  const special = specials[Math.floor(Math.random() * specials.length)]
+  const upper = String.fromCharCode(65 + Math.floor(Math.random() * 26))
+  return `Vidyut${digits}${special}${upper}`
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { inspectorEmail, inspectorName, redirectTo } = await req.json()
+    const { inspectorEmail, inspectorName } = await req.json()
 
     if (!inspectorEmail || !inspectorName) {
       return new Response(
@@ -23,76 +32,117 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? ''
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    // Always prefer the production Vercel URL so redirect works regardless of origin
-    const portalUrl = 'https://vidyut-dexter.vercel.app/inspector-portal'
+    const password = generatePassword()
+    const portalUrl = 'https://vidyut-dexter.vercel.app'
 
-    // Try invite first (works for new users)
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      inspectorEmail,
-      { redirectTo: portalUrl, data: { display_name: inspectorName, role: 'inspector' } }
-    )
+    // Step 1: Check if user already exists in auth
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+    const existingUser = existingUsers?.users?.find((u: any) => u.email === inspectorEmail)
 
-    if (!inviteError) {
-      // Invite sent successfully
-      return new Response(
-        JSON.stringify({ success: true, method: 'invite', userId: inviteData.user?.id }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    let userId: string
+
+    if (existingUser) {
+      // Update password for existing auth user
+      const { data: updated, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        existingUser.id,
+        { password, email_confirm: true }
       )
-    }
-
-    // If user already exists in auth, generate a password reset link instead
-    if (inviteError.message?.toLowerCase().includes('already') || inviteError.message?.toLowerCase().includes('registered')) {
-      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-        type: 'recovery',
-        email: inspectorEmail,
-        options: { redirectTo: portalUrl }
-      })
-
-      if (linkError) {
-        console.error('Generate link error:', linkError.message)
+      if (updateError) {
         return new Response(
-          JSON.stringify({ error: linkError.message }),
+          JSON.stringify({ error: `Failed to update credentials: ${updateError.message}` }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
-
-      // Send the reset link via Resend
-      const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-      if (RESEND_API_KEY && linkData?.properties?.action_link) {
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${RESEND_API_KEY}` },
-          body: JSON.stringify({
-            from: 'Vidyut Portal <no-reply@vidyut.com>',
-            to: inspectorEmail,
-            subject: 'Your Vidyut Inspector Portal Access',
-            html: `
-              <h2>Hello ${inspectorName},</h2>
-              <p>Your login credentials for the Vidyut Inspector Portal have been updated.</p>
-              <p><a href="${linkData.properties.action_link}" style="background:#c8a261;color:#000;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Set Your Password & Login</a></p>
-              <p>This link expires in 24 hours.</p>
-              <br/><p>— Vidyut Operations Team</p>
-            `
-          })
-        })
+      userId = existingUser.id
+    } else {
+      // Create new auth user with generated password
+      const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: inspectorEmail,
+        password,
+        email_confirm: true,  // Skip email confirmation — credentials sent directly
+        user_metadata: { display_name: inspectorName, role: 'inspector' }
+      })
+      if (createError) {
+        return new Response(
+          JSON.stringify({ error: `Failed to create account: ${createError.message}` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
       }
+      userId = created.user.id
+    }
 
+    // Step 2: Send credentials email via Resend
+    if (!RESEND_API_KEY) {
       return new Response(
-        JSON.stringify({ success: true, method: 'recovery' }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'RESEND_API_KEY secret not set in edge function. Please add it via Supabase dashboard.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Any other invite error
-    console.error('Invite error:', inviteError.message)
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"><title>Vidyut Inspector Portal Access</title></head>
+      <body style="margin:0;padding:0;background:#0a0a0a;font-family:'Segoe UI',Arial,sans-serif;">
+        <div style="max-width:520px;margin:40px auto;background:#141414;border-radius:12px;overflow:hidden;border:1px solid rgba(200,162,97,0.2);">
+          <div style="background:linear-gradient(135deg,#1a1208,#2a1f0e);padding:32px;text-align:center;border-bottom:1px solid rgba(200,162,97,0.2);">
+            <h1 style="color:#c8a261;margin:0;font-size:1.6rem;letter-spacing:2px;">⚡ VIDYUT</h1>
+            <p style="color:rgba(255,255,255,0.5);margin:6px 0 0;font-size:0.85rem;letter-spacing:1px;">ELECTRICITY THEFT DETECTION SYSTEM</p>
+          </div>
+          <div style="padding:32px;">
+            <h2 style="color:#ffffff;font-size:1.2rem;margin:0 0 8px;">Hello, Inspector ${inspectorName}</h2>
+            <p style="color:rgba(255,255,255,0.6);font-size:0.9rem;line-height:1.6;margin:0 0 24px;">
+              Your Field Inspector Portal account has been created. Use the credentials below to log in.
+            </p>
+            <div style="background:#0a0a0a;border:1px solid rgba(200,162,97,0.3);border-radius:8px;padding:20px;margin-bottom:24px;">
+              <p style="margin:0 0 12px;"><span style="color:rgba(255,255,255,0.4);font-size:0.8rem;display:block;margin-bottom:4px;">LOGIN EMAIL</span><strong style="color:#ffffff;font-size:1rem;">${inspectorEmail}</strong></p>
+              <p style="margin:0;"><span style="color:rgba(255,255,255,0.4);font-size:0.8rem;display:block;margin-bottom:4px;">TEMPORARY PASSWORD</span><strong style="color:#c8a261;font-size:1.1rem;letter-spacing:2px;">${password}</strong></p>
+            </div>
+            <a href="${portalUrl}" style="display:block;text-align:center;background:#c8a261;color:#000;padding:14px 24px;border-radius:8px;font-weight:700;text-decoration:none;font-size:0.95rem;margin-bottom:24px;">
+              Login to Inspector Portal →
+            </a>
+            <p style="color:rgba(255,255,255,0.35);font-size:0.78rem;line-height:1.5;margin:0;text-align:center;">
+              Please change your password after your first login.<br/>Do not share these credentials with anyone.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+
+    const resendRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${RESEND_API_KEY}`
+      },
+      body: JSON.stringify({
+        from: 'Vidyut Portal <onboarding@resend.dev>',
+        to: inspectorEmail,
+        subject: `Your Vidyut Inspector Portal Login Credentials`,
+        html: emailHtml
+      })
+    })
+
+    const resendData = await resendRes.json()
+
+    if (!resendRes.ok) {
+      console.error('Resend error:', resendData)
+      return new Response(
+        JSON.stringify({ error: `Email delivery failed: ${resendData.message || JSON.stringify(resendData)}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     return new Response(
-      JSON.stringify({ error: inviteError.message }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, userId, emailId: resendData.id }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (err) {
