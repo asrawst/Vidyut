@@ -1261,7 +1261,7 @@ const AdminDashboard = ({
                     )}
 
                     {activeTab === 'Inspection' && (
-                        <div className="dashboard-panel" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem' }}>
+                        <div className="dashboard-panel" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
                             {/* Calendar List (Editable) */}
                             <div className="panel-card" style={{ height: 'fit-content' }}>
                                 <h3 className="panel-title">Field Inspection Calendar</h3>
@@ -1384,108 +1384,6 @@ const AdminDashboard = ({
                                         </tbody>
                                     </table>
                                 </div>
-                            </div>
-
-                            {/* Generate Inspector Credential Form */}
-                            <div className="panel-card" style={{ height: 'fit-content' }}>
-                                <h3 className="panel-title">Generate Inspector Credential</h3>
-                                <form 
-                                    onSubmit={async (e) => {
-                                        e.preventDefault();
-                                        if (newInspector.name && newInspector.email && newInspector.password) {
-                                            const formattedName = `Inspector ${newInspector.name}`;
-                                            if (inspectorsList.includes(formattedName)) {
-                                                alert("Inspector name already exists!");
-                                                return;
-                                            }
-                                            const success = await handleSaveInspector(formattedName, newInspector.badgeId, newInspector.email, newInspector.password, 'Tata Power DDL');
-                                            if (success) {
-                                                alert(`Account credentials generated successfully for ${formattedName} (Badge ID: ${newInspector.badgeId || 'INS-GEN-01'}). Credentials synced to Supabase database.`);
-                                                setNewInspector({ name: '', badgeId: '', email: '', password: '' });
-                                            }
-                                        } else {
-                                            alert("Please fill in name, email and password.");
-                                        }
-                                    }}
-                                    style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
-                                >
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Inspector Full Name *</label>
-                                        <input 
-                                            type="text"
-                                            value={newInspector.name}
-                                            onChange={e => setNewInspector({ ...newInspector, name: e.target.value })}
-                                            placeholder="e.g. R. Sharma"
-                                            required
-                                            style={{
-                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
-                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
-                                            }}
-                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
-                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
-                                        />
-                                    </div>
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Badge Identification ID</label>
-                                        <input 
-                                            type="text"
-                                            value={newInspector.badgeId}
-                                            onChange={e => setNewInspector({ ...newInspector, badgeId: e.target.value })}
-                                            placeholder="e.g. INS-DEL-88402"
-                                            style={{
-                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
-                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
-                                            }}
-                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
-                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
-                                        />
-                                    </div>
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Email Address *</label>
-                                        <input 
-                                            type="email"
-                                            value={newInspector.email}
-                                            onChange={e => setNewInspector({ ...newInspector, email: e.target.value })}
-                                            placeholder="e.g. inspector@vidyut.com"
-                                            required
-                                            style={{
-                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
-                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
-                                            }}
-                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
-                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
-                                        />
-                                    </div>
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Temporary Access Password *</label>
-                                        <input 
-                                            type="password"
-                                            value={newInspector.password}
-                                            onChange={e => setNewInspector({ ...newInspector, password: e.target.value })}
-                                            placeholder="••••••••"
-                                            required
-                                            style={{
-                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
-                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
-                                            }}
-                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
-                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
-                                        />
-                                    </div>
-
-                                    <button 
-                                        type="submit"
-                                        style={{
-                                            background: 'white', color: 'black', padding: '0.75rem 1.5rem', 
-                                            borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer', alignSelf: 'flex-start', marginTop: '0.5rem'
-                                        }}
-                                    >
-                                        Generate Inspector Credential
-                                    </button>
-                                </form>
                             </div>
                         </div>
                     )}
