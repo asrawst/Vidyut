@@ -367,7 +367,7 @@ function App() {
                         email: insEmail,
                         displayName: inspectorRow.display_name || insEmail.split('@')[0].toUpperCase(),
                         badgeId: inspectorRow.badge_id,
-                        discom: inspectorRow.discom || 'Tata Power DDL'
+                        discom: inspectorRow.discom
                       });
                       setIsInspectorModalOpen(false);
                       setInsEmail('');

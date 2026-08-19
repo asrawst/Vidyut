@@ -113,7 +113,7 @@ const AdminDashboard = ({
                     name: ins.display_name,
                     badgeId: ins.badge_id || 'INS-GEN-01',
                     email: ins.email,
-                    discom: ins.discom || 'Tata Power DDL',
+                    discom: ins.discom || user?.discom || 'DISCOM',
                     created: ins.created_at ? new Date(ins.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Aug 10, 2026'
                 }));
                 setInspectorsDetails(formatted);
@@ -175,7 +175,7 @@ const AdminDashboard = ({
     }, [result, selectedFile]);
 
     // Save inspector to Supabase DB & state (no auth.signUp — FK constraint must be removed in Supabase)
-    const handleSaveInspector = async (formattedName, badgeId, email, _password = '', discom = 'Tata Power DDL') => {
+    const handleSaveInspector = async (formattedName, badgeId, email, _password = '', discom = user?.discom || 'DISCOM') => {
         const generatedBadgeId = badgeId || `INS-DEL-${Math.floor(10000 + Math.random() * 90000)}`;
 
         // Generate a UUID for the id column (works once FK constraint to auth.users is dropped)
@@ -1530,7 +1530,7 @@ const AdminDashboard = ({
                                                 alert("Inspector name already exists!");
                                                 return;
                                             }
-                                            const success = await handleSaveInspector(formattedName, newInspector.badgeId, newInspector.email, '', 'Tata Power DDL');
+                                            const success = await handleSaveInspector(formattedName, newInspector.badgeId, newInspector.email, '', user?.discom);
                                             if (success) {
                                                 alert(`Inspector ${formattedName} added successfully to portal records.`);
                                                 setNewInspector({ name: '', badgeId: '', email: '', password: '' });
