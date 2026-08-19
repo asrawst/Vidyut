@@ -389,11 +389,50 @@ const AdminDashboard = ({
         
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", hist.name);
+        link.setAttribute("download", hist.name || 'analysis_history.csv');
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
+
+    // Synchronize coordinates of assigned tasks whenever result dataset is loaded
+    useEffect(() => {
+        if (!result) return;
+        const allItems = [...(result.results || []), ...(result.anomalies || [])];
+        if (allItems.length === 0) return;
+
+        const syncTaskCoordinates = async () => {
+            try {
+                const { data: dbTasks } = await supabase.from('inspection_tasks').select('*');
+                if (dbTasks && dbTasks.length > 0) {
+                    for (const task of dbTasks) {
+                        const match = allItems.find(item => item.consumer_id === task.consumer_id);
+                        if (match && match.latitude && match.longitude) {
+                            const exactLat = parseFloat(match.latitude).toFixed(4);
+                            const exactLng = parseFloat(match.longitude).toFixed(4);
+                            if (task.latitude !== exactLat || task.longitude !== exactLng) {
+                                await supabase
+                                    .from('inspection_tasks')
+                                    .update({
+                                        latitude: exactLat,
+                                        longitude: exactLng,
+                                        transformer_id: match.transformer_id || task.transformer_id,
+                                        risk_score: match.aggregate_risk_score ?? match.risk_score ?? task.risk_score,
+                                        risk_class: match.risk_class || task.risk_class,
+                                        updated_at: new Date().toISOString()
+                                    })
+                                    .eq('consumer_id', task.consumer_id);
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Error auto-syncing coordinates from result:", err);
+            }
+        };
+
+        syncTaskCoordinates();
+    }, [result]);
 
     // Handle status change in table
     const handleStatusChange = (consumerId, newStatus) => {
@@ -422,15 +461,23 @@ const AdminDashboard = ({
             [consumerId]: inspector
         }));
 
-        // Find consumer details in result to get zone, transformer, coordinates & risk
-        const consumerObj = result?.anomalies?.find(a => a.consumer_id === consumerId) ||
-                            result?.results?.find(a => a.consumer_id === consumerId);
+        // Find consumer details in result to get zone, transformer, exact coordinates & risk
+        const consumerObj = result?.results?.find(a => a.consumer_id === consumerId) ||
+                            result?.anomalies?.find(a => a.consumer_id === consumerId);
         const zoneArea = consumerObj?.transformer_id ? `Transformer ${consumerObj.transformer_id}` : 'Sector 5 West';
 
-        // Derive coordinates if not explicitly present (accurate within Delhi BSES grid)
-        const charSum = consumerId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-        const derivedLat = (consumerObj?.latitude || (28.6139 + (((charSum * 17) % 100) - 50) * 0.0012)).toString();
-        const derivedLng = (consumerObj?.longitude || (77.2090 + (((charSum * 31) % 100) - 50) * 0.0012)).toString();
+        // Extract exact coordinates from dataset or derive cleanly if absent
+        let exactLat = consumerObj?.latitude;
+        let exactLng = consumerObj?.longitude;
+
+        if (!exactLat || !exactLng || isNaN(parseFloat(exactLat)) || isNaN(parseFloat(exactLng))) {
+            const charSum = consumerId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+            exactLat = (28.6139 + (((charSum * 17) % 100) - 50) * 0.0012).toFixed(4);
+            exactLng = (77.2090 + (((charSum * 31) % 100) - 50) * 0.0012).toFixed(4);
+        } else {
+            exactLat = parseFloat(exactLat).toFixed(4);
+            exactLng = parseFloat(exactLng).toFixed(4);
+        }
 
         const inspectorInfo = inspectorsDetails.find(ins => ins.name === inspector);
         const inspectorEmail = inspectorInfo?.email || '';
@@ -444,8 +491,8 @@ const AdminDashboard = ({
                 risk_score: consumerObj?.aggregate_risk_score ?? consumerObj?.risk_score ?? 0.85,
                 risk_class: consumerObj?.risk_class || 'critical',
                 status: localInspectionStatus[consumerId] || 'Initiated',
-                latitude: derivedLat,
-                longitude: derivedLng,
+                latitude: exactLat,
+                longitude: exactLng,
                 zone: zoneArea,
                 discom: user?.discom || 'BSES Rajdhani Power',
                 assigned_at: new Date().toISOString(),

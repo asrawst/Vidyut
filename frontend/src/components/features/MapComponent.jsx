@@ -112,13 +112,16 @@ const MapComponent = ({ data }) => {
                         icon={item.icon}
                     >
                         <Popup className="custom-popup">
-                            <div style={{ color: '#1e293b', fontSize: '0.85rem', lineHeight: '1.4' }}>
-                                <strong style={{ fontSize: '0.95rem' }}>Consumer: {item.consumer_id}</strong><br />
+                            <div style={{ color: '#1e293b', fontSize: '0.85rem', lineHeight: '1.5' }}>
+                                <strong style={{ fontSize: '0.95rem', color: '#0f172a' }}>Consumer: {item.consumer_id}</strong><br />
                                 {item.transformer_id && (
                                     <>
                                         <span style={{ color: '#475569' }}>Transformer: <strong>{item.transformer_id}</strong></span><br />
                                     </>
                                 )}
+                                <span style={{ color: '#334155' }}>
+                                    Coordinates: <strong>{parseFloat(item.lat).toFixed(4)}&deg; N, {parseFloat(item.lng).toFixed(4)}&deg; E</strong>
+                                </span><br />
                                 <span>Theft Risk: <strong>{(((item.aggregate_risk_score ?? item.risk_score ?? 0.85)) * 100).toFixed(0)}%</strong></span><br />
                                 <span style={{ 
                                     textTransform: 'capitalize', 
