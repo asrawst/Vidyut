@@ -558,9 +558,12 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                         </div>
                                     </div>
                                     
-                                    {/* Leaflet Map with real coordinates */}
+                                    {/* Leaflet Map with real coordinates & auto-zoom flyTo */}
                                     <div style={{ height: '380px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
-                                        <MapComponent data={activeMapData} />
+                                        <MapComponent 
+                                            data={activeMapData} 
+                                            focusedConsumerId={currentTask?.consumer_id}
+                                        />
                                     </div>
                                 </div>
 

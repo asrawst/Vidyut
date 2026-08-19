@@ -53,21 +53,30 @@ function MapController({ focusedConsumerId, markers, markerRefs }) {
     const map = useMap();
 
     useEffect(() => {
-        if (!focusedConsumerId || !markers || markers.length === 0) return;
-        const target = markers.find(m => m.consumer_id === focusedConsumerId);
-        if (target && !isNaN(target.lat) && !isNaN(target.lng)) {
-            map.flyTo([target.lat, target.lng], 16, {
-                animate: true,
-                duration: 1.2
-            });
+        if (!markers || markers.length === 0) return;
 
-            // Automatically open the popup for the selected pin
-            const markerInstance = markerRefs.current[target.consumer_id];
-            if (markerInstance) {
+        // Find the target marker: either the explicitly focused consumer or the single assigned task
+        const target = focusedConsumerId 
+            ? markers.find(m => m.consumer_id === focusedConsumerId)
+            : (markers.length === 1 ? markers[0] : null);
+
+        if (target && !isNaN(target.lat) && !isNaN(target.lng)) {
+            const timer = setTimeout(() => {
+                map.invalidateSize();
+                map.flyTo([target.lat, target.lng], 16, {
+                    animate: true,
+                    duration: 1.4
+                });
+
                 setTimeout(() => {
-                    markerInstance.openPopup();
-                }, 600);
-            }
+                    const markerInstance = markerRefs.current[target.consumer_id];
+                    if (markerInstance) {
+                        markerInstance.openPopup();
+                    }
+                }, 750);
+            }, 150);
+
+            return () => clearTimeout(timer);
         }
     }, [focusedConsumerId, markers, map, markerRefs]);
 
