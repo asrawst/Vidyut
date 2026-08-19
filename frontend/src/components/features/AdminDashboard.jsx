@@ -3,7 +3,7 @@ import {
     User, ListCollapse, Ban, TrendingUp, Calendar, AlertTriangle, 
     History as HistoryIcon, Settings as SettingsIcon, UploadCloud, 
     Download, RefreshCw, Layers, ShieldAlert, Sparkles, MapPin, 
-    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2 
+    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity 
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LineChart, Line } from 'recharts';
 import MapComponent from './MapComponent';
@@ -235,6 +235,8 @@ const AdminDashboard = ({
                     });
                 }
             })
+            .subscribe();
+
         // Load upload history from Supabase DB
         const fetchUploadHistory = async () => {
             try {
@@ -243,7 +245,7 @@ const AdminDashboard = ({
                     .select('*')
                     .order('created_at', { ascending: false });
 
-                if (histData && !histErr && histData.length > 0) {
+                if (histData && !histErr) {
                     const formatted = histData.map(h => ({
                         id: h.id,
                         name: h.filename,
@@ -275,7 +277,6 @@ const AdminDashboard = ({
             .subscribe();
 
         return () => {
-            subscription.unsubscribe();
             supabase.removeChannel(tasksChannel);
             supabase.removeChannel(histChannel);
         };
