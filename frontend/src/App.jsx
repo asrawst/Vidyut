@@ -56,10 +56,10 @@ function App() {
   const [insLoginLoading, setInsLoginLoading] = useState(false);
   const [insLoginError, setInsLoginError] = useState('');
 
-  // Initialize theme from storage
+  // Clean up any stale theme tokens
   useEffect(() => {
-    const savedTheme = localStorage.getItem('vidyut_theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    localStorage.removeItem('vidyut_theme');
+    document.documentElement.removeAttribute('data-theme');
   }, []);
 
   // Handle Supabase password reset / recovery redirects

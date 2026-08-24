@@ -16,12 +16,10 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         localStorage.setItem('vidyut_inspector_active_tab', activeTab);
     }, [activeTab]);
 
-    const [theme, setTheme] = useState(() => localStorage.getItem('vidyut_theme') || 'dark');
-
     useEffect(() => {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('vidyut_theme', theme);
-    }, [theme]);
+        localStorage.removeItem('vidyut_theme');
+        document.documentElement.removeAttribute('data-theme');
+    }, []);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     
@@ -1085,117 +1083,32 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
                 {/* SETTINGS VIEW */}
                 {activeTab === 'Settings' && (
-                    <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '2rem', maxWidth: '640px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-                        <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.15rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Settings size={20} style={{ color: 'var(--accent-blue)' }} />
-                            Inspector Portal Configuration
-                        </h3>
-
-                        {/* Theme Toggle Section */}
-                        <div style={{ marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                            <label style={{ display: 'block', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.35rem' }}>
-                                Appearance & Theme
-                            </label>
-                            <p style={{ margin: '0 0 1rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                Toggle between Dark Mode and Light Mode for optimal outdoor field visibility.
-                            </p>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                                {/* Dark Mode Card */}
-                                <div 
-                                    onClick={() => setTheme('dark')}
-                                    style={{
-                                        background: theme === 'dark' ? 'rgba(200, 162, 97, 0.12)' : 'rgba(0, 0, 0, 0.15)',
-                                        border: `2px solid ${theme === 'dark' ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.08)'}`,
-                                        borderRadius: '12px',
-                                        padding: '1.1rem',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.85rem',
-                                        boxShadow: theme === 'dark' ? '0 0 15px rgba(200, 162, 97, 0.2)' : 'none'
-                                    }}
-                                >
-                                    <div style={{
-                                        width: '38px',
-                                        height: '38px',
-                                        borderRadius: '10px',
-                                        background: '#12100e',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#c8a261'
-                                    }}>
-                                        <Moon size={18} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontWeight: '600', fontSize: '0.9rem', color: theme === 'dark' ? 'white' : 'inherit' }}>Dark Theme</div>
-                                        <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>Night & Low-Light</div>
-                                    </div>
-                                </div>
-
-                                {/* Light Mode Card */}
-                                <div 
-                                    onClick={() => setTheme('light')}
-                                    style={{
-                                        background: theme === 'light' ? 'rgba(200, 162, 97, 0.12)' : 'rgba(0, 0, 0, 0.15)',
-                                        border: `2px solid ${theme === 'light' ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.08)'}`,
-                                        borderRadius: '12px',
-                                        padding: '1.1rem',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.85rem',
-                                        boxShadow: theme === 'light' ? '0 0 15px rgba(200, 162, 97, 0.2)' : 'none'
-                                    }}
-                                >
-                                    <div style={{
-                                        width: '38px',
-                                        height: '38px',
-                                        borderRadius: '10px',
-                                        background: '#ffffff',
-                                        border: '1px solid rgba(0, 0, 0, 0.1)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#b38938'
-                                    }}>
-                                        <Sun size={18} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontWeight: '600', fontSize: '0.9rem', color: theme === 'light' ? '#0f172a' : 'inherit' }}>Light Theme</div>
-                                        <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>Daylight & Sunlight</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
+                    <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '2rem', maxWidth: '600px' }}>
+                        <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: 'white' }}>Portal Configuration</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Map Render Style</label>
-                                <select style={{ padding: '0.7rem 1rem', background: 'var(--input-bg, #12100e)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' }}>
-                                    <option>Standard Vector tiles (Adaptive)</option>
+                                <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Map Render Style</label>
+                                <select style={{ padding: '0.7rem 1rem', background: '#12100e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' }}>
+                                    <option>Dark Mode Vector tiles (CARTO)</option>
                                     <option>Satellite Orthophoto maps</option>
                                     <option>Standard Street Map (OpenStreetMap)</option>
                                 </select>
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Offline Sync Syncing</label>
+                                <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Offline Sync Syncing</label>
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.25rem' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'white' }}>
                                         <input type="checkbox" defaultChecked /> Auto Sync over cellular networks (3G/4G/5G)
                                     </label>
                                 </div>
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>GPS Tracking Precision</label>
+                                <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>GPS Tracking Precision</label>
                                 <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.25rem' }}>
                                     {['High Precision', 'Battery Saver'].map(mode => (
-                                        <label key={mode} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                                        <label key={mode} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'white' }}>
                                             <input type="radio" name="gps-mode" defaultChecked={mode === 'High Precision'} /> {mode}
                                         </label>
                                     ))}

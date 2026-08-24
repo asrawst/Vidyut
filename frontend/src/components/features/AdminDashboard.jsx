@@ -132,12 +132,10 @@ const AdminDashboard = ({
         localStorage.setItem('vidyut_upload_history', JSON.stringify(uploadHistory));
     }, [uploadHistory]);
 
-    const [theme, setTheme] = useState(() => localStorage.getItem('vidyut_theme') || 'dark');
-
     useEffect(() => {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('vidyut_theme', theme);
-    }, [theme]);
+        localStorage.removeItem('vidyut_theme');
+        document.documentElement.removeAttribute('data-theme');
+    }, []);
 
     // Fetch inspectors directory from Supabase — fires only once auth session is confirmed
     useEffect(() => {
@@ -2231,88 +2229,6 @@ const AdminDashboard = ({
 
                     {activeTab === 'Settings' && (
                         <div className="dashboard-panel">
-                            {/* Theme & Appearance Configuration */}
-                            <div className="panel-card" style={{ marginBottom: '1.5rem' }}>
-                                <h3 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                    {theme === 'dark' ? <Moon size={20} style={{ color: 'var(--accent-blue)' }} /> : <Sun size={20} style={{ color: '#f59e0b' }} />}
-                                    Appearance & Theme
-                                </h3>
-                                <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                    Choose your preferred workspace visual style. This setting persists across browser sessions.
-                                </p>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-                                    {/* Dark Mode Card */}
-                                    <div 
-                                        onClick={() => setTheme('dark')}
-                                        style={{
-                                            background: theme === 'dark' ? 'rgba(200, 162, 97, 0.12)' : 'rgba(0, 0, 0, 0.15)',
-                                            border: `2px solid ${theme === 'dark' ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.08)'}`,
-                                            borderRadius: '12px',
-                                            padding: '1.25rem',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem',
-                                            boxShadow: theme === 'dark' ? '0 0 15px rgba(200, 162, 97, 0.2)' : 'none'
-                                        }}
-                                    >
-                                        <div style={{
-                                            width: '42px',
-                                            height: '42px',
-                                            borderRadius: '10px',
-                                            background: '#12100e',
-                                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: '#c8a261'
-                                        }}>
-                                            <Moon size={20} />
-                                        </div>
-                                        <div>
-                                            <div style={{ fontWeight: '600', fontSize: '0.95rem', color: theme === 'dark' ? 'white' : 'inherit' }}>Dark Theme</div>
-                                            <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>Charcoal & Copper Gold</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Light Mode Card */}
-                                    <div 
-                                        onClick={() => setTheme('light')}
-                                        style={{
-                                            background: theme === 'light' ? 'rgba(200, 162, 97, 0.12)' : 'rgba(0, 0, 0, 0.15)',
-                                            border: `2px solid ${theme === 'light' ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.08)'}`,
-                                            borderRadius: '12px',
-                                            padding: '1.25rem',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem',
-                                            boxShadow: theme === 'light' ? '0 0 15px rgba(200, 162, 97, 0.2)' : 'none'
-                                        }}
-                                    >
-                                        <div style={{
-                                            width: '42px',
-                                            height: '42px',
-                                            borderRadius: '10px',
-                                            background: '#ffffff',
-                                            border: '1px solid rgba(0, 0, 0, 0.1)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: '#b38938'
-                                        }}>
-                                            <Sun size={20} />
-                                        </div>
-                                        <div>
-                                            <div style={{ fontWeight: '600', fontSize: '0.95rem', color: theme === 'light' ? '#0f172a' : 'inherit' }}>Light Theme</div>
-                                            <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>Crisp Slate & Clean White</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             <div className="panel-card">
                                 <h3 className="panel-title">Threshold Configurator</h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
