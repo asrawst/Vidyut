@@ -6,6 +6,7 @@ import UploadBlock from './components/features/UploadBlock';
 import FetchButton from './components/common/FetchButton';
 import LoginModal from './components/modals/LoginModal';
 import AboutUsModal from './components/modals/AboutUsModal';
+import ResetPasswordModal from './components/modals/ResetPasswordModal';
 import AdminDashboard from './components/features/AdminDashboard';
 import InspectorPortal from './components/features/InspectorPortal';
 import { createClient } from '@supabase/supabase-js';
@@ -49,10 +50,32 @@ function App() {
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isServicesModalOpen, setIsServicesModalOpen] = useState(false);
   const [isInspectorModalOpen, setIsInspectorModalOpen] = useState(false);
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
   const [insEmail, setInsEmail] = useState('');
   const [insPassword, setInsPassword] = useState('');
   const [insLoginLoading, setInsLoginLoading] = useState(false);
   const [insLoginError, setInsLoginError] = useState('');
+
+  // Handle Supabase password reset / recovery redirects
+  useEffect(() => {
+    // 1. Check URL hash / search params on initial load
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    if (hash.includes('type=recovery') || search.includes('type=recovery')) {
+      setIsResetPasswordModalOpen(true);
+    }
+
+    // 2. Listen to Supabase PASSWORD_RECOVERY auth state change event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsResetPasswordModalOpen(true);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
 
   // Persist authentication and results in localStorage
   useEffect(() => {
@@ -462,6 +485,37 @@ function App() {
           onLoginSuccess={(mockUser) => {
             setUser(mockUser);
             setIsLoginModalOpen(false);
+          }}
+        />
+      )}
+
+      {/* ResetPasswordModal */}
+      {isResetPasswordModalOpen && (
+        <ResetPasswordModal
+          onClose={() => {
+            setIsResetPasswordModalOpen(false);
+            window.history.replaceState(null, '', window.location.pathname);
+          }}
+          onSuccess={async (authUser) => {
+            setIsResetPasswordModalOpen(false);
+            window.history.replaceState(null, '', window.location.pathname);
+            
+            // Re-authenticate and load admin session
+            if (authUser) {
+              const { data: adminRow } = await supabase
+                .from('admin_users')
+                .select('discom, state')
+                .eq('email', authUser.email)
+                .single();
+
+              setUser({
+                email: authUser.email,
+                discom: adminRow?.discom || 'BSES Rajdhani Power Limited',
+                state: adminRow?.state || 'Delhi'
+              });
+            } else {
+              setIsLoginModalOpen(true);
+            }
           }}
         />
       )}

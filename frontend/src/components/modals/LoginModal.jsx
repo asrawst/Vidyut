@@ -52,10 +52,36 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [forgotLoading, setForgotLoading] = useState(false);
+    const [forgotMessage, setForgotMessage] = useState('');
+
+    const handleForgotPassword = async () => {
+        if (!email || !email.includes('@')) {
+            setError('Please enter your email address first to receive a password reset link.');
+            return;
+        }
+        setError('');
+        setForgotLoading(true);
+        try {
+            const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
+                redirectTo: `${window.location.origin}/`
+            });
+            if (resetErr) {
+                setError(resetErr.message);
+            } else {
+                setForgotMessage(`✅ Password reset link sent to ${email}! Check your inbox.`);
+            }
+        } catch (err) {
+            setError('Failed to send reset email. Please try again.');
+        } finally {
+            setForgotLoading(false);
+        }
+    };
 
     // Reset fields on toggle
     useEffect(() => {
         setError('');
+        setForgotMessage('');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
@@ -373,7 +399,42 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
+                        {!isSignUp && (
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.2rem' }}>
+                                <button
+                                    type="button"
+                                    onClick={handleForgotPassword}
+                                    disabled={forgotLoading}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#c8a261',
+                                        fontSize: '0.8rem',
+                                        fontWeight: '500',
+                                        cursor: forgotLoading ? 'not-allowed' : 'pointer',
+                                        padding: 0,
+                                        opacity: forgotLoading ? 0.6 : 0.9
+                                    }}
+                                >
+                                    {forgotLoading ? 'Sending link...' : 'Forgot password?'}
+                                </button>
+                            </div>
+                        )}
                     </div>
+
+                    {forgotMessage && (
+                        <div style={{
+                            padding: '0.6rem 0.9rem',
+                            background: 'rgba(16, 185, 129, 0.12)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            borderRadius: '6px',
+                            color: '#34d399',
+                            fontSize: '0.85rem',
+                            lineHeight: '1.4'
+                        }}>
+                            {forgotMessage}
+                        </div>
+                    )}
 
                     {/* SignUp Fields */}
                     {isSignUp && (
