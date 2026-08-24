@@ -3,7 +3,7 @@ import {
     User, ListCollapse, Ban, TrendingUp, Calendar, AlertTriangle, 
     History as HistoryIcon, Settings as SettingsIcon, UploadCloud, 
     Download, RefreshCw, Layers, ShieldAlert, Sparkles, MapPin, 
-    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity 
+    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Sun, Moon 
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LineChart, Line } from 'recharts';
 import MapComponent from './MapComponent';
@@ -131,6 +131,13 @@ const AdminDashboard = ({
     useEffect(() => {
         localStorage.setItem('vidyut_upload_history', JSON.stringify(uploadHistory));
     }, [uploadHistory]);
+
+    const [theme, setTheme] = useState(() => localStorage.getItem('vidyut_theme') || 'dark');
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('vidyut_theme', theme);
+    }, [theme]);
 
     // Fetch inspectors directory from Supabase — fires only once auth session is confirmed
     useEffect(() => {
@@ -961,7 +968,15 @@ const AdminDashboard = ({
                                                         ))}
                                                     </Pie>
                                                     <Tooltip 
-                                                        contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white' }}
+                                                        contentStyle={{ 
+                                                            background: 'rgba(18, 16, 14, 0.95)', 
+                                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
+                                                            borderRadius: '8px', 
+                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                                                            padding: '0.5rem 0.75rem' 
+                                                        }}
+                                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
+                                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
                                                     />
                                                     <Legend wrapperStyle={{ fontSize: '0.8rem', marginTop: '10px' }} />
                                                 </PieChart>
@@ -977,7 +992,15 @@ const AdminDashboard = ({
                                                     <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" style={{ fontSize: '0.75rem' }} />
                                                     <YAxis stroke="rgba(255,255,255,0.5)" style={{ fontSize: '0.75rem' }} />
                                                     <Tooltip 
-                                                        contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white' }}
+                                                        contentStyle={{ 
+                                                            background: 'rgba(18, 16, 14, 0.95)', 
+                                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
+                                                            borderRadius: '8px', 
+                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                                                            padding: '0.5rem 0.75rem' 
+                                                        }}
+                                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
+                                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
                                                     />
                                                     <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
                                                     <Bar dataKey="critical" name="Critical" fill="#ef4444" stackId="a" />
@@ -1019,7 +1042,17 @@ const AdminDashboard = ({
                                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                                         ))}
                                                     </Pie>
-                                                    <Tooltip />
+                                                    <Tooltip 
+                                                        contentStyle={{ 
+                                                            background: 'rgba(18, 16, 14, 0.95)', 
+                                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
+                                                            borderRadius: '8px', 
+                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                                                            padding: '0.5rem 0.75rem' 
+                                                        }}
+                                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
+                                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                    />
                                                     <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
                                                 </PieChart>
                                             </ResponsiveContainer>
@@ -1041,7 +1074,17 @@ const AdminDashboard = ({
                                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                                                     <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" style={{ fontSize: '0.75rem' }} />
                                                     <YAxis stroke="rgba(255,255,255,0.5)" style={{ fontSize: '0.75rem' }} />
-                                                    <Tooltip />
+                                                    <Tooltip 
+                                                        contentStyle={{ 
+                                                            background: 'rgba(18, 16, 14, 0.95)', 
+                                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
+                                                            borderRadius: '8px', 
+                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                                                            padding: '0.5rem 0.75rem' 
+                                                        }}
+                                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
+                                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                    />
                                                     <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
                                                     <Bar dataKey="critical" name="Critical" fill="#ef4444" stackId="a" />
                                                     <Bar dataKey="high" name="High Risk" fill="#f97316" stackId="a" />
@@ -1624,8 +1667,17 @@ const AdminDashboard = ({
                                                 ]}>
                                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                                                     <XAxis dataKey="month" stroke="rgba(255,255,255,0.5)" />
-                                                    <YAxis stroke="rgba(255,255,255,0.5)" />
-                                                    <Tooltip />
+                                                    <Tooltip 
+                                                        contentStyle={{ 
+                                                            background: 'rgba(18, 16, 14, 0.95)', 
+                                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
+                                                            borderRadius: '8px', 
+                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                                                            padding: '0.5rem 0.75rem' 
+                                                        }}
+                                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
+                                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                    />
                                                     <Legend />
                                                     <Line type="monotone" dataKey="Target" stroke="#c8a261" activeDot={{ r: 8 }} />
                                                     <Line type="monotone" dataKey="Recovered" stroke="#10b981" />
@@ -2179,6 +2231,88 @@ const AdminDashboard = ({
 
                     {activeTab === 'Settings' && (
                         <div className="dashboard-panel">
+                            {/* Theme & Appearance Configuration */}
+                            <div className="panel-card" style={{ marginBottom: '1.5rem' }}>
+                                <h3 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                    {theme === 'dark' ? <Moon size={20} style={{ color: 'var(--accent-blue)' }} /> : <Sun size={20} style={{ color: '#f59e0b' }} />}
+                                    Appearance & Theme
+                                </h3>
+                                <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                    Choose your preferred workspace visual style. This setting persists across browser sessions.
+                                </p>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+                                    {/* Dark Mode Card */}
+                                    <div 
+                                        onClick={() => setTheme('dark')}
+                                        style={{
+                                            background: theme === 'dark' ? 'rgba(200, 162, 97, 0.12)' : 'rgba(0, 0, 0, 0.15)',
+                                            border: `2px solid ${theme === 'dark' ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.08)'}`,
+                                            borderRadius: '12px',
+                                            padding: '1.25rem',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '1rem',
+                                            boxShadow: theme === 'dark' ? '0 0 15px rgba(200, 162, 97, 0.2)' : 'none'
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: '42px',
+                                            height: '42px',
+                                            borderRadius: '10px',
+                                            background: '#12100e',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: '#c8a261'
+                                        }}>
+                                            <Moon size={20} />
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: '600', fontSize: '0.95rem', color: theme === 'dark' ? 'white' : 'inherit' }}>Dark Theme</div>
+                                            <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>Charcoal & Copper Gold</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Light Mode Card */}
+                                    <div 
+                                        onClick={() => setTheme('light')}
+                                        style={{
+                                            background: theme === 'light' ? 'rgba(200, 162, 97, 0.12)' : 'rgba(0, 0, 0, 0.15)',
+                                            border: `2px solid ${theme === 'light' ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.08)'}`,
+                                            borderRadius: '12px',
+                                            padding: '1.25rem',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '1rem',
+                                            boxShadow: theme === 'light' ? '0 0 15px rgba(200, 162, 97, 0.2)' : 'none'
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: '42px',
+                                            height: '42px',
+                                            borderRadius: '10px',
+                                            background: '#ffffff',
+                                            border: '1px solid rgba(0, 0, 0, 0.1)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: '#b38938'
+                                        }}>
+                                            <Sun size={20} />
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: '600', fontSize: '0.95rem', color: theme === 'light' ? '#0f172a' : 'inherit' }}>Light Theme</div>
+                                            <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>Crisp Slate & Clean White</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="panel-card">
                                 <h3 className="panel-title">Threshold Configurator</h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

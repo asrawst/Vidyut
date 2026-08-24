@@ -56,6 +56,12 @@ function App() {
   const [insLoginLoading, setInsLoginLoading] = useState(false);
   const [insLoginError, setInsLoginError] = useState('');
 
+  // Initialize theme from storage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('vidyut_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }, []);
+
   // Handle Supabase password reset / recovery redirects
   useEffect(() => {
     // 1. Check URL hash / search params on initial load

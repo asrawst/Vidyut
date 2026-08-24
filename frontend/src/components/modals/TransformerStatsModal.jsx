@@ -59,7 +59,17 @@ const TransformerStatsModal = ({ isOpen, onClose, data }) => {
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip />
+                                    <Tooltip 
+                                        contentStyle={{ 
+                                            background: 'rgba(18, 16, 14, 0.95)', 
+                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
+                                            borderRadius: '8px', 
+                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                                            padding: '0.5rem 0.75rem' 
+                                        }}
+                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
+                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
+                                    />
                                     <Legend />
                                 </PieChart>
                             </ResponsiveContainer>
@@ -78,7 +88,18 @@ const TransformerStatsModal = ({ isOpen, onClose, data }) => {
                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                                     <XAxis dataKey="transformer_id" stroke="rgba(255,255,255,0.6)" />
                                     <YAxis stroke="rgba(255,255,255,0.6)" />
-                                    <Tooltip cursor={{ fill: 'rgba(255,255,255,0.1)' }} contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155' }} />
+                                    <Tooltip 
+                                        cursor={{ fill: 'rgba(255,255,255,0.1)' }} 
+                                        contentStyle={{ 
+                                            background: 'rgba(18, 16, 14, 0.95)', 
+                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
+                                            borderRadius: '8px', 
+                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                                            padding: '0.5rem 0.75rem' 
+                                        }}
+                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
+                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
+                                    />
                                     <Legend />
                                     <Bar dataKey="anomalies_detected" name="Anomalies" fill="#8884d8">
                                         {data.map((entry, index) => (

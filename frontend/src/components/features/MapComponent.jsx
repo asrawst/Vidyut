@@ -163,11 +163,19 @@ const MapComponent = ({ data, focusedConsumerId, onSelectConsumer }) => {
                 center={center}
                 zoom={12}
                 scrollWheelZoom={false}
-                style={{ height: '100%', width: '100%', minHeight: '380px', background: '#242f3e' }}
+                style={{ 
+                    height: '100%', 
+                    width: '100%', 
+                    minHeight: '380px', 
+                    background: (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light') ? '#f1f5f9' : '#242f3e' 
+                }}
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    url={(typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light')
+                        ? "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                        : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    }
                 />
 
                 <MapController 
