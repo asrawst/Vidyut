@@ -3,7 +3,7 @@ import {
     User, ListCollapse, Ban, TrendingUp, Calendar, AlertTriangle, 
     History as HistoryIcon, Settings as SettingsIcon, UploadCloud, 
     Download, RefreshCw, Layers, ShieldAlert, Sparkles, MapPin, 
-    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Sun, Moon 
+    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Zap 
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LineChart, Line } from 'recharts';
 import MapComponent from './MapComponent';
@@ -1156,14 +1156,66 @@ const AdminDashboard = ({
                                             }}
                                         >
                                             {loading ? <RefreshCw className="animate-spin" size={18} /> : null}
-                                            {loading ? 'Processing ML Pipeline...' : 'Fetch & Analyse'}
+                                            {loading ? 'Analyzing Dataset...' : 'Fetch & Analyse'}
                                         </button>
-                                        <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.4)', marginTop: '0.75rem' }}>
-                                            Click to start high voltage classification analysis
-                                        </span>
                                     </div>
                                 </div>
                             </section>
+
+                            {/* Buffering state while data is fetching from backend */}
+                            {loading && (
+                                <div style={{
+                                    margin: '2rem 0',
+                                    padding: '3rem 2rem',
+                                    background: 'linear-gradient(135deg, rgba(22, 20, 18, 0.9) 0%, rgba(14, 12, 10, 0.95) 100%)',
+                                    border: '1px solid rgba(200, 162, 97, 0.25)',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 20px 40px -15px rgba(0,0,0,0.8), 0 0 25px rgba(200, 162, 97, 0.1)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    textAlign: 'center',
+                                    gap: '1.25rem'
+                                }}>
+                                    <div style={{ position: 'relative', width: '56px', height: '56px' }}>
+                                        <div style={{
+                                            position: 'absolute',
+                                            inset: 0,
+                                            borderRadius: '50%',
+                                            border: '3px solid rgba(200, 162, 97, 0.15)',
+                                            borderTopColor: '#c8a261',
+                                            animation: 'spin 1s linear infinite'
+                                        }} />
+                                        <div style={{
+                                            position: 'absolute',
+                                            inset: '6px',
+                                            borderRadius: '50%',
+                                            border: '2px solid rgba(255, 255, 255, 0.08)',
+                                            borderBottomColor: '#f97316',
+                                            animation: 'spin 1.5s linear infinite reverse'
+                                        }} />
+                                        <div style={{
+                                            position: 'absolute',
+                                            inset: 0,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: '#c8a261'
+                                        }}>
+                                            <Zap size={20} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'white', fontWeight: '600' }}>
+                                            Analyzing Power Consumption Data...
+                                        </h3>
+                                        <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                                            Processing consumer load profiles, transformer reconciliations, and theft anomaly models.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Analysis Report Anchor */}
                             {result && (
