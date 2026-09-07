@@ -338,9 +338,15 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         }
     };
 
-    // Cancel / Release current audit task so it can be reassigned
+    // Cancel / Release current audit task so it can be reassigned (Only before audit starts)
     const cancelAudit = async () => {
         if (!currentTask) return;
+        const rawStatus = (currentTask.status || inspectionStatus || '').toLowerCase();
+        if (rawStatus.includes('proc') || rawStatus.includes('comp') || inspectionStatus === 'Inprocess' || inspectionStatus === 'Completed') {
+            alert("🔒 Audit In Progress / Completed:\n\nOnce a field audit has been started, it cannot be cancelled. Please complete the inspection checklist and submit the audit findings.");
+            return;
+        }
+
         const cid = currentTask.consumer_id;
         if (confirm(`Cancel and release audit for Consumer ${cid}?\n\nThis will unassign you from this task and release it back to DISCOM admin for reassignment.`)) {
             try {
@@ -676,26 +682,45 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                                 Status: {inspectionStatus === 'Inprocess' ? 'In Process' : inspectionStatus}
                                             </span>
                                             
-                                            <button
-                                                onClick={cancelAudit}
-                                                style={{
-                                                    padding: '0.4rem 0.75rem',
-                                                    borderRadius: '6px',
-                                                    background: 'rgba(239, 68, 68, 0.08)',
-                                                    color: '#ef4444',
-                                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                    fontSize: '0.8rem',
-                                                    fontWeight: '600',
-                                                    cursor: 'pointer',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.35rem',
-                                                    transition: 'all 0.2s ease'
-                                                }}
-                                                title="Cancel / release this audit so it can be reassigned"
-                                            >
-                                                <X size={14} /> Cancel Audit
-                                            </button>
+                                            {inspectionStatus === 'Initiate' ? (
+                                                <button
+                                                    onClick={cancelAudit}
+                                                    style={{
+                                                        padding: '0.4rem 0.75rem',
+                                                        borderRadius: '6px',
+                                                        background: 'rgba(239, 68, 68, 0.08)',
+                                                        color: '#ef4444',
+                                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.35rem',
+                                                        transition: 'all 0.2s ease'
+                                                    }}
+                                                    title="Decline or cancel this audit before starting"
+                                                >
+                                                    <X size={14} /> Cancel / Decline Audit
+                                                </button>
+                                            ) : (
+                                                <span
+                                                    style={{
+                                                        padding: '0.4rem 0.65rem',
+                                                        borderRadius: '6px',
+                                                        background: 'rgba(255, 255, 255, 0.04)',
+                                                        color: 'rgba(255, 255, 255, 0.4)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                        fontSize: '0.78rem',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.35rem'
+                                                    }}
+                                                    title="Audit has already been started on site and cannot be cancelled."
+                                                >
+                                                    <Lock size={12} /> Audit Locked
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 
