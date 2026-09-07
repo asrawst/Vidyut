@@ -165,6 +165,43 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         localStorage.setItem('vidyut_inspector_challans', JSON.stringify(challans));
     }, [challans]);
 
+    // Aggregated list of consumers from past audits & assigned inspection tasks for quick selection
+    const pastInspectionOptions = useMemo(() => {
+        const list = [];
+        const seen = new Set();
+
+        // 1. Consumers from past inspections log
+        if (Array.isArray(pastInspections)) {
+            pastInspections.forEach(item => {
+                if (item.consumer && !seen.has(item.consumer)) {
+                    seen.add(item.consumer);
+                    list.push({
+                        consumer: item.consumer,
+                        zone: item.zone || 'Delhi Grid Area',
+                        source: 'Past Audit Log',
+                        status: item.result || 'Completed'
+                    });
+                }
+            });
+        }
+
+        // 2. Consumers from assigned tasks (myTasks and allAssignedTasks)
+        const combinedTasks = [...(myTasks || []), ...(allAssignedTasks || [])];
+        combinedTasks.forEach(task => {
+            if (task.consumer_id && !seen.has(task.consumer_id)) {
+                seen.add(task.consumer_id);
+                list.push({
+                    consumer: task.consumer_id,
+                    zone: task.zone || (task.transformer_id ? `Transformer ${task.transformer_id}` : 'Assigned Grid Task'),
+                    source: 'Assigned Task',
+                    status: task.status || 'Active'
+                });
+            }
+        });
+
+        return list;
+    }, [pastInspections, myTasks, allAssignedTasks]);
+
     // Forms states
     const [challanForm, setChallanForm] = useState({ consumerId: '', anomaly: 'Bypassing meter', load: '', penalty: '', details: '' });
     const [complaintForm, setComplaintForm] = useState({ category: 'Meter Damage', severity: 'Medium', details: '' });
@@ -257,22 +294,52 @@ const InspectorPortal = ({ inspector, onLogout }) => {
     };
 
     // Form Handlers
-    const handleChallanSubmit = (e) => {
+    const handleChallanSubmit = async (e) => {
         e.preventDefault();
         if (!challanForm.consumerId || !challanForm.penalty) {
             alert('Please fill out all required fields');
             return;
         }
+
         const newChallan = {
-            id: `CH-2026-0${challans.length + 1}`,
-            consumer: challanForm.consumerId,
+            id: `CH-2026-${String(challans.length + 1).padStart(3, '0')}`,
+            consumer: challanForm.consumerId.trim(),
             anomaly: challanForm.anomaly,
             load: `${challanForm.load || 'N/A'} kW`,
             penalty: `₹${parseFloat(challanForm.penalty).toLocaleString('en-IN')}`,
-            status: 'Issued'
+            penalty_raw: parseFloat(challanForm.penalty) || 0,
+            inspector: inspectorName || 'Field Inspector',
+            zone: currentTask?.zone || (currentTask?.transformer_id ? `Transformer ${currentTask?.transformer_id}` : 'Delhi Grid Area'),
+            details: challanForm.details || 'Detected during field audit',
+            status: 'Issued',
+            created_at: new Date().toISOString()
         };
-        setChallans([newChallan, ...challans]);
-        alert(`Challan ${newChallan.id} created successfully!`);
+
+        const updatedChallans = [newChallan, ...challans];
+        setChallans(updatedChallans);
+        localStorage.setItem('vidyut_inspector_challans', JSON.stringify(updatedChallans));
+        localStorage.setItem('vidyut_admin_challans', JSON.stringify(updatedChallans));
+
+        // Realtime window dispatch for instant local tab sync
+        window.dispatchEvent(new CustomEvent('vidyut_challan_created', { detail: newChallan }));
+
+        // Realtime broadcast via Supabase Realtime channel
+        try {
+            const channel = supabase.channel('vidyut_challans_realtime_channel');
+            channel.subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    await channel.send({
+                        type: 'broadcast',
+                        event: 'new_challan',
+                        payload: newChallan
+                    });
+                }
+            });
+        } catch (err) {
+            console.error("Supabase real-time broadcast error:", err);
+        }
+
+        alert(`Challan ${newChallan.id} created successfully! Synced to Admin Panel.`);
         setChallanForm({ consumerId: '', anomaly: 'Bypassing meter', load: '', penalty: '', details: '' });
     };
 
@@ -872,12 +939,53 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                             <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: 'white' }}>Issue Penalty / Load Bypass Challan</h3>
                             <form onSubmit={handleChallanSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                    <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Consumer Account ID *</label>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Consumer Account ID *</label>
+                                        {pastInspectionOptions.length > 0 && (
+                                            <span style={{ fontSize: '0.72rem', color: '#c8a261', background: 'rgba(200,162,97,0.1)', padding: '0.15rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(200,162,97,0.25)' }}>
+                                                {pastInspectionOptions.length} Past Audited Record{pastInspectionOptions.length > 1 ? 's' : ''}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Option to select directly from past inspections & audited tasks */}
+                                    {pastInspectionOptions.length > 0 && (
+                                        <select
+                                            value={pastInspectionOptions.some(opt => opt.consumer === challanForm.consumerId) ? challanForm.consumerId : ''}
+                                            onChange={e => {
+                                                if (e.target.value) {
+                                                    setChallanForm({ ...challanForm, consumerId: e.target.value });
+                                                }
+                                            }}
+                                            style={{
+                                                padding: '0.7rem 1rem',
+                                                background: '#181512',
+                                                border: '1px solid rgba(200,162,97,0.3)',
+                                                borderRadius: '8px',
+                                                color: '#ffffff',
+                                                fontSize: '0.88rem',
+                                                outline: 'none',
+                                                cursor: 'pointer',
+                                                marginBottom: '0.35rem'
+                                            }}
+                                        >
+                                            <option value="" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                                                -- Select Consumer from Past Inspections --
+                                            </option>
+                                            {pastInspectionOptions.map((opt, idx) => (
+                                                <option key={idx} value={opt.consumer}>
+                                                    {opt.consumer} • {opt.zone} ({opt.status})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
+
+                                    {/* Manual ID Input */}
                                     <input 
                                         type="text" 
                                         value={challanForm.consumerId}
                                         onChange={e => setChallanForm({...challanForm, consumerId: e.target.value})}
-                                        placeholder="e.g. CON-98401"
+                                        placeholder="Or enter Consumer ID manually (e.g. C0133)"
                                         required
                                         style={{
                                             padding: '0.7rem 1rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)',

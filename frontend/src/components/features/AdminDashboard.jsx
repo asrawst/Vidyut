@@ -132,6 +132,26 @@ const AdminDashboard = ({
         localStorage.setItem('vidyut_upload_history', JSON.stringify(uploadHistory));
     }, [uploadHistory]);
 
+    // Real-time Field Challans issued by Inspectors
+    const [challans, setChallans] = useState(() => {
+        const saved = localStorage.getItem('vidyut_admin_challans') || localStorage.getItem('vidyut_inspector_challans');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) {
+                    return parsed.filter(item => !item.consumer?.startsWith('CON-'));
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        return [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('vidyut_admin_challans', JSON.stringify(challans));
+    }, [challans]);
+
     useEffect(() => {
         localStorage.removeItem('vidyut_theme');
         document.documentElement.removeAttribute('data-theme');
@@ -286,9 +306,51 @@ const AdminDashboard = ({
             })
             .subscribe();
 
+        // Subscribe to real-time Challans issued by Field Inspectors
+        const challanChannel = supabase
+            .channel('vidyut_challans_realtime_channel')
+            .on('broadcast', { event: 'new_challan' }, (event) => {
+                if (event.payload) {
+                    setChallans(prev => {
+                        if (prev.some(c => c.id === event.payload.id)) return prev;
+                        const next = [event.payload, ...prev];
+                        localStorage.setItem('vidyut_admin_challans', JSON.stringify(next));
+                        return next;
+                    });
+                }
+            })
+            .subscribe();
+
+        // Local window event listener for instant multi-tab sync
+        const handleLocalChallan = (e) => {
+            if (e.detail) {
+                setChallans(prev => {
+                    if (prev.some(c => c.id === e.detail.id)) return prev;
+                    const next = [e.detail, ...prev];
+                    localStorage.setItem('vidyut_admin_challans', JSON.stringify(next));
+                    return next;
+                });
+            }
+        };
+
+        const handleStorageSync = (e) => {
+            if (e.key === 'vidyut_admin_challans' || e.key === 'vidyut_inspector_challans') {
+                try {
+                    const parsed = JSON.parse(e.newValue || '[]');
+                    if (Array.isArray(parsed)) setChallans(parsed);
+                } catch (err) {}
+            }
+        };
+
+        window.addEventListener('vidyut_challan_created', handleLocalChallan);
+        window.addEventListener('storage', handleStorageSync);
+
         return () => {
             supabase.removeChannel(tasksChannel);
             supabase.removeChannel(histChannel);
+            supabase.removeChannel(challanChannel);
+            window.removeEventListener('vidyut_challan_created', handleLocalChallan);
+            window.removeEventListener('storage', handleStorageSync);
         };
     }, []);
 
@@ -1918,6 +1980,85 @@ const AdminDashboard = ({
                                                     )}
                                                 </tr>
                                             )))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Field Penalties & Bypass Challans (Realtime Synced with Inspector Portal) */}
+                            <div className="panel-card" style={{ height: 'fit-content' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                    <div>
+                                        <h3 className="panel-title" style={{ margin: 0 }}>Field Penalties & Bypass Challans</h3>
+                                        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)' }}>
+                                            Real-time stream of audit challans issued by field inspectors
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <span style={{ 
+                                            display: 'inline-flex', alignItems: 'center', gap: '0.4rem', 
+                                            fontSize: '0.75rem', color: '#10b981', background: 'rgba(16,185,129,0.1)', 
+                                            padding: '0.25rem 0.6rem', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.25)' 
+                                        }}>
+                                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+                                            Real-Time Synced
+                                        </span>
+                                        <span style={{ 
+                                            fontSize: '0.85rem', fontWeight: '600', color: '#c8a261', 
+                                            background: 'rgba(200,162,97,0.1)', padding: '0.35rem 0.75rem', borderRadius: '8px',
+                                            border: '1px solid rgba(200,162,97,0.25)' 
+                                        }}>
+                                            Total Issued: {challans.length}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Challan ID</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Consumer ID</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Theft Anomaly Class</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Connected Load</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Assessed Penalty</th>
+                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Auditing Inspector</th>
+                                                <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {challans.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="7" style={{ textAlign: 'center', padding: '3rem 1rem', color: 'rgba(255,255,255,0.4)' }}>
+                                                        <AlertTriangle size={30} style={{ margin: '0 auto 0.75rem auto', opacity: 0.35, display: 'block' }} />
+                                                        <div style={{ fontSize: '0.95rem', fontWeight: '500', color: 'rgba(255,255,255,0.6)' }}>No Challans Issued Yet</div>
+                                                        <div style={{ fontSize: '0.8rem', marginTop: '0.35rem', color: 'rgba(255,255,255,0.35)' }}>
+                                                            Challans created by field inspectors during on-site audits will appear here in real-time.
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                challans.map((ch, idx) => (
+                                                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                        <td style={{ padding: '1rem', fontWeight: '600', color: '#ffffff' }}>{ch.id}</td>
+                                                        <td style={{ padding: '1rem', color: '#c8a261', fontWeight: '600' }}>{ch.consumer}</td>
+                                                        <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.85)' }}>{ch.anomaly}</td>
+                                                        <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)' }}>{ch.load}</td>
+                                                        <td style={{ padding: '1rem', color: '#ef4444', fontWeight: '700' }}>{ch.penalty}</td>
+                                                        <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)' }}>{ch.inspector || 'Field Inspector'}</td>
+                                                        <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                            <span style={{
+                                                                fontSize: '0.75rem', fontWeight: '600',
+                                                                background: 'rgba(239,68,68,0.15)', color: '#ef4444',
+                                                                border: '1px solid rgba(239,68,68,0.3)',
+                                                                padding: '0.25rem 0.65rem', borderRadius: '6px'
+                                                            }}>
+                                                                {ch.status || 'Issued'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
