@@ -158,24 +158,26 @@ const MapComponent = ({ data, focusedConsumerId, onSelectConsumer }) => {
                         opacity: 0;
                     }
                 }
-                .actual-black-tiles {
-                    filter: invert(100%) hue-rotate(180deg) brightness(75%) contrast(130%) grayscale(100%) !important;
-                }
                 .leaflet-container {
-                    background: #090a0f !important;
+                    background: #181c24 !important;
                 }
             `}</style>
             <MapContainer
                 center={center}
                 zoom={12}
                 scrollWheelZoom={false}
-                style={{ height: '100%', width: '100%', minHeight: '380px', background: '#090a0f' }}
+                style={{ height: '100%', width: '100%', minHeight: '380px', background: '#181c24' }}
             >
+                {/* Base Dark Map Layer */}
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    className="actual-black-tiles"
-                    maxZoom={19}
+                    attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+                    maxZoom={16}
+                />
+                {/* Labels & Roads Layer (matches original Carto Dark Matter text/roads) */}
+                <TileLayer
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+                    maxZoom={16}
                 />
 
                 <MapController 
