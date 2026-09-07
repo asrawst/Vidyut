@@ -107,7 +107,31 @@ const InspectorPortal = ({ inspector, onLogout }) => {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'inspection_tasks' }, () => {
                 fetchTasksFromDB();
             })
+            .on('broadcast', { event: 'task_deleted' }, (e) => {
+                if (e.payload && e.payload.consumer_id) {
+                    const cid = e.payload.consumer_id;
+                    setAllAssignedTasks(prev => prev.filter(t => t.consumer_id !== cid));
+                    setChallans(prev => {
+                        const next = prev.filter(c => c.consumer !== cid);
+                        localStorage.setItem('vidyut_inspector_challans', JSON.stringify(next));
+                        return next;
+                    });
+                }
+            })
             .subscribe();
+
+        const handleLocalTaskDeleted = (e) => {
+            if (e.detail && e.detail.consumer_id) {
+                const cid = e.detail.consumer_id;
+                setAllAssignedTasks(prev => prev.filter(t => t.consumer_id !== cid));
+                setChallans(prev => {
+                    const next = prev.filter(c => c.consumer !== cid);
+                    localStorage.setItem('vidyut_inspector_challans', JSON.stringify(next));
+                    return next;
+                });
+            }
+        };
+        window.addEventListener('vidyut_task_deleted', handleLocalTaskDeleted);
 
         // Storage listener for same-browser tabs
         const handleStorageChange = () => {
@@ -120,6 +144,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
         return () => {
             supabase.removeChannel(channel);
+            window.removeEventListener('vidyut_task_deleted', handleLocalTaskDeleted);
             window.removeEventListener('storage', handleStorageChange);
         };
     }, [inspector]);
@@ -300,7 +325,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                     .from('inspection_challans')
                     .select('*')
                     .order('created_at', { ascending: false });
-                if (data && !error && data.length > 0) {
+                if (!error && Array.isArray(data)) {
                     setChallans(data);
                     localStorage.setItem('vidyut_inspector_challans', JSON.stringify(data));
                 }
@@ -313,7 +338,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
         // Subscribe to server-side Postgres changes
         const challanDbChannel = supabase
-            .channel('inspector_challans_db_sync')
+            .channel('vidyut_global_challans_channel')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'inspection_challans' }, () => {
                 fetchChallansFromDB();
             })
@@ -339,6 +364,15 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                     });
                 }
             })
+            .on('broadcast', { event: 'task_deleted' }, (e) => {
+                if (e.payload && e.payload.consumer_id) {
+                    setChallans(prev => {
+                        const next = prev.filter(c => c.consumer !== e.payload.consumer_id);
+                        localStorage.setItem('vidyut_inspector_challans', JSON.stringify(next));
+                        return next;
+                    });
+                }
+            })
             .subscribe();
 
         const handleLocalChallanDeleted = (e) => {
@@ -350,11 +384,23 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                 });
             }
         };
+
+        const handleStorageSync = (e) => {
+            if (e.key === 'vidyut_inspector_challans' || e.key === 'vidyut_admin_challans') {
+                try {
+                    const parsed = JSON.parse(e.newValue || '[]');
+                    if (Array.isArray(parsed)) setChallans(parsed);
+                } catch (err) {}
+            }
+        };
+
         window.addEventListener('vidyut_challan_deleted', handleLocalChallanDeleted);
+        window.addEventListener('storage', handleStorageSync);
 
         return () => {
             supabase.removeChannel(challanDbChannel);
             window.removeEventListener('vidyut_challan_deleted', handleLocalChallanDeleted);
+            window.removeEventListener('storage', handleStorageSync);
         };
     }, []);
 
@@ -584,7 +630,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
         // 3. Realtime broadcast via Supabase Realtime channel
         try {
-            const channel = supabase.channel('vidyut_challans_realtime_channel');
+            const channel = supabase.channel('vidyut_global_challans_channel');
             channel.send({
                 type: 'broadcast',
                 event: 'new_challan',

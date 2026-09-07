@@ -491,7 +491,7 @@ const AdminDashboard = ({
                     .from('inspection_challans')
                     .select('*')
                     .order('created_at', { ascending: false });
-                if (data && !error && data.length > 0) {
+                if (!error && Array.isArray(data)) {
                     setChallans(data);
                     localStorage.setItem('vidyut_admin_challans', JSON.stringify(data));
                 }
@@ -508,7 +508,7 @@ const AdminDashboard = ({
                     .from('blacklisted_consumers')
                     .select('*')
                     .order('created_at', { ascending: false });
-                if (data && !error && data.length > 0) {
+                if (!error && Array.isArray(data)) {
                     setBlacklistedConsumers(data);
                     localStorage.setItem('vidyut_blacklisted_consumers', JSON.stringify(data));
                 }
@@ -520,7 +520,7 @@ const AdminDashboard = ({
 
         // Subscribe to real-time Challans issued by Field Inspectors
         const challanChannel = supabase
-            .channel('admin_challans_realtime_channel')
+            .channel('vidyut_global_challans_channel')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'inspection_challans' }, () => {
                 fetchChallansFromDB();
             })
@@ -2690,7 +2690,7 @@ const AdminDashboard = ({
                                                                                 } catch (e) {}
 
                                                                                 try {
-                                                                                    const challanCh = supabase.channel('admin_challans_realtime_channel');
+                                                                                    const challanCh = supabase.channel('vidyut_global_challans_channel');
                                                                                     challanCh.send({
                                                                                         type: 'broadcast',
                                                                                         event: 'challan_deleted',
