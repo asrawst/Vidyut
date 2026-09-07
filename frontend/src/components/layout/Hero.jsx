@@ -52,7 +52,7 @@ const Hero = () => {
 
         <button
           onClick={() => {
-            document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('portal-section')?.scrollIntoView({ behavior: 'smooth' });
           }}
           style={{
             padding: '0.85rem 2.2rem',
