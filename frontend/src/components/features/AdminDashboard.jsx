@@ -36,16 +36,44 @@ const AdminDashboard = ({
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [localInspectionStatus, setLocalInspectionStatus] = useState(() => {
         const saved = localStorage.getItem('vidyut_local_inspection_status');
+        const calSaved = localStorage.getItem('vidyut_inspection_calendar');
         if (saved) {
-            try { return JSON.parse(saved); } catch (e) { console.error(e); }
+            try {
+                const parsed = JSON.parse(saved);
+                let validConsumers = [];
+                if (calSaved) {
+                    try { validConsumers = JSON.parse(calSaved).map(c => c.consumer); } catch(e) {}
+                }
+                const clean = {};
+                Object.entries(parsed).forEach(([k, v]) => {
+                    if (v && (validConsumers.length === 0 || validConsumers.includes(k))) {
+                        clean[k] = v;
+                    }
+                });
+                return clean;
+            } catch (e) { console.error(e); }
         }
         return {};
     });
 
     const [assignedInspectors, setAssignedInspectors] = useState(() => {
         const saved = localStorage.getItem('vidyut_assigned_inspectors');
+        const calSaved = localStorage.getItem('vidyut_inspection_calendar');
         if (saved) {
-            try { return JSON.parse(saved); } catch (e) { console.error(e); }
+            try {
+                const parsed = JSON.parse(saved);
+                let validConsumers = [];
+                if (calSaved) {
+                    try { validConsumers = JSON.parse(calSaved).map(c => c.consumer); } catch(e) {}
+                }
+                const clean = {};
+                Object.entries(parsed).forEach(([k, v]) => {
+                    if (v && (validConsumers.length === 0 || validConsumers.includes(k))) {
+                        clean[k] = v;
+                    }
+                });
+                return clean;
+            } catch (e) { console.error(e); }
         }
         return {};
     });
@@ -215,11 +243,15 @@ const AdminDashboard = ({
                     const assignedMap = {};
                     const statusMap = {};
                     tasksData.forEach(t => {
-                        assignedMap[t.consumer_id] = t.inspector_name;
-                        statusMap[t.consumer_id] = t.status;
+                        if (t.inspector_name) {
+                            assignedMap[t.consumer_id] = t.inspector_name;
+                        }
+                        statusMap[t.consumer_id] = t.status || 'Initiated';
                     });
-                    setAssignedInspectors(prev => ({ ...prev, ...assignedMap }));
-                    setLocalInspectionStatus(prev => ({ ...prev, ...statusMap }));
+                    setAssignedInspectors(assignedMap);
+                    setLocalInspectionStatus(statusMap);
+                    localStorage.setItem('vidyut_assigned_inspectors', JSON.stringify(assignedMap));
+                    localStorage.setItem('vidyut_local_inspection_status', JSON.stringify(statusMap));
                     localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(tasksData));
 
                     // Sync Inspection Tab (Field Inspection Calendar) strictly with real DB tasks
@@ -1528,13 +1560,18 @@ const AdminDashboard = ({
                                                             </td>
                                                             <td style={{ padding: '1rem' }}>
                                                                 {(() => {
-                                                                    const currentStatus = localInspectionStatus[item.consumer_id] || 'Initiated';
+                                                                    const activeInspector = assignedInspectors[item.consumer_id];
+                                                                    const hasValidAssignment = !!activeInspector && inspectorsList.includes(activeInspector);
+                                                                    const inCalendar = inspectionCalendar.some(c => c.consumer === item.consumer_id);
+                                                                    const hasActiveTask = hasValidAssignment || inCalendar;
+                                                                    
+                                                                    const currentStatus = hasActiveTask ? (localInspectionStatus[item.consumer_id] || 'Initiated') : 'Initiated';
                                                                     const isCompleted = (currentStatus || '').toLowerCase() === 'completed';
                                                                     const isInProcess = (currentStatus || '').toLowerCase().includes('process');
                                                                     
                                                                     return (
                                                                         <span 
-                                                                            title="Status is updated directly by field inspector from portal"
+                                                                            title={hasActiveTask ? "Status is updated directly by field inspector from portal" : "No active inspection assigned"}
                                                                             style={{
                                                                                 display: 'inline-flex',
                                                                                 alignItems: 'center',
@@ -1560,32 +1597,41 @@ const AdminDashboard = ({
                                                                 })()}
                                                             </td>
                                                             <td style={{ padding: '1rem' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                                    <select
-                                                                        value={assignedInspectors[item.consumer_id] || ''}
-                                                                        onChange={(e) => handleInspectorChange(item.consumer_id, e.target.value)}
-                                                                        className="table-select"
-                                                                        style={{ 
-                                                                            borderColor: assignedInspectors[item.consumer_id] ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255,255,255,0.1)',
-                                                                            color: assignedInspectors[item.consumer_id] ? '#10b981' : 'white',
-                                                                            background: assignedInspectors[item.consumer_id] ? 'rgba(16, 185, 129, 0.08)' : 'rgba(18,16,14,0.9)'
-                                                                        }}
-                                                                        title={assignedInspectors[item.consumer_id] ? `Assigned to ${assignedInspectors[item.consumer_id]}. Locked until audit is cancelled.` : 'Assign an inspector'}
-                                                                    >
-                                                                        <option value="">-- Assign Inspector --</option>
-                                                                        {inspectorsList.map(insp => (
-                                                                            <option key={insp} value={insp}>{insp}</option>
-                                                                        ))}
-                                                                    </select>
-                                                                    {assignedInspectors[item.consumer_id] && (
-                                                                        <span 
-                                                                            title={`Locked to ${assignedInspectors[item.consumer_id]}. Must be cancelled before reassigning.`}
-                                                                            style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', cursor: 'help' }}
-                                                                        >
-                                                                            <Lock size={14} />
-                                                                        </span>
-                                                                    )}
-                                                                </div>
+                                                                {(() => {
+                                                                    const activeInspector = assignedInspectors[item.consumer_id];
+                                                                    const isAssigned = !!activeInspector && inspectorsList.includes(activeInspector);
+                                                                    const inCalendar = inspectionCalendar.some(c => c.consumer === item.consumer_id);
+                                                                    const isActivelyAssigned = isAssigned && inCalendar;
+
+                                                                    return (
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                            <select
+                                                                                value={isAssigned ? activeInspector : ''}
+                                                                                onChange={(e) => handleInspectorChange(item.consumer_id, e.target.value)}
+                                                                                className="table-select"
+                                                                                style={{ 
+                                                                                    borderColor: isActivelyAssigned ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255,255,255,0.1)',
+                                                                                    color: isActivelyAssigned ? '#10b981' : 'white',
+                                                                                    background: isActivelyAssigned ? 'rgba(16, 185, 129, 0.08)' : 'rgba(18,16,14,0.9)'
+                                                                                }}
+                                                                                title={isActivelyAssigned ? `Assigned to ${activeInspector}. Locked until audit is cancelled.` : 'Assign an inspector'}
+                                                                            >
+                                                                                <option value="">-- Assign Inspector --</option>
+                                                                                {inspectorsList.map(insp => (
+                                                                                    <option key={insp} value={insp}>{insp}</option>
+                                                                                ))}
+                                                                            </select>
+                                                                            {isActivelyAssigned && (
+                                                                                <span 
+                                                                                    title={`Locked to ${activeInspector}. Must be cancelled before reassigning.`}
+                                                                                    style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', cursor: 'help' }}
+                                                                                >
+                                                                                    <Lock size={14} />
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })()}
                                                             </td>
                                                         </tr>
                                                     ))}
