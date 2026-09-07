@@ -1037,7 +1037,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                     </div>
                                     
                                     {/* Leaflet Map with real coordinates & auto-zoom flyTo */}
-                                    <div style={{ height: '380px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                    <div style={{ height: '440px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
                                         <MapComponent 
                                             data={activeMapData} 
                                             focusedConsumerId={currentTask?.consumer_id}
@@ -1481,7 +1481,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                                     {selectedPastAudit.latitude}&deg; N, {selectedPastAudit.longitude}&deg; E
                                                 </span>
                                             </div>
-                                            <div style={{ height: '280px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                            <div style={{ height: '340px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
                                                 <MapComponent
                                                     data={{
                                                         results: [{
@@ -1494,6 +1494,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                                         }]
                                                     }}
                                                     focusedConsumerId={selectedPastAudit.consumer}
+                                                    height="340px"
                                                 />
                                             </div>
                                         </div>

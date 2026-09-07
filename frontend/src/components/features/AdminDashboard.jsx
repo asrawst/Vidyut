@@ -1694,9 +1694,16 @@ const AdminDashboard = ({
                                     </div>
 
                                     {/* Map Component */}
-                                    <div className="map-card" ref={mapRef}>
-                                        <h3><MapPin size={20} style={{ color: '#ef4444' }} /> Geographic Anomaly Mapping</h3>
-                                        <div style={{ height: '420px', width: '100%', borderRadius: '12px', overflow: 'hidden' }}>
+                                    <div className="map-card" ref={mapRef} style={{ background: 'rgba(20, 18, 15, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '1.25rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
+                                                <MapPin size={20} style={{ color: '#ef4444' }} /> Geographic Anomaly Mapping
+                                            </h3>
+                                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
+                                                Click any consumer row in table below to fly and zoom to its pin on map
+                                            </span>
+                                        </div>
+                                        <div style={{ height: '480px', width: '100%', borderRadius: '12px', overflow: 'hidden' }}>
                                             <MapComponent 
                                                 data={result} 
                                                 focusedConsumerId={focusedConsumerId}

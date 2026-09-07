@@ -189,7 +189,7 @@ const ResultsDisplay = ({ data }) => {
             </div>
 
             {/* Geographic Analysis (Map) */}
-            <MapComponent data={data} />
+            <MapComponent data={data} height="420px" />
 
             {/* Anomalies Table */}
             {anomalies && anomalies.length > 0 && (
