@@ -228,7 +228,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                     zone: t.zone || (t.transformer_id ? `Transformer ${t.transformer_id}` : 'Delhi Central Grid'),
                     date: t.updated_at ? new Date(t.updated_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently Completed',
                     type: 'Field Hooking & Seal Audit',
-                    result: 'Completed Audit',
+                    result: 'Completed',
                     risk_class: t.risk_class || 'High Anomaly',
                     risk_score: t.risk_score || 0.85,
                     latitude: Number(t.latitude) || 28.6139,
@@ -256,7 +256,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                         zone: item.zone || 'Delhi Central Grid',
                         date: item.date || 'Earlier Audit',
                         type: item.type || 'Field Hooking & Seal Audit',
-                        result: item.result || 'Completed Audit',
+                        result: 'Completed',
                         risk_class: item.risk_class || 'Anomaly Audit',
                         risk_score: item.risk_score || 0.80,
                         latitude: Number(item.latitude) || 28.6139,
@@ -635,7 +635,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
             zone: currentTask.zone || (currentTask.transformer_id ? `Transformer ${currentTask.transformer_id}` : 'Delhi Central Grid'),
             date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
             type: 'Field Hooking & Seal Audit',
-            result: 'Completed Audit',
+            result: 'Completed',
             risk_class: currentTask.risk_class || 'High Anomaly',
             risk_score: currentTask.risk_score || 0.85,
             latitude: Number(currentTask.latitude) || 28.6139,
@@ -1171,7 +1171,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                             All Assigned Audits Completed
                                         </h3>
                                         <p style={{ maxWidth: '520px', margin: '0 0 1.5rem 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                                            All field inspection tasks assigned to <strong>{inspector?.displayName || 'your account'}</strong> for <strong>{inspector?.discom || 'your DISCOM'}</strong> have been successfully verified, resolved, and synchronized globally with the central database.
+                                            All field inspection tasks assigned to <strong>{inspector?.displayName || 'your account'}</strong> for <strong>{inspector?.discom || 'your DISCOM'}</strong> have been successfully verified.
                                         </p>
                                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
                                             <button
@@ -1185,13 +1185,6 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                             >
                                                 <ClipboardCheck size={16} /> View Past Inspections ({pastInspectionsList.length})
                                             </button>
-                                            <span style={{
-                                                background: 'rgba(16, 185, 129, 0.1)', color: '#10b981',
-                                                border: '1px solid rgba(16, 185, 129, 0.25)',
-                                                padding: '0.4rem 0.9rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600'
-                                            }}>
-                                                Status: All Audits Completed & Synced Globally
-                                            </span>
                                         </div>
                                     </>
                                 ) : (
@@ -1319,8 +1312,18 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                                     <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>{ins.inspector_name}</td>
                                                     <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>{ins.date}</td>
                                                     <td style={{ padding: '1rem' }}>
-                                                        <span style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600' }}>
-                                                            {ins.result || 'Completed'}
+                                                        <span style={{ 
+                                                            background: 'rgba(16,185,129,0.12)', 
+                                                            color: '#10b981', 
+                                                            border: '1px solid rgba(16,185,129,0.25)', 
+                                                            padding: '0.25rem 0.65rem', 
+                                                            borderRadius: '4px', 
+                                                            fontSize: '0.75rem', 
+                                                            fontWeight: '600',
+                                                            whiteSpace: 'nowrap',
+                                                            display: 'inline-block'
+                                                        }}>
+                                                            Completed
                                                         </span>
                                                     </td>
                                                     <td style={{ padding: '1rem', textAlign: 'center' }}>
