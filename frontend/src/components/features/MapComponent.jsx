@@ -10,19 +10,20 @@ import {
 
 // Basemap layer configurations for clear visibility in any lighting / audit condition
 const BASEMAPS = {
-    dark: {
-        name: 'Dark Matter',
-        icon: '🌙',
-        base: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap',
-        maxZoom: 19
-    },
     streets: {
         name: 'Street View',
         icon: '🗺️',
-        base: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap',
+        base: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
+    },
+    dark: {
+        name: 'Dark Matter',
+        icon: '🌙',
+        base: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+        reference: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+        attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin',
+        maxZoom: 16
     },
     satellite: {
         name: 'Satellite',
@@ -324,14 +325,17 @@ const MapComponent = ({
                     100% { transform: scale(1.9); opacity: 0; }
                 }
 
-                /* Modern Dark Glassmorphic Popup */
+                /* Modern Dark Glassmorphic Popup - Matched to Vidyut Luxury Palette */
+                .leaflet-popup-close-button {
+                    display: none !important;
+                }
                 .leaflet-popup-content-wrapper {
-                    background: rgba(15, 20, 30, 0.95) !important;
-                    backdrop-filter: blur(12px) !important;
-                    -webkit-backdrop-filter: blur(12px) !important;
-                    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-                    border-radius: 12px !important;
-                    box-shadow: 0 16px 40px rgba(0,0,0,0.6) !important;
+                    background: rgba(18, 16, 14, 0.96) !important;
+                    backdrop-filter: blur(14px) !important;
+                    -webkit-backdrop-filter: blur(14px) !important;
+                    border: 1px solid rgba(200, 162, 97, 0.35) !important;
+                    border-radius: 14px !important;
+                    box-shadow: 0 20px 45px rgba(0,0,0,0.85), 0 0 20px rgba(200, 162, 97, 0.12) !important;
                     padding: 0 !important;
                     color: #f1f5f9 !important;
                 }
@@ -340,21 +344,21 @@ const MapComponent = ({
                     line-height: 1.4 !important;
                 }
                 .leaflet-popup-tip {
-                    background: rgba(15, 20, 30, 0.95) !important;
-                    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+                    background: rgba(18, 16, 14, 0.96) !important;
+                    border: 1px solid rgba(200, 162, 97, 0.35) !important;
                 }
                 .leaflet-container {
                     font-family: inherit !important;
-                    background: #0f141e !important;
+                    background: #0f0e0c !important;
                 }
                 .leaflet-tooltip {
-                    background: rgba(15, 23, 42, 0.95) !important;
-                    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-                    color: #fff !important;
+                    background: rgba(18, 16, 14, 0.96) !important;
+                    border: 1px solid rgba(200, 162, 97, 0.4) !important;
+                    color: #ffffff !important;
                     font-weight: 600 !important;
                     font-size: 0.78rem !important;
                     border-radius: 6px !important;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.6) !important;
                     padding: 3px 8px !important;
                 }
             `}</style>
@@ -380,17 +384,17 @@ const MapComponent = ({
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '0.6rem',
-                        background: 'rgba(15, 20, 30, 0.88)',
+                        background: 'rgba(18, 16, 14, 0.92)',
                         backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255,255,255,0.15)',
+                        border: '1px solid rgba(200, 162, 97, 0.25)',
                         borderRadius: '8px',
                         padding: '0.4rem 0.8rem',
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
                         fontSize: '0.8rem',
                         color: '#fff'
                     }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: '600' }}>
-                            <Compass size={14} style={{ color: '#38bdf8' }} />
+                            <Compass size={14} style={{ color: '#c8a261' }} />
                             {stats.total} {stats.total === 1 ? 'Location' : 'Locations'}
                         </span>
                         {stats.critical > 0 && (
@@ -417,12 +421,12 @@ const MapComponent = ({
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.4rem',
-                        background: 'rgba(15, 20, 30, 0.88)',
+                        background: 'rgba(18, 16, 14, 0.92)',
                         backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255,255,255,0.15)',
+                        border: '1px solid rgba(200, 162, 97, 0.25)',
                         borderRadius: '8px',
                         padding: '0.3rem',
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.35)'
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.5)'
                     }}>
                         {/* Basemap Switcher Buttons */}
                         {Object.entries(BASEMAPS).map(([key, config]) => (
@@ -431,8 +435,8 @@ const MapComponent = ({
                                 type="button"
                                 onClick={() => setBasemapKey(key)}
                                 style={{
-                                    background: basemapKey === key ? 'rgba(56, 189, 248, 0.25)' : 'transparent',
-                                    border: basemapKey === key ? '1px solid #38bdf8' : '1px solid transparent',
+                                    background: basemapKey === key ? 'rgba(200, 162, 97, 0.25)' : 'transparent',
+                                    border: basemapKey === key ? '1px solid #c8a261' : '1px solid transparent',
                                     color: basemapKey === key ? '#ffffff' : 'rgba(255,255,255,0.7)',
                                     padding: '0.3rem 0.6rem',
                                     borderRadius: '6px',
@@ -451,7 +455,7 @@ const MapComponent = ({
                             </button>
                         ))}
 
-                        <div style={{ width: '1px', height: '18px', background: 'rgba(255,255,255,0.15)', margin: '0 0.15rem' }} />
+                        <div style={{ width: '1px', height: '18px', background: 'rgba(200, 162, 97, 0.25)', margin: '0 0.15rem' }} />
 
                         {/* Fit Bounds Button */}
                         <button
@@ -472,7 +476,7 @@ const MapComponent = ({
                             }}
                             title="Recenter and fit all markers"
                         >
-                            <Navigation size={13} style={{ color: '#38bdf8' }} /> Fit All
+                            <Navigation size={13} style={{ color: '#c8a261' }} /> Fit All
                         </button>
 
                         {/* Fullscreen Button */}
@@ -505,9 +509,9 @@ const MapComponent = ({
                     bottom: '14px',
                     left: '14px',
                     zIndex: 1000,
-                    background: 'rgba(15, 20, 30, 0.88)',
+                    background: 'rgba(18, 16, 14, 0.92)',
                     backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.12)',
+                    border: '1px solid rgba(200, 162, 97, 0.25)',
                     borderRadius: '8px',
                     padding: '0.45rem 0.75rem',
                     fontSize: '0.72rem',
@@ -515,7 +519,7 @@ const MapComponent = ({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.9rem',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.4)'
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.5)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: '#ef4444', display: 'inline-block', boxShadow: '0 0 6px #ef4444' }} />
@@ -585,15 +589,15 @@ const MapComponent = ({
                                 </div>
                             </Tooltip>
 
-                            <Popup className="custom-popup" maxWidth={310} minWidth={260}>
-                                <div style={{ padding: '0.85rem 1rem' }}>
+                            <Popup className="custom-popup" closeButton={false} maxWidth={310} minWidth={260}>
+                                <div style={{ padding: '0.9rem 1.1rem' }}>
                                     {/* Popup Header */}
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', marginBottom: '0.65rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', borderBottom: '1px solid rgba(200, 162, 97, 0.2)', paddingBottom: '0.55rem', marginBottom: '0.65rem' }}>
                                         <div>
-                                            <span style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                            <span style={{ fontSize: '0.68rem', color: '#c8a261', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>
                                                 Consumer Identifier
                                             </span>
-                                            <div style={{ fontSize: '1rem', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.01em' }}>
+                                            <div style={{ fontSize: '1.05rem', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.01em', marginTop: '1px' }}>
                                                 {item.consumer_id}
                                             </div>
                                         </div>
@@ -601,55 +605,56 @@ const MapComponent = ({
                                             fontSize: '0.7rem',
                                             fontWeight: '700',
                                             textTransform: 'uppercase',
-                                            padding: '0.2rem 0.5rem',
-                                            borderRadius: '4px',
+                                            padding: '0.2rem 0.55rem',
+                                            borderRadius: '5px',
                                             background: `${item.color}22`,
-                                            border: `1px solid ${item.color}55`,
-                                            color: item.color
+                                            border: `1px solid ${item.color}66`,
+                                            color: item.color,
+                                            letterSpacing: '0.02em'
                                         }}>
                                             {item.risk_class || (item.riskType === 'critical' ? 'Critical' : 'High Risk')}
                                         </span>
                                     </div>
 
                                     {/* Risk Score Progress Bar */}
-                                    <div style={{ marginBottom: '0.75rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                                            <span style={{ color: '#94a3b8' }}>Theft Probability:</span>
+                                    <div style={{ marginBottom: '0.85rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '0.3rem' }}>
+                                            <span style={{ color: 'rgba(255,255,255,0.7)' }}>Theft Probability:</span>
                                             <strong style={{ color: item.color }}>{riskPercent}%</strong>
                                         </div>
-                                        <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
                                             <div style={{ width: `${riskPercent}%`, height: '100%', background: item.color, borderRadius: '3px' }} />
                                         </div>
                                     </div>
 
                                     {/* Transformer & Location Details */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.78rem', color: '#cbd5e1', marginBottom: '0.85rem' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '0.9rem' }}>
                                         {item.transformer_id && (
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <span style={{ color: '#94a3b8' }}>Transformer:</span>
-                                                <strong style={{ color: '#f1f5f9' }}>{item.transformer_id}</strong>
+                                                <span style={{ color: 'rgba(255,255,255,0.6)' }}>Transformer:</span>
+                                                <strong style={{ color: '#ffffff' }}>{item.transformer_id}</strong>
                                             </div>
                                         )}
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ color: '#94a3b8' }}>GPS Coords:</span>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                                <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#e2e8f0' }}>
+                                            <span style={{ color: 'rgba(255,255,255,0.6)' }}>GPS Coords:</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                                <span style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: '#ffffff' }}>
                                                     {item.lat.toFixed(4)}&deg; N, {item.lng.toFixed(4)}&deg; E
                                                 </span>
                                                 <button
                                                     type="button"
                                                     onClick={(e) => handleCopyCoords(e, item.lat, item.lng, item.consumer_id)}
-                                                    style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                                                    style={{ background: 'none', border: 'none', color: '#c8a261', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
                                                     title="Copy GPS coordinates"
                                                 >
-                                                    {copiedId === item.consumer_id ? <Check size={12} style={{ color: '#10b981' }} /> : <Copy size={12} />}
+                                                    {copiedId === item.consumer_id ? <Check size={13} style={{ color: '#10b981' }} /> : <Copy size={13} />}
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Action Links */}
-                                    <div style={{ display: 'flex', gap: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                                    <div style={{ display: 'flex', gap: '0.5rem', paddingTop: '0.55rem', borderTop: '1px solid rgba(200, 162, 97, 0.18)' }}>
                                         <a
                                             href={googleMapsUrl}
                                             target="_blank"
@@ -659,18 +664,27 @@ const MapComponent = ({
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                gap: '0.35rem',
-                                                background: 'rgba(56, 189, 248, 0.15)',
-                                                border: '1px solid rgba(56, 189, 248, 0.35)',
-                                                color: '#38bdf8',
-                                                padding: '0.4rem 0.5rem',
-                                                borderRadius: '6px',
-                                                fontSize: '0.75rem',
+                                                gap: '0.4rem',
+                                                background: 'rgba(200, 162, 97, 0.12)',
+                                                border: '1px solid rgba(200, 162, 97, 0.35)',
+                                                color: '#c8a261',
+                                                padding: '0.45rem 0.6rem',
+                                                borderRadius: '7px',
+                                                fontSize: '0.78rem',
                                                 fontWeight: '600',
-                                                textDecoration: 'none'
+                                                textDecoration: 'none',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(200, 162, 97, 0.22)';
+                                                e.currentTarget.style.borderColor = 'rgba(200, 162, 97, 0.6)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'rgba(200, 162, 97, 0.12)';
+                                                e.currentTarget.style.borderColor = 'rgba(200, 162, 97, 0.35)';
                                             }}
                                         >
-                                            <ExternalLink size={12} /> Google Maps
+                                            <ExternalLink size={13} /> Google Maps
                                         </a>
                                     </div>
                                 </div>

@@ -89,7 +89,7 @@ const TransformerStatsModal = ({ isOpen, onClose, data }) => {
                                     <XAxis dataKey="transformer_id" stroke="rgba(255,255,255,0.6)" />
                                     <YAxis stroke="rgba(255,255,255,0.6)" />
                                     <Tooltip 
-                                        cursor={{ fill: 'rgba(255,255,255,0.1)' }} 
+                                        cursor={{ fill: 'transparent' }} 
                                         contentStyle={{ 
                                             background: 'rgba(18, 16, 14, 0.95)', 
                                             border: '1px solid rgba(200, 162, 97, 0.35)', 
