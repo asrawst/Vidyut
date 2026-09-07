@@ -165,6 +165,51 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         localStorage.setItem('vidyut_inspector_challans', JSON.stringify(challans));
     }, [challans]);
 
+    // Fetch and sync challans from Supabase Cloud Server DB
+    useEffect(() => {
+        const fetchChallansFromDB = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('inspection_challans')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (data && !error && data.length > 0) {
+                    setChallans(data);
+                    localStorage.setItem('vidyut_inspector_challans', JSON.stringify(data));
+                }
+            } catch (err) {
+                console.warn("Challans DB notice:", err);
+            }
+        };
+
+        fetchChallansFromDB();
+
+        // Subscribe to server-side Postgres changes
+        const challanDbChannel = supabase
+            .channel('inspector_challans_db_sync')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'inspection_challans' }, () => {
+                fetchChallansFromDB();
+            })
+            .on('broadcast', { event: 'new_challan' }, (e) => {
+                if (e.payload) {
+                    setChallans(prev => {
+                        if (prev.some(c => c.id === e.payload.id)) return prev;
+                        return [e.payload, ...prev];
+                    });
+                }
+            })
+            .on('broadcast', { event: 'update_challan_status' }, (e) => {
+                if (e.payload && e.payload.id) {
+                    setChallans(prev => prev.map(c => c.id === e.payload.id ? { ...c, status: e.payload.status } : c));
+                }
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(challanDbChannel);
+        };
+    }, []);
+
     // Aggregated list of consumers from past audits & assigned inspection tasks for quick selection
     const pastInspectionOptions = useMemo(() => {
         const list = [];
@@ -293,6 +338,56 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         }
     };
 
+    // Cancel / Release current audit task so it can be reassigned
+    const cancelAudit = async () => {
+        if (!currentTask) return;
+        const cid = currentTask.consumer_id;
+        if (confirm(`Cancel and release audit for Consumer ${cid}?\n\nThis will unassign you from this task and release it back to DISCOM admin for reassignment.`)) {
+            try {
+                // Delete from Supabase tasks table
+                await supabase
+                    .from('inspection_tasks')
+                    .delete()
+                    .eq('consumer_id', cid);
+
+                // Update local state
+                setAllAssignedTasks(prev => prev.filter(t => t.consumer_id !== cid));
+                
+                // Remove from local storage
+                const savedTasks = JSON.parse(localStorage.getItem('vidyut_assigned_tasks') || '[]');
+                localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(savedTasks.filter(t => t.consumer_id !== cid)));
+
+                const savedStatus = JSON.parse(localStorage.getItem('vidyut_local_inspection_status') || '{}');
+                delete savedStatus[cid];
+                localStorage.setItem('vidyut_local_inspection_status', JSON.stringify(savedStatus));
+
+                const savedAssign = JSON.parse(localStorage.getItem('vidyut_assigned_inspectors') || '{}');
+                delete savedAssign[cid];
+                localStorage.setItem('vidyut_assigned_inspectors', JSON.stringify(savedAssign));
+
+                const savedCal = JSON.parse(localStorage.getItem('vidyut_inspection_calendar') || '[]');
+                localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(savedCal.filter(c => c.consumer !== cid)));
+
+                // Dispatch local window event & broadcast
+                window.dispatchEvent(new CustomEvent('vidyut_task_deleted', { detail: { consumer_id: cid } }));
+                try {
+                    const channel = supabase.channel('admin_tasks_realtime_channel');
+                    channel.send({
+                        type: 'broadcast',
+                        event: 'task_deleted',
+                        payload: { consumer_id: cid }
+                    }).catch(e => console.warn(e));
+                } catch (e) {}
+
+                alert(`Audit for Consumer ${cid} has been cancelled and released.`);
+                setSelectedConsumerId(null);
+            } catch (err) {
+                console.error("Error cancelling audit:", err);
+                alert("Error cancelling audit. Please try again.");
+            }
+        }
+    };
+
     // Form Handlers
     const handleChallanSubmit = async (e) => {
         e.preventDefault();
@@ -320,10 +415,19 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         localStorage.setItem('vidyut_inspector_challans', JSON.stringify(updatedChallans));
         localStorage.setItem('vidyut_admin_challans', JSON.stringify(updatedChallans));
 
-        // Realtime window dispatch for instant local tab sync
+        // 1. Save directly to Supabase Cloud Server Database
+        try {
+            await supabase
+                .from('inspection_challans')
+                .upsert([newChallan]);
+        } catch (err) {
+            console.warn("Supabase cloud database save notice:", err);
+        }
+
+        // 2. Realtime window dispatch for instant local tab sync
         window.dispatchEvent(new CustomEvent('vidyut_challan_created', { detail: newChallan }));
 
-        // Realtime broadcast via Supabase Realtime channel
+        // 3. Realtime broadcast via Supabase Realtime channel
         try {
             const channel = supabase.channel('vidyut_challans_realtime_channel');
             channel.send({
@@ -335,7 +439,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
             console.warn("Supabase real-time notice:", err);
         }
 
-        alert(`Challan ${newChallan.id} for Consumer ${newChallan.consumer} created successfully! Synced in real-time to Admin Panel.`);
+        alert(`Challan ${newChallan.id} for Consumer ${newChallan.consumer} created & saved to global cloud server!`);
         setChallanForm({ consumerId: '', anomaly: 'Bypassing meter', load: '', penalty: '', details: '' });
     };
 
@@ -571,6 +675,27 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                             }}>
                                                 Status: {inspectionStatus === 'Inprocess' ? 'In Process' : inspectionStatus}
                                             </span>
+                                            
+                                            <button
+                                                onClick={cancelAudit}
+                                                style={{
+                                                    padding: '0.4rem 0.75rem',
+                                                    borderRadius: '6px',
+                                                    background: 'rgba(239, 68, 68, 0.08)',
+                                                    color: '#ef4444',
+                                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.35rem',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                                title="Cancel / release this audit so it can be reassigned"
+                                            >
+                                                <X size={14} /> Cancel Audit
+                                            </button>
                                         </div>
                                     </div>
 

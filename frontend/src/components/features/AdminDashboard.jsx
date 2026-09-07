@@ -3,7 +3,7 @@ import {
     User, ListCollapse, Ban, TrendingUp, Calendar, AlertTriangle, 
     History as HistoryIcon, Settings as SettingsIcon, UploadCloud, 
     Download, RefreshCw, Layers, ShieldAlert, Sparkles, MapPin, 
-    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Zap 
+    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Zap, Lock 
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LineChart, Line } from 'recharts';
 import MapComponent from './MapComponent';
@@ -245,15 +245,17 @@ const AdminDashboard = ({
             .on('postgres_changes', { event: '*', schema: 'public', table: 'inspection_tasks' }, (payload) => {
                 if (payload.new) {
                     const updated = payload.new;
-                    setLocalInspectionStatus(prev => ({
-                        ...prev,
-                        [updated.consumer_id]: updated.status
-                    }));
+                    setLocalInspectionStatus(prev => {
+                        const next = { ...prev, [updated.consumer_id]: updated.status };
+                        localStorage.setItem('vidyut_local_inspection_status', JSON.stringify(next));
+                        return next;
+                    });
                     if (updated.inspector_name) {
-                        setAssignedInspectors(prev => ({
-                            ...prev,
-                            [updated.consumer_id]: updated.inspector_name
-                        }));
+                        setAssignedInspectors(prev => {
+                            const next = { ...prev, [updated.consumer_id]: updated.inspector_name };
+                            localStorage.setItem('vidyut_assigned_inspectors', JSON.stringify(next));
+                            return next;
+                        });
                     }
 
                     // Realtime sync to Inspection Tab Calendar
@@ -269,11 +271,48 @@ const AdminDashboard = ({
                         localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(nextList));
                         return nextList;
                     });
-                } else if (payload.old && payload.eventType === 'DELETE') {
+                } else if (payload.eventType === 'DELETE' || (payload.old && payload.old.consumer_id)) {
+                    const delId = payload.old?.consumer_id;
+                    if (delId) {
+                        setInspectionCalendar(prev => {
+                            const nextList = prev.filter(c => c.consumer !== delId);
+                            localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(nextList));
+                            return nextList;
+                        });
+                        setLocalInspectionStatus(prev => {
+                            const next = { ...prev };
+                            delete next[delId];
+                            localStorage.setItem('vidyut_local_inspection_status', JSON.stringify(next));
+                            return next;
+                        });
+                        setAssignedInspectors(prev => {
+                            const next = { ...prev };
+                            delete next[delId];
+                            localStorage.setItem('vidyut_assigned_inspectors', JSON.stringify(next));
+                            return next;
+                        });
+                    }
+                }
+            })
+            .on('broadcast', { event: 'task_deleted' }, (event) => {
+                if (event.payload && event.payload.consumer_id) {
+                    const delId = event.payload.consumer_id;
                     setInspectionCalendar(prev => {
-                        const nextList = prev.filter(c => c.consumer !== payload.old.consumer_id);
+                        const nextList = prev.filter(c => c.consumer !== delId);
                         localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(nextList));
                         return nextList;
+                    });
+                    setLocalInspectionStatus(prev => {
+                        const next = { ...prev };
+                        delete next[delId];
+                        localStorage.setItem('vidyut_local_inspection_status', JSON.stringify(next));
+                        return next;
+                    });
+                    setAssignedInspectors(prev => {
+                        const next = { ...prev };
+                        delete next[delId];
+                        localStorage.setItem('vidyut_assigned_inspectors', JSON.stringify(next));
+                        return next;
                     });
                 }
             })
@@ -320,14 +359,63 @@ const AdminDashboard = ({
             })
             .subscribe();
 
+        // Fetch and sync Challans from Supabase Cloud DB
+        const fetchChallansFromDB = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('inspection_challans')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (data && !error && data.length > 0) {
+                    setChallans(data);
+                    localStorage.setItem('vidyut_admin_challans', JSON.stringify(data));
+                }
+            } catch (err) {
+                console.warn("Challans DB notice:", err);
+            }
+        };
+        fetchChallansFromDB();
+
+        // Fetch and sync Blacklisted Consumers from Supabase Cloud DB
+        const fetchBlacklistedFromDB = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('blacklisted_consumers')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (data && !error && data.length > 0) {
+                    setBlacklistedConsumers(data);
+                    localStorage.setItem('vidyut_blacklisted_consumers', JSON.stringify(data));
+                }
+            } catch (err) {
+                console.warn("Blacklisted DB notice:", err);
+            }
+        };
+        fetchBlacklistedFromDB();
+
         // Subscribe to real-time Challans issued by Field Inspectors
         const challanChannel = supabase
-            .channel('vidyut_challans_realtime_channel')
+            .channel('admin_challans_realtime_channel')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'inspection_challans' }, () => {
+                fetchChallansFromDB();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'blacklisted_consumers' }, () => {
+                fetchBlacklistedFromDB();
+            })
             .on('broadcast', { event: 'new_challan' }, (event) => {
                 if (event.payload) {
                     setChallans(prev => {
                         if (prev.some(c => c.id === event.payload.id)) return prev;
                         const next = [event.payload, ...prev];
+                        localStorage.setItem('vidyut_admin_challans', JSON.stringify(next));
+                        return next;
+                    });
+                }
+            })
+            .on('broadcast', { event: 'update_challan_status' }, (event) => {
+                if (event.payload && event.payload.id) {
+                    setChallans(prev => {
+                        const next = prev.map(c => c.id === event.payload.id ? { ...c, status: event.payload.status } : c);
                         localStorage.setItem('vidyut_admin_challans', JSON.stringify(next));
                         return next;
                     });
@@ -354,9 +442,39 @@ const AdminDashboard = ({
                     if (Array.isArray(parsed)) setChallans(parsed);
                 } catch (err) {}
             }
+            if (e.key === 'vidyut_blacklisted_consumers') {
+                try {
+                    const parsed = JSON.parse(e.newValue || '[]');
+                    if (Array.isArray(parsed)) setBlacklistedConsumers(parsed);
+                } catch (err) {}
+            }
+        };
+
+        const handleLocalTaskDeleted = (e) => {
+            if (e.detail && e.detail.consumer_id) {
+                const delId = e.detail.consumer_id;
+                setInspectionCalendar(prev => {
+                    const next = prev.filter(c => c.consumer !== delId);
+                    localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(next));
+                    return next;
+                });
+                setLocalInspectionStatus(prev => {
+                    const next = { ...prev };
+                    delete next[delId];
+                    localStorage.setItem('vidyut_local_inspection_status', JSON.stringify(next));
+                    return next;
+                });
+                setAssignedInspectors(prev => {
+                    const next = { ...prev };
+                    delete next[delId];
+                    localStorage.setItem('vidyut_assigned_inspectors', JSON.stringify(next));
+                    return next;
+                });
+            }
         };
 
         window.addEventListener('vidyut_challan_created', handleLocalChallan);
+        window.addEventListener('vidyut_task_deleted', handleLocalTaskDeleted);
         window.addEventListener('storage', handleStorageSync);
 
         return () => {
@@ -364,6 +482,7 @@ const AdminDashboard = ({
             supabase.removeChannel(histChannel);
             supabase.removeChannel(challanChannel);
             window.removeEventListener('vidyut_challan_created', handleLocalChallan);
+            window.removeEventListener('vidyut_task_deleted', handleLocalTaskDeleted);
             window.removeEventListener('storage', handleStorageSync);
         };
     }, []);
@@ -657,10 +776,30 @@ const AdminDashboard = ({
 
     // Handle inspector assignment & sync with calendar, localStorage and Supabase DB
     const handleInspectorChange = async (consumerId, inspector) => {
-        setAssignedInspectors(prev => ({
-            ...prev,
-            [consumerId]: inspector
-        }));
+        const currentInspector = assignedInspectors[consumerId];
+        const currentStatus = (localInspectionStatus[consumerId] || '').toLowerCase();
+        const isCancelled = currentStatus === 'cancelled' || currentStatus === 'canceled' || currentStatus === 'declined';
+
+        // Check if consumer is actively assigned to another inspector and has not been cancelled
+        if (currentInspector && inspector && currentInspector !== inspector && !isCancelled) {
+            alert(
+                `🔒 Audit Locked to ${currentInspector}\n\n` +
+                `Consumer "${consumerId}" is currently assigned to ${currentInspector} (Status: ${localInspectionStatus[consumerId] || 'Initiated'}).\n\n` +
+                `This audit cannot be reassigned to another inspector until ${currentInspector} cancels or releases the audit.`
+            );
+            return;
+        }
+
+        setAssignedInspectors(prev => {
+            const next = { ...prev };
+            if (inspector) {
+                next[consumerId] = inspector;
+            } else {
+                delete next[consumerId];
+            }
+            localStorage.setItem('vidyut_assigned_inspectors', JSON.stringify(next));
+            return next;
+        });
 
         // Find consumer details in result to get zone, transformer, exact coordinates & risk
         const consumerObj = result?.results?.find(a => a.consumer_id === consumerId) ||
@@ -1421,20 +1560,32 @@ const AdminDashboard = ({
                                                                 })()}
                                                             </td>
                                                             <td style={{ padding: '1rem' }}>
-                                                                <select
-                                                                    value={assignedInspectors[item.consumer_id] || ''}
-                                                                    onChange={(e) => handleInspectorChange(item.consumer_id, e.target.value)}
-                                                                    className="table-select"
-                                                                    style={{ 
-                                                                        borderColor: assignedInspectors[item.consumer_id] ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255,255,255,0.1)',
-                                                                        color: assignedInspectors[item.consumer_id] ? '#10b981' : 'white'
-                                                                    }}
-                                                                >
-                                                                    <option value="">-- Assign Inspector --</option>
-                                                                    {inspectorsList.map(insp => (
-                                                                        <option key={insp} value={insp}>{insp}</option>
-                                                                    ))}
-                                                                </select>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                    <select
+                                                                        value={assignedInspectors[item.consumer_id] || ''}
+                                                                        onChange={(e) => handleInspectorChange(item.consumer_id, e.target.value)}
+                                                                        className="table-select"
+                                                                        style={{ 
+                                                                            borderColor: assignedInspectors[item.consumer_id] ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255,255,255,0.1)',
+                                                                            color: assignedInspectors[item.consumer_id] ? '#10b981' : 'white',
+                                                                            background: assignedInspectors[item.consumer_id] ? 'rgba(16, 185, 129, 0.08)' : 'rgba(18,16,14,0.9)'
+                                                                        }}
+                                                                        title={assignedInspectors[item.consumer_id] ? `Assigned to ${assignedInspectors[item.consumer_id]}. Locked until audit is cancelled.` : 'Assign an inspector'}
+                                                                    >
+                                                                        <option value="">-- Assign Inspector --</option>
+                                                                        {inspectorsList.map(insp => (
+                                                                            <option key={insp} value={insp}>{insp}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                    {assignedInspectors[item.consumer_id] && (
+                                                                        <span 
+                                                                            title={`Locked to ${assignedInspectors[item.consumer_id]}. Must be cancelled before reassigning.`}
+                                                                            style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', cursor: 'help' }}
+                                                                        >
+                                                                            <Lock size={14} />
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -1542,10 +1693,22 @@ const AdminDashboard = ({
                                         </button>
                                     </div>
                                     <form 
-                                        onSubmit={(e) => {
+                                        onSubmit={async (e) => {
                                             e.preventDefault();
                                             if (newConsumerData.id && newConsumerData.addr) {
-                                                setBlacklistedConsumers([...blacklistedConsumers, newConsumerData]);
+                                                const updated = [newConsumerData, ...blacklistedConsumers.filter(item => item.id !== newConsumerData.id)];
+                                                setBlacklistedConsumers(updated);
+                                                localStorage.setItem('vidyut_blacklisted_consumers', JSON.stringify(updated));
+                                                
+                                                // Persist to Supabase Cloud Server Database
+                                                try {
+                                                    await supabase
+                                                        .from('blacklisted_consumers')
+                                                        .upsert([newConsumerData]);
+                                                } catch (err) {
+                                                    console.warn("Supabase blacklist save notice:", err);
+                                                }
+
                                                 setNewConsumerData({ id: '', addr: '', severity: '', fine: '', status: 'Meter Removed' });
                                                 setIsAddingConsumer(false);
                                             } else {
@@ -1749,8 +1912,17 @@ const AdminDashboard = ({
                                                             <td style={{ padding: '1rem', textAlign: 'center' }}>
                                                                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                                                                     <button 
-                                                                        onClick={() => {
-                                                                            setBlacklistedConsumers(blacklistedConsumers.map(item => item.id === c.id ? editConsumerData : item));
+                                                                        onClick={async () => {
+                                                                            const updated = blacklistedConsumers.map(item => item.id === c.id ? editConsumerData : item);
+                                                                            setBlacklistedConsumers(updated);
+                                                                            localStorage.setItem('vidyut_blacklisted_consumers', JSON.stringify(updated));
+                                                                            try {
+                                                                                await supabase
+                                                                                    .from('blacklisted_consumers')
+                                                                                    .upsert([editConsumerData]);
+                                                                            } catch (err) {
+                                                                                console.warn("Supabase blacklist update notice:", err);
+                                                                            }
                                                                             setEditingConsumerId(null);
                                                                         }}
                                                                         style={{ padding: '0.3rem 0.6rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600' }}
@@ -1791,9 +1963,19 @@ const AdminDashboard = ({
                                                                         <Edit2 size={16} />
                                                                     </button>
                                                                     <button 
-                                                                        onClick={() => {
+                                                                        onClick={async () => {
                                                                             if (confirm(`Are you sure you want to delete blacklisted consumer ${c.id}?`)) {
-                                                                                setBlacklistedConsumers(blacklistedConsumers.filter(item => item.id !== c.id));
+                                                                                const updated = blacklistedConsumers.filter(item => item.id !== c.id);
+                                                                                setBlacklistedConsumers(updated);
+                                                                                localStorage.setItem('vidyut_blacklisted_consumers', JSON.stringify(updated));
+                                                                                try {
+                                                                                    await supabase
+                                                                                        .from('blacklisted_consumers')
+                                                                                        .delete()
+                                                                                        .eq('id', c.id);
+                                                                                } catch (err) {
+                                                                                    console.warn("Supabase blacklist delete notice:", err);
+                                                                                }
                                                                             }
                                                                         }}
                                                                         style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
@@ -1846,12 +2028,23 @@ const AdminDashboard = ({
                             fullAmount: amount
                         }));
 
-                        const handleUpdateChallanStatus = (challanId, newStatus) => {
+                        const handleUpdateChallanStatus = async (challanId, newStatus) => {
                             const updated = challans.map(ch => ch.id === challanId ? { ...ch, status: newStatus } : ch);
                             setChallans(updated);
                             localStorage.setItem('vidyut_admin_challans', JSON.stringify(updated));
                             localStorage.setItem('vidyut_inspector_challans', JSON.stringify(updated));
                             window.dispatchEvent(new CustomEvent('vidyut_challan_created', { detail: { id: challanId, status: newStatus } }));
+                            
+                            // Persist to Supabase Cloud Server Database
+                            try {
+                                await supabase
+                                    .from('inspection_challans')
+                                    .update({ status: newStatus, updated_at: new Date().toISOString() })
+                                    .eq('id', challanId);
+                            } catch (err) {
+                                console.warn("Supabase challan status update notice:", err);
+                            }
+
                             try {
                                 const channel = supabase.channel('vidyut_challans_realtime_channel');
                                 channel.send({
@@ -2055,11 +2248,43 @@ const AdminDashboard = ({
                                                                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                                                                     <button 
                                                                         onClick={async () => {
+                                                                            const targetConsumer = ins.consumer;
+                                                                            const oldInspector = ins.inspector;
+                                                                            const newInspector = editCalendarData.inspector;
+                                                                            const oldStatus = (ins.status || '').toLowerCase();
+                                                                            const isCancelled = oldStatus === 'cancelled' || oldStatus === 'canceled';
+
+                                                                            if (oldInspector && newInspector && oldInspector !== newInspector && !isCancelled) {
+                                                                                alert(
+                                                                                    `🔒 Audit Locked to ${oldInspector}\n\n` +
+                                                                                    `Consumer "${targetConsumer}" is actively assigned to ${oldInspector}.\n\n` +
+                                                                                    `It cannot be reassigned to another inspector until ${oldInspector} cancels or releases the audit.`
+                                                                                );
+                                                                                return;
+                                                                            }
+
                                                                             setInspectionCalendar(prev => {
-                                                                                const next = prev.map(item => item.consumer === ins.consumer ? editCalendarData : item);
+                                                                                const next = prev.map(item => item.consumer === targetConsumer ? editCalendarData : item);
                                                                                 localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(next));
                                                                                 return next;
                                                                             });
+
+                                                                            if (editCalendarData.status) {
+                                                                                setLocalInspectionStatus(prev => {
+                                                                                    const next = { ...prev, [targetConsumer]: editCalendarData.status };
+                                                                                    localStorage.setItem('vidyut_local_inspection_status', JSON.stringify(next));
+                                                                                    return next;
+                                                                                });
+                                                                            }
+
+                                                                            if (editCalendarData.inspector) {
+                                                                                setAssignedInspectors(prev => {
+                                                                                    const next = { ...prev, [targetConsumer]: editCalendarData.inspector };
+                                                                                    localStorage.setItem('vidyut_assigned_inspectors', JSON.stringify(next));
+                                                                                    return next;
+                                                                                });
+                                                                            }
+
                                                                             setEditingCalendarId(null);
                                                                             try {
                                                                                 await supabase
@@ -2070,7 +2295,7 @@ const AdminDashboard = ({
                                                                                         status: editCalendarData.status,
                                                                                         updated_at: new Date().toISOString()
                                                                                     })
-                                                                                    .eq('consumer_id', ins.consumer);
+                                                                                    .eq('consumer_id', targetConsumer);
                                                                             } catch (e) {
                                                                                 console.error(e);
                                                                             }
@@ -2139,19 +2364,52 @@ const AdminDashboard = ({
                                                                     <button 
                                                                         onClick={async () => {
                                                                             if (confirm(`Remove consumer ${ins.consumer} from inspection calendar?`)) {
+                                                                                const targetConsumer = ins.consumer;
+                                                                                
+                                                                                // 1. Remove from Inspection Calendar state & cache
                                                                                 setInspectionCalendar(prev => {
-                                                                                    const next = prev.filter(item => item.consumer !== ins.consumer);
+                                                                                    const next = prev.filter(item => item.consumer !== targetConsumer);
                                                                                     localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(next));
                                                                                     return next;
                                                                                 });
+
+                                                                                // 2. Immediately reset Detected Anomalies Inspection Status & Inspector Assignment
+                                                                                setLocalInspectionStatus(prev => {
+                                                                                    const next = { ...prev };
+                                                                                    delete next[targetConsumer];
+                                                                                    localStorage.setItem('vidyut_local_inspection_status', JSON.stringify(next));
+                                                                                    return next;
+                                                                                });
+
+                                                                                setAssignedInspectors(prev => {
+                                                                                    const next = { ...prev };
+                                                                                    delete next[targetConsumer];
+                                                                                    localStorage.setItem('vidyut_assigned_inspectors', JSON.stringify(next));
+                                                                                    return next;
+                                                                                });
+
+                                                                                // 3. Dispatch local window event for multi-tab sync
+                                                                                window.dispatchEvent(new CustomEvent('vidyut_task_deleted', { detail: { consumer_id: targetConsumer } }));
+
+                                                                                // 4. Delete from Supabase Cloud Server Database
                                                                                 try {
                                                                                     await supabase
                                                                                         .from('inspection_tasks')
                                                                                         .delete()
-                                                                                        .eq('consumer_id', ins.consumer);
+                                                                                        .eq('consumer_id', targetConsumer);
                                                                                 } catch (e) {
                                                                                     console.error(e);
                                                                                 }
+
+                                                                                // 5. Broadcast deletion over Supabase Realtime channel
+                                                                                try {
+                                                                                    const channel = supabase.channel('admin_tasks_realtime_channel');
+                                                                                    channel.send({
+                                                                                        type: 'broadcast',
+                                                                                        event: 'task_deleted',
+                                                                                        payload: { consumer_id: targetConsumer }
+                                                                                    }).catch(e => console.warn(e));
+                                                                                } catch (e) {}
                                                                             }
                                                                         }}
                                                                         style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
