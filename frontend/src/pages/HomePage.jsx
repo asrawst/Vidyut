@@ -1,32 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Hero from '../components/layout/Hero';
 import Footer from '../components/layout/Footer';
-import UploadBlock from '../components/features/UploadBlock';
-import FetchButton from '../components/common/FetchButton';
 import LoginModal from '../components/modals/LoginModal';
 import InspectorLoginModal from '../components/modals/InspectorLoginModal';
 import AboutUsModal from '../components/modals/AboutUsModal';
 import ResetPasswordModal from '../components/modals/ResetPasswordModal';
-import { Sliders, CheckCircle, Smartphone, AlertCircle, X, ShieldAlert, Award, ExternalLink, Shield, UserCheck, ArrowRight } from 'lucide-react';
-import { supabase } from '../supabaseClient';
-
-const dataset = {
-  id: 'source',
-  title: 'Upload Source Dataset',
-  description: 'File format: .csv',
-  icon: 'meter',
-  details: {
-    text: 'Upload the complete dataset containing consumer consumption, transformer mapping, and other required signals.',
-    columns: ['consumer_id', 'energy_consumed', 'transformer_id']
-  }
-};
+import { ExternalLink, Shield, UserCheck, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const [files, setFiles] = useState({});
-  const [loading, setLoading] = useState(false);
   
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('vidyut_user');
@@ -57,55 +41,6 @@ export default function HomePage() {
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  const handleFileUpload = (id, file) => {
-    setFiles(prev => ({
-      ...prev,
-      [id]: file
-    }));
-  };
-
-  const handleFetch = async () => {
-    if (!user) {
-      setIsLoginModalOpen(true);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const formData = new FormData();
-      const sourceFile = files['source'];
-
-      if (!sourceFile) {
-        alert("Please upload the source dataset first.");
-        setLoading(false);
-        return;
-      }
-
-      formData.append('files', sourceFile);
-      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      const API_BASE_URL = rawApiUrl.trim().replace(/\/+$/, '');
-      const response = await fetch(`${API_BASE_URL}/api/v1/analyze`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server error: ${errorText}`);
-      }
-
-      const data = await response.json();
-      const resultData = data.status === 'success' ? data.data : data;
-      localStorage.setItem('vidyut_result', JSON.stringify(resultData));
-      navigate('/admin');
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      alert(`Error during analysis: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleAdminLogout = () => {
     setUser(null);
     localStorage.removeItem('vidyut_user');
@@ -125,13 +60,13 @@ export default function HomePage() {
       <main className="main-content" style={{ padding: '0 2rem' }}>
         <Hero />
 
-        {/* Simultaneous Portals Fast Launch Panel */}
-        <section style={{ maxWidth: '1200px', margin: '0 auto 3rem auto', width: '100%' }}>
+        {/* Multi-Portal Command Panels */}
+        <section style={{ maxWidth: '1200px', margin: '0 auto 4rem auto', width: '100%' }}>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
             gap: '1.5rem',
-            marginBottom: '2.5rem'
+            marginBottom: '2rem'
           }}>
             {/* Admin Portal Card */}
             <div style={{
@@ -298,45 +233,6 @@ export default function HomePage() {
                 </a>
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* Upload Dataset Section */}
-        <section style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
-          <h2 id="upload-section" className="section-title">Upload Dataset</h2>
-          
-          <div className="upload-grid" style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
-            <div 
-              onClickCapture={(e) => {
-                if (!user) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsLoginModalOpen(true);
-                }
-              }}
-              style={{ width: '100%', maxWidth: '350px' }}
-            >
-              <UploadBlock
-                title={dataset.title}
-                description={dataset.description}
-                icon={dataset.icon}
-                details={dataset.details}
-                onFileUpload={(file) => handleFileUpload(dataset.id, file)}
-                sampleData={{
-                  url: '/sample_data/sample_dataset.csv',
-                  name: 'Sample_Dataset.csv'
-                }}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '4rem' }}>
-            <FetchButton 
-              onClick={handleFetch} 
-              disabled={loading} 
-              loading={loading}
-              text="Run Anomaly Detection Analysis"
-            />
           </div>
         </section>
       </main>
