@@ -1748,37 +1748,156 @@ const AdminDashboard = ({
                         </div>
                     )}
 
-                    {activeTab === 'Loss Recovery' && (
-                        <div className="dashboard-panel">
-                            <div className="panel-card">
-                                <h3 className="panel-title">T&D Loss Recovery Dashboard</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', marginBottom: '2rem' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>Target Recovery (Q3)</span>
-                                            <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'white', marginTop: '0.25rem' }}>₹12.4 Lakhs</div>
+                    {activeTab === 'Loss Recovery' && (() => {
+                        const totalPenaltyAssessed = challans.reduce((sum, ch) => {
+                            const raw = ch.penalty_raw || parseFloat(String(ch.penalty || '').replace(/[^\d.]/g, '')) || 0;
+                            return sum + raw;
+                        }, 0);
+
+                        const paidChallans = challans.filter(ch => (ch.status || '').toLowerCase() === 'paid');
+                        const realizedPenalty = paidChallans.reduce((sum, ch) => {
+                            const raw = ch.penalty_raw || parseFloat(String(ch.penalty || '').replace(/[^\d.]/g, '')) || 0;
+                            return sum + raw;
+                        }, 0);
+
+                        const parsedLoss = result?.summary?.total_loss_calculated 
+                            ? parseFloat(String(result.summary.total_loss_calculated).replace(/[^\d.]/g, '')) 
+                            : 1240000;
+                        const targetRecovery = Math.max(parsedLoss, totalPenaltyAssessed > 0 ? totalPenaltyAssessed * 1.25 : 1240000);
+                        const recoveryRate = targetRecovery > 0 ? ((totalPenaltyAssessed / targetRecovery) * 100).toFixed(1) : '0';
+
+                        // Calculate penalty breakdown by anomaly class
+                        const categoryBreakdown = {};
+                        challans.forEach(ch => {
+                            const cat = ch.anomaly || 'Meter Bypassing';
+                            const raw = ch.penalty_raw || parseFloat(String(ch.penalty || '').replace(/[^\d.]/g, '')) || 0;
+                            categoryBreakdown[cat] = (categoryBreakdown[cat] || 0) + raw;
+                        });
+
+                        const categoryChartData = Object.entries(categoryBreakdown).map(([name, amount]) => ({
+                            name: name.length > 18 ? name.slice(0, 16) + '...' : name,
+                            amount: amount / 1000, // in Thousands for chart
+                            fullAmount: amount
+                        }));
+
+                        const handleUpdateChallanStatus = (challanId, newStatus) => {
+                            const updated = challans.map(ch => ch.id === challanId ? { ...ch, status: newStatus } : ch);
+                            setChallans(updated);
+                            localStorage.setItem('vidyut_admin_challans', JSON.stringify(updated));
+                            localStorage.setItem('vidyut_inspector_challans', JSON.stringify(updated));
+                            window.dispatchEvent(new CustomEvent('vidyut_challan_created', { detail: { id: challanId, status: newStatus } }));
+                            try {
+                                const channel = supabase.channel('vidyut_challans_realtime_channel');
+                                channel.send({
+                                    type: 'broadcast',
+                                    event: 'update_challan_status',
+                                    payload: { id: challanId, status: newStatus }
+                                }).catch(e => console.warn(e));
+                            } catch (e) {}
+                        };
+
+                        return (
+                            <div className="dashboard-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                {/* Top KPI Metric Cards (Synced with Challans) */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+                                    <div className="panel-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', fontWeight: '500' }}>Total Assessed Penalties</span>
+                                            <span style={{ fontSize: '0.72rem', color: '#c8a261', background: 'rgba(200,162,97,0.1)', padding: '0.15rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(200,162,97,0.25)' }}>
+                                                {challans.length} Challan{challans.length === 1 ? '' : 's'}
+                                            </span>
                                         </div>
-                                        <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>Realized Recovery</span>
-                                            <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#10b981', marginTop: '0.25rem' }}>₹5.8 Lakhs</div>
+                                        <div style={{ fontSize: '1.85rem', fontWeight: '700', color: '#ef4444' }}>
+                                            ₹{totalPenaltyAssessed.toLocaleString('en-IN')}
                                         </div>
-                                        <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>Recovery Progress Rate</span>
-                                            <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--accent-blue)', marginTop: '0.25rem' }}>46.7%</div>
+                                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                                            From field inspection bypass & hooking audits
+                                        </span>
+                                    </div>
+
+                                    <div className="panel-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', fontWeight: '500' }}>Realized / Collected Revenue</span>
+                                        <div style={{ fontSize: '1.85rem', fontWeight: '700', color: '#10b981' }}>
+                                            ₹{(realizedPenalty > 0 ? realizedPenalty : totalPenaltyAssessed).toLocaleString('en-IN')}
+                                        </div>
+                                        <span style={{ fontSize: '0.75rem', color: 'rgba(16,185,129,0.7)' }}>
+                                            {paidChallans.length > 0 ? `${paidChallans.length} Paid Cases` : 'Enforcement active across DISCOM'}
+                                        </span>
+                                    </div>
+
+                                    <div className="panel-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', fontWeight: '500' }}>Target Recovery Scope</span>
+                                        <div style={{ fontSize: '1.85rem', fontWeight: '700', color: '#ffffff' }}>
+                                            ₹{(targetRecovery >= 100000 ? (targetRecovery / 100000).toFixed(2) + ' Lakhs' : targetRecovery.toLocaleString('en-IN'))}
+                                        </div>
+                                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                                            Calculated from feeder & transformer grid loss
+                                        </span>
+                                    </div>
+
+                                    <div className="panel-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', fontWeight: '500' }}>Recovery Progress</span>
+                                            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>{recoveryRate}%</span>
+                                        </div>
+                                        <div style={{ fontSize: '1.85rem', fontWeight: '700', color: '#c8a261' }}>
+                                            {recoveryRate}%
+                                        </div>
+                                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginTop: '0.2rem' }}>
+                                            <div style={{ width: `${Math.min(100, parseFloat(recoveryRate))}%`, height: '100%', background: 'linear-gradient(90deg, #c8a261, #10b981)', borderRadius: '3px', transition: 'width 0.4s ease' }} />
                                         </div>
                                     </div>
-                                    <div style={{ background: 'rgba(18,16,14,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-                                        <h4 style={{ margin: '0 0 1rem 0', color: 'white', fontSize: '0.95rem' }}>Monthly Recovery Trend</h4>
-                                        <div style={{ flex: 1, minHeight: '200px' }}>
-                                            <ResponsiveContainer width="100%" height="100%">
+                                </div>
+
+                                {/* Analytics Charts Section */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                    {/* Penalty Revenue by Theft Category */}
+                                    <div className="panel-card">
+                                        <h4 style={{ margin: '0 0 1rem 0', color: 'white', fontSize: '0.95rem' }}>Penalty Revenue by Violation Class (₹ Thousands)</h4>
+                                        <div style={{ minHeight: '220px', width: '100%' }}>
+                                            {categoryChartData.length === 0 ? (
+                                                <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
+                                                    Issue challans from Inspector Portal to populate breakdown.
+                                                </div>
+                                            ) : (
+                                                <ResponsiveContainer width="100%" height={220}>
+                                                    <BarChart data={categoryChartData}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                                        <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" fontSize={11} />
+                                                        <YAxis stroke="rgba(255,255,255,0.5)" fontSize={11} />
+                                                        <Tooltip 
+                                                            contentStyle={{ 
+                                                                background: 'rgba(18, 16, 14, 0.95)', 
+                                                                border: '1px solid rgba(200, 162, 97, 0.35)', 
+                                                                borderRadius: '8px', 
+                                                                boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                                                                padding: '0.5rem 0.75rem' 
+                                                            }}
+                                                            itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
+                                                            labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                            formatter={(val) => [`₹${(val * 1000).toLocaleString('en-IN')}`, 'Assessed Fine']}
+                                                        />
+                                                        <Bar dataKey="amount" fill="#c8a261" radius={[4, 4, 0, 0]} />
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Monthly Recovery Trend */}
+                                    <div className="panel-card">
+                                        <h4 style={{ margin: '0 0 1rem 0', color: 'white', fontSize: '0.95rem' }}>Recovery Realization Trajectory (₹ Lakhs)</h4>
+                                        <div style={{ minHeight: '220px', width: '100%' }}>
+                                            <ResponsiveContainer width="100%" height={220}>
                                                 <LineChart data={[
                                                     { month: 'May', Target: 1.5, Recovered: 0.9 },
                                                     { month: 'Jun', Target: 2.0, Recovered: 1.4 },
                                                     { month: 'Jul', Target: 2.5, Recovered: 2.1 },
-                                                    { month: 'Aug', Target: 3.0, Recovered: 1.4 }
+                                                    { month: 'Aug', Target: 3.0, Recovered: (totalPenaltyAssessed / 100000 > 0 ? (totalPenaltyAssessed / 100000).toFixed(2) : 1.4) }
                                                 ]}>
                                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                                    <XAxis dataKey="month" stroke="rgba(255,255,255,0.5)" />
+                                                    <XAxis dataKey="month" stroke="rgba(255,255,255,0.5)" fontSize={11} />
+                                                    <YAxis stroke="rgba(255,255,255,0.5)" fontSize={11} />
                                                     <Tooltip 
                                                         contentStyle={{ 
                                                             background: 'rgba(18, 16, 14, 0.95)', 
@@ -1791,16 +1910,97 @@ const AdminDashboard = ({
                                                         labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
                                                     />
                                                     <Legend />
-                                                    <Line type="monotone" dataKey="Target" stroke="#c8a261" activeDot={{ r: 8 }} />
-                                                    <Line type="monotone" dataKey="Recovered" stroke="#10b981" />
+                                                    <Line type="monotone" dataKey="Target" stroke="#c8a261" activeDot={{ r: 6 }} strokeWidth={2} />
+                                                    <Line type="monotone" dataKey="Recovered" stroke="#10b981" activeDot={{ r: 6 }} strokeWidth={2} />
                                                 </LineChart>
                                             </ResponsiveContainer>
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Active Challan Enforcement & Recovery Ledger */}
+                                <div className="panel-card">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                        <div>
+                                            <h3 className="panel-title" style={{ margin: 0 }}>Active Challans & Recovery Ledger</h3>
+                                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)' }}>
+                                                Manage penalty recovery status synchronized across DISCOM and inspector portals
+                                            </span>
+                                        </div>
+                                        <span style={{ 
+                                            fontSize: '0.75rem', color: '#10b981', background: 'rgba(16,185,129,0.1)', 
+                                            padding: '0.25rem 0.6rem', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.25)',
+                                            display: 'inline-flex', alignItems: 'center', gap: '0.35rem'
+                                        }}>
+                                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} />
+                                            Live Real-Time Synced
+                                        </span>
+                                    </div>
+
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                            <thead>
+                                                <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                                                    <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Challan ID</th>
+                                                    <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Consumer Account</th>
+                                                    <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Theft Classification</th>
+                                                    <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Load</th>
+                                                    <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Assessed Penalty</th>
+                                                    <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Inspector</th>
+                                                    <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Recovery Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {challans.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan="7" style={{ textAlign: 'center', padding: '3rem 1rem', color: 'rgba(255,255,255,0.4)' }}>
+                                                            <TrendingUp size={32} style={{ margin: '0 auto 0.75rem auto', opacity: 0.35, display: 'block' }} />
+                                                            <div style={{ fontSize: '0.95rem', fontWeight: '500', color: 'rgba(255,255,255,0.6)' }}>No Active Recovery Cases</div>
+                                                            <div style={{ fontSize: '0.8rem', marginTop: '0.35rem', color: 'rgba(255,255,255,0.35)' }}>
+                                                                Challans issued by field auditors will automatically link here to track financial recovery.
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    challans.map((ch, idx) => (
+                                                        <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                            <td style={{ padding: '1rem', fontWeight: '600', color: '#ffffff' }}>{ch.id}</td>
+                                                            <td style={{ padding: '1rem', color: '#c8a261', fontWeight: '600' }}>{ch.consumer}</td>
+                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.85)' }}>{ch.anomaly}</td>
+                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)' }}>{ch.load}</td>
+                                                            <td style={{ padding: '1rem', color: '#ef4444', fontWeight: '700' }}>{ch.penalty}</td>
+                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)' }}>{ch.inspector || 'Field Inspector'}</td>
+                                                            <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                                <select 
+                                                                    value={ch.status || 'Issued'}
+                                                                    onChange={e => handleUpdateChallanStatus(ch.id, e.target.value)}
+                                                                    style={{
+                                                                        padding: '0.35rem 0.65rem',
+                                                                        background: (ch.status === 'Paid' || ch.status === 'Recovered') ? 'rgba(16,185,129,0.15)' : (ch.status === 'Under Recovery') ? 'rgba(200,162,97,0.15)' : 'rgba(239,68,68,0.15)',
+                                                                        color: (ch.status === 'Paid' || ch.status === 'Recovered') ? '#10b981' : (ch.status === 'Under Recovery') ? '#c8a261' : '#ef4444',
+                                                                        border: `1px solid ${(ch.status === 'Paid' || ch.status === 'Recovered') ? 'rgba(16,185,129,0.35)' : (ch.status === 'Under Recovery') ? 'rgba(200,162,97,0.35)' : 'rgba(239,68,68,0.35)'}`,
+                                                                        borderRadius: '6px',
+                                                                        fontSize: '0.78rem',
+                                                                        fontWeight: '600',
+                                                                        outline: 'none',
+                                                                        cursor: 'pointer'
+                                                                    }}
+                                                                >
+                                                                    <option value="Issued" style={{ background: '#181512', color: '#ef4444' }}>Issued</option>
+                                                                    <option value="Under Recovery" style={{ background: '#181512', color: '#c8a261' }}>Under Recovery</option>
+                                                                    <option value="Paid" style={{ background: '#181512', color: '#10b981' }}>Paid / Recovered</option>
+                                                                </select>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     {activeTab === 'Inspection' && (
                         <div className="dashboard-panel" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
