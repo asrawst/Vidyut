@@ -123,82 +123,101 @@ def run_pipeline(*, user_data: dict = None, merged_df: pd.DataFrame = None, run_
 # CORE LOGIC (Refactored from electrical_bomb.py)
 # ============================================================
 
-def _core_electrical_bomb_logic(merged_df: pd.DataFrame) -> pd.DataFrame:
-    # ... Original logic ...
-    
+def _core_electrical_bomb_logic(merged_df: pd.DataFrame) -> tuple:
     # 1. BEHAVIORAL ANOMALY — ML
-    behavior_features = (
-        merged_df
-        .groupby("consumer_id")
-        .agg(
-            mean_usage=("energy_consumed", "mean"),
-            std_usage=("energy_consumed", "std"),
-            min_usage=("energy_consumed", "min"),
-            max_usage=("energy_consumed", "max"),
-            trend=("energy_consumed", lambda x: x.iloc[-1] - x.iloc[0])
-        )
-        .fillna(0)
-    )
+    # Group once efficiently
+    grp = merged_df.groupby("consumer_id")["energy_consumed"]
+    behavior_features = pd.DataFrame({
+        "mean_usage": grp.mean(),
+        "std_usage": grp.std().fillna(0),
+        "min_usage": grp.min(),
+        "max_usage": grp.max(),
+        "trend": grp.last() - grp.first()
+    }).fillna(0)
 
     X_beh = RobustScaler().fit_transform(behavior_features)
     
-    iso = IsolationForest(n_estimators=300, contamination=0.08, random_state=42)
+    # 100 estimators with n_jobs=-1 executes in milliseconds
+    iso = IsolationForest(n_estimators=100, contamination=0.08, random_state=42, n_jobs=-1)
     ml_raw = -iso.fit_predict(X_beh)
-    ml_anomaly_risk = (ml_raw - ml_raw.min()) / (ml_raw.max() - ml_raw.min())
+    denom_ml = ml_raw.max() - ml_raw.min()
+    ml_anomaly_risk = (ml_raw - ml_raw.min()) / (denom_ml if denom_ml != 0 else 1.0)
     ml_anomaly_df = pd.DataFrame({"ml_anomaly_risk": ml_anomaly_risk}, index=behavior_features.index)
 
-    # 2. BEHAVIORAL ANOMALY — STATISTICAL
-    stat_series = (
-        merged_df
-        .groupby("consumer_id")["energy_consumed"]
-        .apply(lambda x: (x.mean() - x.min()) / (x.std() + 1e-6))
-    )
-    stat_anomaly_risk = (stat_series - stat_series.min()) / (stat_series.max() - stat_series.min())
+    # 2. BEHAVIORAL ANOMALY — STATISTICAL (Vectorized)
+    cons_mean = behavior_features["mean_usage"]
+    cons_min = behavior_features["min_usage"]
+    cons_std = behavior_features["std_usage"]
+    stat_series = (cons_mean - cons_min) / (cons_std + 1e-6)
+    denom_stat = stat_series.max() - stat_series.min()
+    stat_anomaly_risk = (stat_series - stat_series.min()) / (denom_stat if denom_stat != 0 else 1.0)
     stat_anomaly_df = stat_anomaly_risk.to_frame("stat_anomaly_risk")
 
-    # 3. TRANSFORMER LOSS
+    # 3. TRANSFORMER LOSS (Vectorized)
     tx_daily = (
         merged_df
-        .groupby(["transformer_id", "date"])
+        .groupby(["transformer_id", "date"], as_index=False)
         .agg(total_consumption=("energy_consumed", "sum"), energy_input=("energy_input", "mean"))
-        .reset_index()
     )
     tx_daily['loss'] = tx_daily["energy_input"] - tx_daily["total_consumption"]
-    tx_daily["loss_ratio"] = (tx_daily["energy_input"] - tx_daily["total_consumption"]) / tx_daily["energy_input"]
+    tx_daily["loss_ratio"] = tx_daily['loss'] / (tx_daily["energy_input"].replace(0, 1e-6))
+    
     tx_loss = tx_daily.groupby("transformer_id")["loss_ratio"].mean()
-    tx_loss_risk = (tx_loss - tx_loss.min()) / (tx_loss.max() - tx_loss.min())
-    total_loss_all_transformers = tx_daily["loss"].abs().sum()
+    denom_tx = tx_loss.max() - tx_loss.min()
+    tx_loss_risk = (tx_loss - tx_loss.min()) / (denom_tx if denom_tx != 0 else 1.0)
+    total_loss_all_transformers = float(tx_daily["loss"].abs().sum())
 
     transformer_loss_df = (
         merged_df[["consumer_id", "transformer_id"]]
-        .drop_duplicates()
+        .drop_duplicates(subset=["consumer_id"])
         .merge(tx_loss_risk.rename("transformer_loss_risk"), on="transformer_id", how="left")
         .set_index("consumer_id")
     )
 
-    # 4. PEER COMPARISON
-    peer_stats = merged_df.groupby(["transformer_id", "consumer_id"])["energy_consumed"].mean().reset_index()
-    peer_stats["peer_mean"] = peer_stats.groupby("transformer_id")["energy_consumed"].transform("mean")
-    peer_stats["peer_std"] = peer_stats.groupby("transformer_id")["energy_consumed"].transform("std").replace(0, 1e-6)
+    # 4. PEER COMPARISON (Vectorized)
+    peer_stats = merged_df.groupby(["transformer_id", "consumer_id"], as_index=False)["energy_consumed"].mean()
+    tx_peer_stats = peer_stats.groupby("transformer_id")["energy_consumed"].agg(peer_mean="mean", peer_std="std").reset_index()
+    tx_peer_stats["peer_std"] = tx_peer_stats["peer_std"].fillna(0).replace(0, 1e-6)
+    
+    peer_stats = peer_stats.merge(tx_peer_stats, on="transformer_id", how="left")
     peer_stats["peer_deviation"] = peer_stats["peer_mean"] - peer_stats["energy_consumed"]
-    peer_stats["peer_risk"] = peer_stats.apply(lambda r: r["peer_deviation"] / r["peer_std"] if r["peer_deviation"] > 0 else 0, axis=1)
+    peer_stats["peer_risk"] = np.where(
+        peer_stats["peer_deviation"] > 0,
+        peer_stats["peer_deviation"] / peer_stats["peer_std"],
+        0.0
+    )
     peer_risk = peer_stats.groupby("consumer_id")["peer_risk"].mean()
-    peer_risk = (peer_risk - peer_risk.min()) / (peer_risk.max() - peer_risk.min())
+    denom_peer = peer_risk.max() - peer_risk.min()
+    peer_risk = (peer_risk - peer_risk.min()) / (denom_peer if denom_peer != 0 else 1.0)
     peer_df = peer_risk.to_frame("peer_risk")
 
-    # 5. VOLTAGE / POWER QUALITY
-    volt_stats = merged_df.groupby("transformer_id")["avg_voltage"].agg(["mean", "std"]).rename(columns={"mean": "v_mean", "std": "v_std"})
-    volt_df_calc = merged_df.merge(volt_stats, on="transformer_id", how="left")
-    volt_df_calc["v_std"] = volt_df_calc["v_std"].replace(0, 1e-6)
+    # 5. VOLTAGE / POWER QUALITY (Vectorized)
+    volt_stats = (
+        merged_df
+        .groupby("transformer_id")["avg_voltage"]
+        .agg(["mean", "std"])
+        .rename(columns={"mean": "v_mean", "std": "v_std"})
+    )
+    volt_stats["v_std"] = volt_stats["v_std"].fillna(0).replace(0, 1e-6)
+    
+    volt_df_calc = merged_df[["consumer_id", "transformer_id", "avg_voltage"]].merge(volt_stats, on="transformer_id", how="left")
     volt_df_calc["v_dev"] = volt_df_calc["v_mean"] - volt_df_calc["avg_voltage"]
-    volt_df_calc["voltage_risk"] = volt_df_calc.apply(lambda r: r["v_dev"] / r["v_std"] if r["v_dev"] >= 1.5 * r["v_std"] else 0, axis=1)
+    volt_df_calc["voltage_risk"] = np.where(
+        volt_df_calc["v_dev"] >= 1.5 * volt_df_calc["v_std"],
+        volt_df_calc["v_dev"] / volt_df_calc["v_std"],
+        0.0
+    )
     voltage_risk = volt_df_calc.groupby("consumer_id")["voltage_risk"].mean()
-    voltage_risk = (voltage_risk - voltage_risk.min()) / (voltage_risk.max() - voltage_risk.min())
+    denom_volt = voltage_risk.max() - voltage_risk.min()
+    voltage_risk = (voltage_risk - voltage_risk.min()) / (denom_volt if denom_volt != 0 else 1.0)
     voltage_df = voltage_risk.to_frame("voltage_risk")
 
-    # 6. SEASONAL
-    seasonal_series = merged_df.groupby("consumer_id").apply(lambda x: x[x["season"] == "monsoon"]["energy_consumed"].mean() / (x["energy_consumed"].mean() + 1e-6))
-    seasonal_risk = (seasonal_series - seasonal_series.min()) / (seasonal_series.max() - seasonal_series.min())
+    # 6. SEASONAL (Vectorized)
+    mean_monsoon = merged_df[merged_df["season"] == "monsoon"].groupby("consumer_id")["energy_consumed"].mean()
+    mean_all = behavior_features["mean_usage"]
+    seasonal_series = (mean_monsoon / (mean_all + 1e-6)).reindex(mean_all.index).fillna(0.0)
+    denom_season = seasonal_series.max() - seasonal_series.min()
+    seasonal_risk = (seasonal_series - seasonal_series.min()) / (denom_season if denom_season != 0 else 1.0)
     seasonal_df = seasonal_risk.to_frame("seasonal_risk")
 
     # 7. FINAL AGGREGATION
@@ -209,7 +228,7 @@ def _core_electrical_bomb_logic(merged_df: pd.DataFrame) -> pd.DataFrame:
         .join(transformer_loss_df)
         .join(voltage_df)
         .join(seasonal_df)
-        .fillna(0)
+        .fillna(0.0)
     )
 
     combined_df["base_risk"] = (
@@ -222,53 +241,48 @@ def _core_electrical_bomb_logic(merged_df: pd.DataFrame) -> pd.DataFrame:
     )
 
     combined_df["final_risk"] = combined_df["base_risk"] ** 1.6
-    iqr_risk = combined_df["final_risk"].quantile(0.75) + 1.5 * (combined_df["final_risk"].quantile(0.75) - combined_df["final_risk"].quantile(0.25))
-    # 8. INSPECTION SELECTION (For frontend Risk Class)
-    mean_r = combined_df["final_risk"].mean()
-    std_r = combined_df["final_risk"].std()
-    inspection_cutoff = max(combined_df["final_risk"].quantile(0.97), mean_r + 2 * std_r)
     
-    def bucket(score):
-        if score >= inspection_cutoff: return "critical"
-        elif score >= combined_df['final_risk'].quantile(0.8): return "high"
-        elif score >= combined_df['final_risk'].quantile(0.6): return "mild"
-        else: return "normal"
-
-    # Calculate Anomaly Threshold (Top 20% - High & Critical)
-    # User requested Mild != Anomaly. So Anomaly = High (top 20%) + Critical.
-    anomaly_cutoff = combined_df["final_risk"].quantile(0.8)
-
-    combined_df["risk_class"] = combined_df["final_risk"].apply(bucket)
+    # 8. INSPECTION SELECTION & BUCKETING (Vectorized)
+    mean_r = float(combined_df["final_risk"].mean())
+    std_r = float(combined_df["final_risk"].std())
+    inspection_cutoff = max(float(combined_df["final_risk"].quantile(0.97)), mean_r + 2 * std_r)
+    q80 = float(combined_df['final_risk'].quantile(0.8))
+    q60 = float(combined_df['final_risk'].quantile(0.6))
     
-    # Flag based on Anomaly Cutoff
+    # Vectorized bucketing using np.select
+    conditions = [
+        combined_df["final_risk"] >= inspection_cutoff,
+        combined_df["final_risk"] >= q80,
+        combined_df["final_risk"] >= q60
+    ]
+    choices = ["critical", "high", "mild"]
+    combined_df["risk_class"] = np.select(conditions, choices, default="normal")
+    
+    # Flag based on Anomaly Cutoff (q80)
+    anomaly_cutoff = q80
     combined_df["inspection_flag"] = combined_df["final_risk"] >= anomaly_cutoff
 
-    # Count anomalies per transformer based on stricter IQR limit
-    transformer_anomaly_counts = combined_df[combined_df["inspection_flag"]].groupby("transformer_id").size()
-    
-    # Show transformers that have at least one STRICT anomaly
-    transformers_at_risk = [
-        {
-            "transformer_id": transformer_id,
-            "anomalies_detected": int(count)
-        }
-        for transformer_id, count in transformer_anomaly_counts.items()
-    ]
+    # Count anomalies per transformer
+    if "transformer_id" in combined_df.columns:
+        transformer_anomaly_counts = combined_df[combined_df["inspection_flag"]].groupby("transformer_id").size()
+        transformers_at_risk = [
+            {
+                "transformer_id": str(transformer_id),
+                "anomalies_detected": int(count)
+            }
+            for transformer_id, count in transformer_anomaly_counts.items()
+        ]
+    else:
+        transformers_at_risk = []
+
     # Calculate Percentile for Frontend Display
     combined_df["risk_percentile"] = combined_df["final_risk"].rank(pct=True).fillna(0.0)
     
     # Restore consumer_id from index
-    combined_df = combined_df.reset_index() # consumer_id
+    combined_df = combined_df.reset_index()
     
-    # 9. INTEGRATE LOCATION DATA (Fix for Map)
-    # We need to grab latitude/longitude back from the original merged_df
-    # Since merged_df has many rows per consumer (time series), we take the first occurrence
+    # 9. INTEGRATE LOCATION DATA
     location_lookup = merged_df[["consumer_id", "latitude", "longitude"]].drop_duplicates(subset=["consumer_id"])
     combined_df = combined_df.merge(location_lookup, on="consumer_id", how="left")
-    
-    # Need transformer_id in output (is inside combined_df? No, it was in transformer_loss_df but lost if index join)
-    # transformer_loss_df was joined, so 'transformer_id' should be there? 
-    # join(transformer_loss_df) which has index consumer_id and columns [transformer_id, transformer_loss_risk]
-    # So yes, transformer_id is in combined_df.
     
     return combined_df, total_loss_all_transformers, transformers_at_risk, anomaly_cutoff

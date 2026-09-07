@@ -73,7 +73,7 @@ class MLEngine:
                 # Or maybe the user uploaded the merged file with a weird name and we failed detection
                 raise ValueError("No valid input files provided. Please upload the 5 required CSVs or a single merged dataset.")
 
-            final_df, total_loss_all_transformers, transformers_at_risk, anomaly_cutoff, transformers_at_risk = run_pipeline(
+            final_df, total_loss_all_transformers, transformers_at_risk, anomaly_cutoff = run_pipeline(
                 user_data=user_data,
                 run_anomaly_model=False, 
             )
