@@ -1,20 +1,68 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { 
     MapPin, User, ClipboardCheck, AlertTriangle, 
     ShieldAlert, Lock, Settings, LogOut, Menu, 
-    X, CheckCircle, Navigation, Map, Shield, Zap, Activity, Radio, ChevronRight, Sun, Moon
+    X, CheckCircle, Navigation, Map, Shield, Zap, Activity, Radio, ChevronRight, Sun, Moon, ExternalLink 
 } from 'lucide-react';
 import MapComponent from './MapComponent';
 import { supabase } from '../../supabaseClient';
 
+const INSPECTOR_TAB_SLUGS = {
+    'Current Task': 'tasks',
+    'Account Details': 'account',
+    'Past Inspections': 'past-inspections',
+    'Create Challan': 'create-challan',
+    'File Complain': 'file-complain',
+    'Login History': 'login-history',
+    'Settings': 'settings'
+};
+
+const INSPECTOR_SLUG_TO_TAB = {
+    'tasks': 'Current Task',
+    'current-task': 'Current Task',
+    'audit': 'Current Task',
+    'account': 'Account Details',
+    'account-details': 'Account Details',
+    'past-inspections': 'Past Inspections',
+    'history': 'Past Inspections',
+    'create-challan': 'Create Challan',
+    'challans': 'Create Challan',
+    'challan': 'Create Challan',
+    'file-complain': 'File Complain',
+    'complain': 'File Complain',
+    'complaints': 'File Complain',
+    'login-history': 'Login History',
+    'settings': 'Settings'
+};
+
 const InspectorPortal = ({ inspector, onLogout }) => {
+    const navigate = useNavigate();
+    const { tab: urlTab } = useParams();
+
     const [activeTab, setActiveTab] = useState(() => {
+        if (urlTab && INSPECTOR_SLUG_TO_TAB[urlTab.toLowerCase()]) {
+            return INSPECTOR_SLUG_TO_TAB[urlTab.toLowerCase()];
+        }
         return localStorage.getItem('vidyut_inspector_active_tab') || 'Current Task';
     });
 
     useEffect(() => {
+        if (urlTab && INSPECTOR_SLUG_TO_TAB[urlTab.toLowerCase()]) {
+            setActiveTab(INSPECTOR_SLUG_TO_TAB[urlTab.toLowerCase()]);
+        }
+    }, [urlTab]);
+
+    useEffect(() => {
         localStorage.setItem('vidyut_inspector_active_tab', activeTab);
     }, [activeTab]);
+
+    const switchTab = (tabName) => {
+        setActiveTab(tabName);
+        if (window.innerWidth <= 768) setIsSidebarOpen(false);
+        const slug = INSPECTOR_TAB_SLUGS[tabName] || 'tasks';
+        navigate(`/inspector/${slug}`, { replace: true });
+    };
 
     useEffect(() => {
         localStorage.removeItem('vidyut_theme');
@@ -547,7 +595,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                         <button
                             key={item.name}
                             title={isSidebarOpen ? undefined : item.name}
-                            onClick={() => { setActiveTab(item.name); if (window.innerWidth <= 768) setIsSidebarOpen(false); }}
+                            onClick={() => switchTab(item.name)}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -628,6 +676,28 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                             </p>
                         </div>
                     </div>
+                    <a
+                        href="/admin"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            background: 'rgba(200, 162, 97, 0.1)',
+                            border: '1px solid rgba(200, 162, 97, 0.3)',
+                            color: '#c8a261',
+                            padding: '0.4rem 0.85rem',
+                            borderRadius: '6px',
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            textDecoration: 'none',
+                            transition: 'all 0.2s'
+                        }}
+                        title="Open Admin Dashboard in a separate tab to operate both simultaneously"
+                    >
+                        <ExternalLink size={13} /> Open Admin Portal
+                    </a>
                 </div>
 
                 {/* CURRENT TASK VIEW */}

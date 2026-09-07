@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { 
     User, ListCollapse, Ban, TrendingUp, Calendar, AlertTriangle, 
     History as HistoryIcon, Settings as SettingsIcon, UploadCloud, 
     Download, RefreshCw, Layers, ShieldAlert, Sparkles, MapPin, 
-    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Zap, Lock 
+    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Zap, Lock, ExternalLink 
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LineChart, Line } from 'recharts';
 import MapComponent from './MapComponent';
@@ -15,6 +16,40 @@ import { supabase } from '../../supabaseClient';
 // Mock Lists for tabs
 const MOCK_INSPECTORS = ['Inspector R. Sharma', 'Inspector A. Verma', 'Inspector K. Gupta', 'Inspector S. Iyer'];
 
+const TAB_SLUGS = {
+    'Overview': 'overview',
+    'Account Details': 'account',
+    'Transformer List': 'transformers',
+    'Blacklisted Consumer': 'blacklisted',
+    'Loss Recovery': 'loss-recovery',
+    'Inspection': 'inspections',
+    'Inspector List': 'inspectors',
+    'Priority': 'priority',
+    'History': 'history',
+    'Settings': 'settings'
+};
+
+const SLUG_TO_TAB = {
+    'overview': 'Overview',
+    'account': 'Account Details',
+    'account-details': 'Account Details',
+    'transformers': 'Transformer List',
+    'transformer-list': 'Transformer List',
+    'blacklisted': 'Blacklisted Consumer',
+    'blacklisted-consumer': 'Blacklisted Consumer',
+    'blacklist': 'Blacklisted Consumer',
+    'loss-recovery': 'Loss Recovery',
+    'recovery': 'Loss Recovery',
+    'inspections': 'Inspection',
+    'inspection': 'Inspection',
+    'calendar': 'Inspection',
+    'inspectors': 'Inspector List',
+    'inspector-list': 'Inspector List',
+    'priority': 'Priority',
+    'history': 'History',
+    'settings': 'Settings'
+};
+
 const AdminDashboard = ({ 
     user, 
     onLogout, 
@@ -25,13 +60,32 @@ const AdminDashboard = ({
     handleFetch,
     setResult
 }) => {
+    const navigate = useNavigate();
+    const { tab: urlTab } = useParams();
+
     const [activeTab, setActiveTab] = useState(() => {
+        if (urlTab && SLUG_TO_TAB[urlTab.toLowerCase()]) {
+            return SLUG_TO_TAB[urlTab.toLowerCase()];
+        }
         return localStorage.getItem('vidyut_admin_active_tab') || 'Overview';
     });
 
     useEffect(() => {
+        if (urlTab && SLUG_TO_TAB[urlTab.toLowerCase()]) {
+            setActiveTab(SLUG_TO_TAB[urlTab.toLowerCase()]);
+        }
+    }, [urlTab]);
+
+    useEffect(() => {
         localStorage.setItem('vidyut_admin_active_tab', activeTab);
     }, [activeTab]);
+
+    const switchTab = (tabName) => {
+        setActiveTab(tabName);
+        setIsSidebarOpen(false);
+        const slug = TAB_SLUGS[tabName] || 'overview';
+        navigate(`/admin/${slug}`, { replace: true });
+    };
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [localInspectionStatus, setLocalInspectionStatus] = useState(() => {
@@ -1214,61 +1268,61 @@ const AdminDashboard = ({
                 <nav className="sidebar-nav">
                     <button 
                         className={`nav-item ${activeTab === 'Overview' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('Overview'); setIsSidebarOpen(false); }}
+                        onClick={() => switchTab('Overview')}
                     >
                         <Layers size={18} /> Overview
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Account Details' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('Account Details'); setIsSidebarOpen(false); }}
+                        onClick={() => switchTab('Account Details')}
                     >
                         <User size={18} /> Account Details
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Transformer List' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('Transformer List'); setIsSidebarOpen(false); }}
+                        onClick={() => switchTab('Transformer List')}
                     >
                         <ListCollapse size={18} /> Transformer List
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Blacklisted Consumer' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('Blacklisted Consumer'); setIsSidebarOpen(false); }}
+                        onClick={() => switchTab('Blacklisted Consumer')}
                     >
                         <Ban size={18} /> Blacklisted Consumer
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Loss Recovery' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('Loss Recovery'); setIsSidebarOpen(false); }}
+                        onClick={() => switchTab('Loss Recovery')}
                     >
                         <TrendingUp size={18} /> Loss Recovery
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Inspection' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('Inspection'); setIsSidebarOpen(false); }}
+                        onClick={() => switchTab('Inspection')}
                     >
                         <Calendar size={18} /> Inspection
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Inspector List' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('Inspector List'); setIsSidebarOpen(false); }}
+                        onClick={() => switchTab('Inspector List')}
                     >
                         <UserCheck size={18} /> Inspector List
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Priority' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('Priority'); setIsSidebarOpen(false); }}
+                        onClick={() => switchTab('Priority')}
                     >
                         <ShieldAlert size={18} /> Priority
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'History' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('History'); setIsSidebarOpen(false); }}
+                        onClick={() => switchTab('History')}
                     >
                         <HistoryIcon size={18} /> History
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'Settings' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('Settings'); setIsSidebarOpen(false); }}
+                        onClick={() => switchTab('Settings')}
                     >
                         <SettingsIcon size={18} /> Settings
                     </button>
@@ -1294,7 +1348,29 @@ const AdminDashboard = ({
                         </button>
                         <h1 className="header-title">{activeTab}</h1>
                     </div>
-                    <div className="header-meta">
+                    <div className="header-meta" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <a
+                            href="/inspector"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                                color: '#10b981',
+                                padding: '0.35rem 0.75rem',
+                                borderRadius: '6px',
+                                fontSize: '0.78rem',
+                                fontWeight: '600',
+                                textDecoration: 'none',
+                                transition: 'all 0.2s'
+                            }}
+                            title="Open Field Inspector Portal in a separate tab to run both simultaneously"
+                        >
+                            <ExternalLink size={13} /> Open Inspector Portal
+                        </a>
                         <span className="header-role-badge">Admin Workspace</span>
                         <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
                             Logged in as: <strong style={{ color: 'white' }}>{user?.email}</strong>

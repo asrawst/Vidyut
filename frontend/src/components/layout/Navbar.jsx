@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, User, Info, Sliders, LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Menu, User, Info, Sliders, LogOut, Shield } from 'lucide-react';
 import './navbar_menu.css';
 
 const Navbar = ({ 
@@ -54,7 +55,7 @@ const Navbar = ({
         }}>
             <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
                 <div className="nav-logo">
-                    <a href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'white' }}>
+                    <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'white' }}>
                         <span style={{ 
                             fontFamily: 'var(--font-heading)',
                             fontWeight: '400', 
@@ -64,7 +65,7 @@ const Navbar = ({
                         }}>
                             Vidyut
                         </span>
-                    </a>
+                    </Link>
                 </div>
                 {/* Desktop Links */}
                 <div className="desktop-nav" style={{ display: 'flex', alignItems: 'center' }}>
