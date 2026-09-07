@@ -308,7 +308,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
             load: `${challanForm.load || 'N/A'} kW`,
             penalty: `₹${parseFloat(challanForm.penalty).toLocaleString('en-IN')}`,
             penalty_raw: parseFloat(challanForm.penalty) || 0,
-            inspector: inspectorName || 'Field Inspector',
+            inspector: inspector?.displayName || inspector?.name || inspector?.email || 'Field Inspector',
             zone: currentTask?.zone || (currentTask?.transformer_id ? `Transformer ${currentTask?.transformer_id}` : 'Delhi Grid Area'),
             details: challanForm.details || 'Detected during field audit',
             status: 'Issued',
@@ -326,20 +326,16 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         // Realtime broadcast via Supabase Realtime channel
         try {
             const channel = supabase.channel('vidyut_challans_realtime_channel');
-            channel.subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') {
-                    await channel.send({
-                        type: 'broadcast',
-                        event: 'new_challan',
-                        payload: newChallan
-                    });
-                }
-            });
+            channel.send({
+                type: 'broadcast',
+                event: 'new_challan',
+                payload: newChallan
+            }).catch(e => console.warn("Realtime broadcast notice:", e));
         } catch (err) {
-            console.error("Supabase real-time broadcast error:", err);
+            console.warn("Supabase real-time notice:", err);
         }
 
-        alert(`Challan ${newChallan.id} created successfully! Synced to Admin Panel.`);
+        alert(`Challan ${newChallan.id} for Consumer ${newChallan.consumer} created successfully! Synced in real-time to Admin Panel.`);
         setChallanForm({ consumerId: '', anomaly: 'Bypassing meter', load: '', penalty: '', details: '' });
     };
 
