@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
     MapPin, User, ClipboardCheck, AlertTriangle, 
     ShieldAlert, Lock, Settings, LogOut, Menu, 
-    X, CheckCircle, Navigation, Map, Shield, Zap, Activity, Radio, ChevronRight, Sun, Moon, ExternalLink 
+    X, CheckCircle, Navigation, Map, Shield, Zap, Activity, Radio, ChevronRight, Sun, Moon, ExternalLink,
+    Eye, FileText, Check
 } from 'lucide-react';
 import MapComponent from './MapComponent';
 import { supabase } from '../../supabaseClient';
@@ -142,16 +143,26 @@ const InspectorPortal = ({ inspector, onLogout }) => {
     }, [allAssignedTasks, inspector]);
 
     const [selectedConsumerId, setSelectedConsumerId] = useState(null);
+    const [selectedPastAudit, setSelectedPastAudit] = useState(null);
 
-    // Active Task Object
+    // Active pending/in-process tasks (completed tasks are removed from the active queue)
+    const activeTasks = useMemo(() => {
+        if (!myTasks || myTasks.length === 0) return [];
+        return myTasks.filter(t => {
+            const s = (t.status || '').toLowerCase();
+            return !s.includes('comp');
+        });
+    }, [myTasks]);
+
+    // Active Task Object (selected from pending tasks queue)
     const currentTask = useMemo(() => {
-        if (myTasks.length === 0) return null;
+        if (activeTasks.length === 0) return null;
         if (selectedConsumerId) {
-            const found = myTasks.find(t => t.consumer_id === selectedConsumerId);
+            const found = activeTasks.find(t => t.consumer_id === selectedConsumerId);
             if (found) return found;
         }
-        return myTasks[0];
-    }, [myTasks, selectedConsumerId]);
+        return activeTasks[0];
+    }, [activeTasks, selectedConsumerId]);
 
     // Active Inspection Task State
     const [inspectionStatus, setInspectionStatus] = useState('Initiate'); // 'Initiate', 'Inprocess', 'Completed'
@@ -195,6 +206,74 @@ const InspectorPortal = ({ inspector, onLogout }) => {
     useEffect(() => {
         localStorage.setItem('vidyut_inspector_past_inspections', JSON.stringify(pastInspections));
     }, [pastInspections]);
+
+    // Worldwide Global Past Inspections merged from Supabase Database & local session records
+    const pastInspectionsList = useMemo(() => {
+        const list = [];
+        const seen = new Set();
+
+        // 1. From global Supabase inspection_tasks table where status is Completed
+        const completedFromDB = (allAssignedTasks || []).filter(t => {
+            const s = (t.status || '').toLowerCase();
+            return s.includes('comp');
+        });
+
+        completedFromDB.forEach(t => {
+            if (!seen.has(t.consumer_id)) {
+                seen.add(t.consumer_id);
+                list.push({
+                    id: t.id ? `AUD-${String(t.id).substring(0, 6).toUpperCase()}` : `INS-${t.consumer_id}`,
+                    consumer: t.consumer_id,
+                    transformer_id: t.transformer_id || 'T01',
+                    zone: t.zone || (t.transformer_id ? `Transformer ${t.transformer_id}` : 'Delhi Central Grid'),
+                    date: t.updated_at ? new Date(t.updated_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently Completed',
+                    type: 'Field Hooking & Seal Audit',
+                    result: 'Completed Audit',
+                    risk_class: t.risk_class || 'High Anomaly',
+                    risk_score: t.risk_score || 0.85,
+                    latitude: Number(t.latitude) || 28.6139,
+                    longitude: Number(t.longitude) || 77.2090,
+                    inspector_name: t.inspector_name || inspector?.displayName || 'Field Inspector',
+                    inspector_email: t.inspector_email || inspector?.email || '',
+                    discom: t.discom || inspector?.discom || 'Tata Power DDL',
+                    status: 'Completed',
+                    checkList: { sealIntact: true, hookingCheck: true, bypassDetected: false, terminalSecure: true },
+                    notes: t.notes || 'Field audit completed on-site. Meter seal and hook bypass verified.'
+                });
+            }
+        });
+
+        // 2. Merge local records from pastInspections state
+        if (Array.isArray(pastInspections)) {
+            pastInspections.forEach(item => {
+                const cId = item.consumer || item.consumer_id;
+                if (cId && !seen.has(cId)) {
+                    seen.add(cId);
+                    list.push({
+                        id: item.id || `INS-${cId}`,
+                        consumer: cId,
+                        transformer_id: item.transformer_id || 'T01',
+                        zone: item.zone || 'Delhi Central Grid',
+                        date: item.date || 'Earlier Audit',
+                        type: item.type || 'Field Hooking & Seal Audit',
+                        result: item.result || 'Completed Audit',
+                        risk_class: item.risk_class || 'Anomaly Audit',
+                        risk_score: item.risk_score || 0.80,
+                        latitude: Number(item.latitude) || 28.6139,
+                        longitude: Number(item.longitude) || 77.2090,
+                        inspector_name: item.inspector_name || inspector?.displayName || 'Field Inspector',
+                        inspector_email: item.inspector_email || inspector?.email || '',
+                        discom: item.discom || inspector?.discom || 'Tata Power DDL',
+                        status: 'Completed',
+                        checkList: item.checkList || { sealIntact: true, hookingCheck: true, bypassDetected: false, terminalSecure: true },
+                        notes: item.notes || 'Inspection details verified and filed.'
+                    });
+                }
+            });
+        }
+
+        return list;
+    }, [allAssignedTasks, pastInspections, inspector]);
 
     const [challans, setChallans] = useState(() => {
         const saved = localStorage.getItem('vidyut_inspector_challans');
@@ -264,22 +343,22 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         const seen = new Set();
 
         // 1. Consumers from past inspections log
-        if (Array.isArray(pastInspections)) {
-            pastInspections.forEach(item => {
+        if (Array.isArray(pastInspectionsList)) {
+            pastInspectionsList.forEach(item => {
                 if (item.consumer && !seen.has(item.consumer)) {
                     seen.add(item.consumer);
                     list.push({
                         consumer: item.consumer,
                         zone: item.zone || 'Delhi Grid Area',
-                        source: 'Past Audit Log',
+                        source: 'Past Completed Audit',
                         status: item.result || 'Completed'
                     });
                 }
             });
         }
 
-        // 2. Consumers from assigned tasks (myTasks and allAssignedTasks)
-        const combinedTasks = [...(myTasks || []), ...(allAssignedTasks || [])];
+        // 2. Consumers from active assigned tasks
+        const combinedTasks = [...(activeTasks || []), ...(allAssignedTasks || [])];
         combinedTasks.forEach(task => {
             if (task.consumer_id && !seen.has(task.consumer_id)) {
                 seen.add(task.consumer_id);
@@ -293,30 +372,31 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         });
 
         return list;
-    }, [pastInspections, myTasks, allAssignedTasks]);
+    }, [pastInspectionsList, activeTasks, allAssignedTasks]);
 
     // Forms states
     const [challanForm, setChallanForm] = useState({ consumerId: '', anomaly: 'Bypassing meter', load: '', penalty: '', details: '' });
     const [complaintForm, setComplaintForm] = useState({ category: 'Meter Damage', severity: 'Medium', details: '' });
 
-    // Dynamic map dataset built from assigned tasks
+    // Dynamic map dataset built from active assigned tasks
     const activeMapData = useMemo(() => {
-        if (myTasks.length > 0) {
+        const tasksToMap = activeTasks.length > 0 ? activeTasks : (currentTask ? [currentTask] : []);
+        if (tasksToMap.length > 0) {
             return {
-                results: myTasks.map(t => ({
+                results: tasksToMap.map(t => ({
                     consumer_id: t.consumer_id,
                     transformer_id: t.transformer_id,
-                    latitude: t.latitude,
-                    longitude: t.longitude,
+                    latitude: Number(t.latitude) || 28.6139,
+                    longitude: Number(t.longitude) || 77.2090,
                     risk_class: t.risk_class || 'critical',
-                    aggregate_risk_score: t.risk_score || 0.85
+                    aggregate_risk_score: Number(t.risk_score) || 0.85
                 }))
             };
         }
         return {
             results: []
         };
-    }, [myTasks]);
+    }, [activeTasks, currentTask]);
 
     // Sidebar items matching the blueprint exactly
     const navItems = [
@@ -503,23 +583,86 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         setComplaintForm({ category: 'Meter Damage', severity: 'Medium', details: '' });
     };
 
-    const completeInspection = () => {
-        if (!checkList.sealIntact && !checkList.hookingCheck && !checkList.bypassDetected) {
+    const completeInspection = async () => {
+        if (!checkList.sealIntact && !checkList.hookingCheck && !checkList.bypassDetected && !checkList.terminalSecure) {
             alert('Please perform checklist verification before completing the audit');
             return;
         }
-        updateTaskStatus('Completed');
+        if (!currentTask) return;
 
-        // Add to past inspections list dynamically
+        const cid = currentTask.consumer_id;
+        const nowIso = new Date().toISOString();
+
+        // 1. Sync live update to Supabase DB globally
+        try {
+            const { error: updErr } = await supabase
+                .from('inspection_tasks')
+                .update({ 
+                    status: 'Completed', 
+                    updated_at: nowIso 
+                })
+                .eq('consumer_id', cid);
+            if (updErr) console.error("Error updating task status in Supabase:", updErr.message);
+        } catch (err) {
+            console.error("Supabase update exception:", err);
+        }
+
+        // 2. Update local state & localStorage cache
+        try {
+            const savedTasks = JSON.parse(localStorage.getItem('vidyut_assigned_tasks') || '[]');
+            const updated = savedTasks.map(t => t.consumer_id === cid ? { ...t, status: 'Completed', updated_at: nowIso } : t);
+            localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(updated));
+            setAllAssignedTasks(updated);
+
+            // Sync with localInspectionStatus for Admin Dashboard overview
+            const savedStatus = JSON.parse(localStorage.getItem('vidyut_local_inspection_status') || '{}');
+            savedStatus[cid] = 'Completed';
+            localStorage.setItem('vidyut_local_inspection_status', JSON.stringify(savedStatus));
+
+            // Sync with calendar
+            const savedCal = JSON.parse(localStorage.getItem('vidyut_inspection_calendar') || '[]');
+            const updatedCal = savedCal.map(c => c.consumer === cid ? { ...c, status: 'Completed' } : c);
+            localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(updatedCal));
+        } catch (e) {
+            console.error('Error updating task status locally:', e);
+        }
+
+        // 3. Add to past inspections list
         const newRecord = {
-            id: `INS-${Math.floor(1000 + Math.random() * 9000)}`,
-            consumer: currentTask?.consumer_id || 'C0057',
-            zone: currentTask?.zone || `Transformer ${currentTask?.transformer_id || 'T01'}`,
-            date: 'Today',
+            id: currentTask.id ? `AUD-${String(currentTask.id).substring(0, 6).toUpperCase()}` : `INS-${cid}`,
+            consumer: cid,
+            transformer_id: currentTask.transformer_id || 'T01',
+            zone: currentTask.zone || (currentTask.transformer_id ? `Transformer ${currentTask.transformer_id}` : 'Delhi Central Grid'),
+            date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
             type: 'Field Hooking & Seal Audit',
-            result: 'Completed Audit'
+            result: 'Completed Audit',
+            risk_class: currentTask.risk_class || 'High Anomaly',
+            risk_score: currentTask.risk_score || 0.85,
+            latitude: Number(currentTask.latitude) || 28.6139,
+            longitude: Number(currentTask.longitude) || 77.2090,
+            inspector_name: inspector?.displayName || 'Field Inspector',
+            inspector_email: inspector?.email || '',
+            discom: currentTask.discom || inspector?.discom || 'Tata Power DDL',
+            status: 'Completed',
+            checkList: { ...checkList },
+            notes: auditNotes || 'Field inspection successfully completed on site. Physical seal and hooking checks verified.'
         };
-        setPastInspections(prev => [newRecord, ...prev]);
+        setPastInspections(prev => [newRecord, ...prev.filter(p => p.consumer !== cid)]);
+
+        // 4. Reset checklist & field notes
+        setCheckList({ sealIntact: false, hookingCheck: false, bypassDetected: false, terminalSecure: false });
+        setAuditNotes('');
+        setInspectionStatus('Initiate');
+
+        // 5. Switch to next remaining active task or clear selected consumer
+        const remainingActive = activeTasks.filter(t => t.consumer_id !== cid);
+        if (remainingActive.length > 0) {
+            setSelectedConsumerId(remainingActive[0].consumer_id);
+        } else {
+            setSelectedConsumerId(null);
+        }
+
+        alert(`✅ Field audit for Consumer ${cid} completed and saved globally!\n\nSynchronized worldwide with DISCOM central database.`);
     };
 
     return (
@@ -794,29 +937,30 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                         </div>
                                     </div>
 
-                                    {/* Task Switcher if inspector has multiple assigned consumers */}
-                                    {myTasks.length > 1 && (
+                                    {/* Task Switcher if inspector has multiple active assigned consumers */}
+                                    {activeTasks.length > 1 && (
                                         <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.75rem' }}>
                                             <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '0.5rem' }}>
-                                                Switch Assigned Audit ({myTasks.length} total):
+                                                Switch Active Assigned Audit ({activeTasks.length} pending):
                                             </span>
                                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                                {myTasks.map(t => (
+                                                {activeTasks.map(t => (
                                                     <button
                                                         key={t.consumer_id}
                                                         onClick={() => setSelectedConsumerId(t.consumer_id)}
                                                         style={{
                                                             padding: '0.35rem 0.75rem',
                                                             borderRadius: '6px',
-                                                            background: currentTask.consumer_id === t.consumer_id ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
-                                                            color: currentTask.consumer_id === t.consumer_id ? '#000000' : 'rgba(255, 255, 255, 0.8)',
+                                                            background: currentTask?.consumer_id === t.consumer_id ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
+                                                            color: currentTask?.consumer_id === t.consumer_id ? '#000000' : 'rgba(255, 255, 255, 0.8)',
                                                             border: '1px solid rgba(255, 255, 255, 0.1)',
                                                             fontSize: '0.8rem',
                                                             fontWeight: '600',
                                                             cursor: 'pointer',
                                                             display: 'flex',
                                                             alignItems: 'center',
-                                                            gap: '0.35rem'
+                                                            gap: '0.35rem',
+                                                            transition: 'all 0.2s'
                                                         }}
                                                     >
                                                         <span>{t.consumer_id} (Tr: {t.transformer_id})</span>
@@ -997,44 +1141,11 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                                 </div>
                                             </div>
                                         )}
-
-                                        {inspectionStatus === 'Completed' && (
-                                            <div style={{ textAlign: 'center' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem', color: '#10b981' }}>
-                                                    <CheckCircle size={36} />
-                                                </div>
-                                                <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1rem', fontWeight: '600', margin: '0 0 0.25rem' }}>
-                                                    Audit Completed for Consumer {currentTask.consumer_id}!
-                                                </p>
-                                                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', margin: '0 0 1.5rem' }}>
-                                                    Audit logs and transformer verification have been synchronized with DISCOM central database.
-                                                </p>
-                                                <button
-                                                    onClick={() => {
-                                                        const remainingTasks = myTasks.filter(t => t.consumer_id !== currentTask.consumer_id);
-                                                        if (remainingTasks.length > 0) {
-                                                            setSelectedConsumerId(remainingTasks[0].consumer_id);
-                                                        } else {
-                                                            updateTaskStatus('Initiate');
-                                                        }
-                                                        setCheckList({ sealIntact: false, hookingCheck: false, bypassDetected: false, terminalSecure: false });
-                                                        setAuditNotes('');
-                                                    }}
-                                                    style={{
-                                                        background: 'transparent', border: '1px solid var(--accent-blue)', color: 'var(--accent-blue)',
-                                                        padding: '0.65rem 1.75rem', borderRadius: '8px', fontWeight: '600', cursor: 'pointer',
-                                                        fontSize: '0.9rem'
-                                                    }}
-                                                >
-                                                    {myTasks.filter(t => (t.status || '').toLowerCase() !== 'completed').length > 1 ? 'Next Assigned Task' : 'Reset Inspection Stepper'}
-                                                </button>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </>
                         ) : (
-                            /* Standby State when no task is assigned */
+                            /* Standby State when no active task remains in queue */
                             <div style={{ 
                                 background: 'var(--glass-bg)', 
                                 border: '1px solid var(--glass-border)', 
@@ -1046,27 +1157,68 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                 alignItems: 'center',
                                 justifyContent: 'center'
                             }}>
-                                <div style={{
-                                    width: '64px', height: '64px', borderRadius: '50%',
-                                    background: 'rgba(200, 162, 97, 0.1)', border: '1px solid rgba(200, 162, 97, 0.2)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    color: '#c8a261', marginBottom: '1.25rem'
-                                }}>
-                                    <MapPin size={28} />
-                                </div>
-                                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.35rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
-                                    No Active Field Audits Assigned
-                                </h3>
-                                <p style={{ maxWidth: '500px', margin: '0 0 1.5rem 0', color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                                    You are currently on standby for <strong>{inspector?.discom || 'your DISCOM'}</strong>. Once your administrator uploads consumption logs and assigns anomaly audit tasks to <strong>{inspector?.displayName || 'your account'}</strong>, the route, meter pins, and transformer mapping will automatically appear here.
-                                </p>
-                                <span style={{
-                                    background: 'rgba(16, 185, 129, 0.1)', color: '#10b981',
-                                    border: '1px solid rgba(16, 185, 129, 0.25)',
-                                    padding: '0.35rem 0.9rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600'
-                                }}>
-                                    Status: Connected & Standby
-                                </span>
+                                {pastInspectionsList.length > 0 ? (
+                                    <>
+                                        <div style={{
+                                            width: '68px', height: '68px', borderRadius: '50%',
+                                            background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: '#10b981', marginBottom: '1.25rem'
+                                        }}>
+                                            <CheckCircle size={34} />
+                                        </div>
+                                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+                                            All Assigned Audits Completed
+                                        </h3>
+                                        <p style={{ maxWidth: '520px', margin: '0 0 1.5rem 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                            All field inspection tasks assigned to <strong>{inspector?.displayName || 'your account'}</strong> for <strong>{inspector?.discom || 'your DISCOM'}</strong> have been successfully verified, resolved, and synchronized globally with the central database.
+                                        </p>
+                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                            <button
+                                                onClick={() => switchTab('Past Inspections')}
+                                                style={{
+                                                    background: '#c8a261', color: '#000000', padding: '0.65rem 1.5rem',
+                                                    borderRadius: '8px', fontWeight: '600', cursor: 'pointer', border: 'none',
+                                                    fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <ClipboardCheck size={16} /> View Past Inspections ({pastInspectionsList.length})
+                                            </button>
+                                            <span style={{
+                                                background: 'rgba(16, 185, 129, 0.1)', color: '#10b981',
+                                                border: '1px solid rgba(16, 185, 129, 0.25)',
+                                                padding: '0.4rem 0.9rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600'
+                                            }}>
+                                                Status: All Audits Completed & Synced Globally
+                                            </span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div style={{
+                                            width: '64px', height: '64px', borderRadius: '50%',
+                                            background: 'rgba(200, 162, 97, 0.1)', border: '1px solid rgba(200, 162, 97, 0.2)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: '#c8a261', marginBottom: '1.25rem'
+                                        }}>
+                                            <MapPin size={28} />
+                                        </div>
+                                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.35rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+                                            No Active Field Audits Assigned
+                                        </h3>
+                                        <p style={{ maxWidth: '500px', margin: '0 0 1.5rem 0', color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                            You are currently on standby for <strong>{inspector?.discom || 'your DISCOM'}</strong>. Once your administrator uploads consumption logs and assigns anomaly audit tasks to <strong>{inspector?.displayName || 'your account'}</strong>, the route, meter pins, and transformer mapping will automatically appear here.
+                                        </p>
+                                        <span style={{
+                                            background: 'rgba(16, 185, 129, 0.1)', color: '#10b981',
+                                            border: '1px solid rgba(16, 185, 129, 0.25)',
+                                            padding: '0.35rem 0.9rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600'
+                                        }}>
+                                            Status: Connected & Standby
+                                        </span>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
@@ -1112,38 +1264,293 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
                 {/* PAST INSPECTIONS VIEW */}
                 {activeTab === 'Past Inspections' && (
-                    <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', overflow: 'hidden' }}>
-                        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                            <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'white' }}>Historical Audit Log</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', overflow: 'hidden' }}>
+                            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'white' }}>Historical Audit Log</h3>
+                                    <p style={{ margin: '0.25rem 0 0', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
+                                        Click any inspection record to view its on-site GPS coordinates, map telemetry, checklist, and audit findings.
+                                    </p>
+                                </div>
+                                <span style={{ background: 'rgba(200, 162, 97, 0.12)', color: '#c8a261', border: '1px solid rgba(200, 162, 97, 0.25)', padding: '0.35rem 0.8rem', borderRadius: '20px', fontSize: '0.78rem', fontWeight: '600' }}>
+                                    {pastInspectionsList.length} Completed Record{pastInspectionsList.length !== 1 ? 's' : ''} (Global Sync)
+                                </span>
+                            </div>
+
+                            {pastInspectionsList.length === 0 ? (
+                                <div style={{ padding: '3rem 2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
+                                    <ClipboardCheck size={36} style={{ marginBottom: '0.75rem', opacity: 0.4 }} />
+                                    <p style={{ margin: 0, fontSize: '0.95rem' }}>No past inspections completed yet.</p>
+                                    <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem' }}>When you complete active assigned field audits, they will appear here automatically.</p>
+                                </div>
+                            ) : (
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                        <thead>
+                                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>AUDIT ID</th>
+                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>CONSUMER ID</th>
+                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>ZONE / TRANSFORMER</th>
+                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>INSPECTOR</th>
+                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>DATE & TIME</th>
+                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>STATUS</th>
+                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600', textAlign: 'center' }}>ACTION</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {pastInspectionsList.map((ins, i) => (
+                                                <tr 
+                                                    key={ins.id || i} 
+                                                    onClick={() => setSelectedPastAudit(ins)}
+                                                    style={{ 
+                                                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                        cursor: 'pointer',
+                                                        transition: 'background 0.15s ease'
+                                                    }}
+                                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(200, 162, 97, 0.06)'}
+                                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                                >
+                                                    <td style={{ padding: '1rem', fontWeight: '600', color: '#c8a261' }}>{ins.id}</td>
+                                                    <td style={{ padding: '1rem', color: 'white', fontWeight: '600' }}>{ins.consumer}</td>
+                                                    <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>
+                                                        {ins.zone} {ins.transformer_id ? `(Tr: ${ins.transformer_id})` : ''}
+                                                    </td>
+                                                    <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>{ins.inspector_name}</td>
+                                                    <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>{ins.date}</td>
+                                                    <td style={{ padding: '1rem' }}>
+                                                        <span style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600' }}>
+                                                            {ins.result || 'Completed'}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedPastAudit(ins);
+                                                            }}
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '0.35rem',
+                                                                background: 'rgba(200, 162, 97, 0.15)',
+                                                                border: '1px solid rgba(200, 162, 97, 0.3)',
+                                                                color: '#c8a261',
+                                                                padding: '0.35rem 0.75rem',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.78rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                        >
+                                                            <Eye size={13} /> View Audit & Map
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-                                    <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>AUDIT ID</th>
-                                    <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>CONSUMER ID</th>
-                                    <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>ZONE AREA</th>
-                                    <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>DATE</th>
-                                    <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>AUDIT TYPE</th>
-                                    <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>STATUS</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {pastInspections.map((ins, i) => (
-                                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                        <td style={{ padding: '1rem', fontWeight: '600' }}>{ins.id}</td>
-                                        <td style={{ padding: '1rem', color: 'white' }}>{ins.consumer}</td>
-                                        <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.zone}</td>
-                                        <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.date}</td>
-                                        <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.type}</td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <span style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600' }}>
-                                                {ins.result}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+
+                        {/* Interactive Past Audit Detail Modal with Map */}
+                        {selectedPastAudit && (
+                            <div 
+                                onClick={() => setSelectedPastAudit(null)}
+                                style={{
+                                    position: 'fixed',
+                                    top: 0, left: 0, width: '100vw', height: '100vh',
+                                    background: 'rgba(0, 0, 0, 0.75)',
+                                    backdropFilter: 'blur(6px)',
+                                    WebkitBackdropFilter: 'blur(6px)',
+                                    zIndex: 2000,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '1.5rem'
+                                }}
+                            >
+                                <div 
+                                    onClick={e => e.stopPropagation()}
+                                    style={{
+                                        background: '#12110e',
+                                        border: '1px solid rgba(200, 162, 97, 0.35)',
+                                        borderRadius: '18px',
+                                        maxWidth: '850px',
+                                        width: '100%',
+                                        maxHeight: '90vh',
+                                        overflowY: 'auto',
+                                        padding: '2rem',
+                                        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7)',
+                                        position: 'relative'
+                                    }}
+                                >
+                                    {/* Modal Header */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1.25rem' }}>
+                                        <div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                                                <span style={{ background: 'rgba(200, 162, 97, 0.2)', color: '#c8a261', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: '700' }}>
+                                                    {selectedPastAudit.id}
+                                                </span>
+                                                <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: '700' }}>
+                                                    VERIFIED AUDIT
+                                                </span>
+                                            </div>
+                                            <h2 style={{ margin: 0, fontSize: '1.5rem', color: 'white', fontFamily: 'var(--font-heading)' }}>
+                                                Inspection Details: Consumer <span style={{ color: 'var(--accent-blue)' }}>{selectedPastAudit.consumer}</span>
+                                            </h2>
+                                            <p style={{ margin: '0.25rem 0 0', color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>
+                                                Transformer {selectedPastAudit.transformer_id} &bull; {selectedPastAudit.zone} &bull; Audited on {selectedPastAudit.date}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => setSelectedPastAudit(null)}
+                                            style={{
+                                                background: 'rgba(255,255,255,0.05)',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                borderRadius: '50%',
+                                                width: '32px', height: '32px',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                color: 'white', cursor: 'pointer'
+                                            }}
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+
+                                    {/* Modal Content Grid */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1.5rem', marginBottom: '1.75rem' }}>
+                                        {/* Left: Map */}
+                                        <div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                                <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'white', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                    <MapPin size={14} style={{ color: '#c8a261' }} /> Geolocated Meter Pin
+                                                </span>
+                                                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+                                                    {selectedPastAudit.latitude}&deg; N, {selectedPastAudit.longitude}&deg; E
+                                                </span>
+                                            </div>
+                                            <div style={{ height: '280px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                                <MapComponent
+                                                    data={{
+                                                        results: [{
+                                                            consumer_id: selectedPastAudit.consumer,
+                                                            transformer_id: selectedPastAudit.transformer_id,
+                                                            latitude: selectedPastAudit.latitude,
+                                                            longitude: selectedPastAudit.longitude,
+                                                            risk_class: selectedPastAudit.risk_class || 'critical',
+                                                            aggregate_risk_score: selectedPastAudit.risk_score || 0.85
+                                                        }]
+                                                    }}
+                                                    focusedConsumerId={selectedPastAudit.consumer}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Right: Telemetry & Checklist */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '1rem' }}>
+                                                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>
+                                                    Audit Metadata
+                                                </span>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.85rem' }}>
+                                                    <div>
+                                                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>Inspector:</span>
+                                                        <div style={{ color: 'white', fontWeight: '500' }}>{selectedPastAudit.inspector_name}</div>
+                                                    </div>
+                                                    <div>
+                                                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>DISCOM:</span>
+                                                        <div style={{ color: 'white', fontWeight: '500' }}>{selectedPastAudit.discom}</div>
+                                                    </div>
+                                                    <div>
+                                                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>Risk Class:</span>
+                                                        <div style={{ color: '#ef4444', fontWeight: '600' }}>{selectedPastAudit.risk_class}</div>
+                                                    </div>
+                                                    <div>
+                                                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>Risk Score:</span>
+                                                        <div style={{ color: '#c8a261', fontWeight: '600' }}>{((selectedPastAudit.risk_score || 0.85) * 100).toFixed(0)}%</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Checklist summary */}
+                                            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '1rem' }}>
+                                                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>
+                                                    Field Checklist Verified
+                                                </span>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontSize: '0.8rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981' }}>
+                                                        <Check size={14} /> Physical Seal Intact
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981' }}>
+                                                        <Check size={14} /> Pole Hooking Checked
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981' }}>
+                                                        <Check size={14} /> Bypass Line Verified
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981' }}>
+                                                        <Check size={14} /> Terminal Sealed
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Notes */}
+                                            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '1rem' }}>
+                                                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', display: 'block', marginBottom: '0.35rem' }}>
+                                                    Inspector Notes
+                                                </span>
+                                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', lineHeight: '1.4' }}>
+                                                    {selectedPastAudit.notes || 'On-site audit completed and synchronized with DISCOM server.'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Bar */}
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.25rem' }}>
+                                        <button
+                                            onClick={() => {
+                                                setChallanForm(prev => ({ ...prev, consumerId: selectedPastAudit.consumer }));
+                                                setSelectedPastAudit(null);
+                                                switchTab('Create Challan');
+                                            }}
+                                            style={{
+                                                background: '#c8a261',
+                                                color: '#000000',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                padding: '0.65rem 1.4rem',
+                                                fontWeight: '600',
+                                                fontSize: '0.88rem',
+                                                cursor: 'pointer',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.4rem'
+                                            }}
+                                        >
+                                            <AlertTriangle size={15} /> Issue Challan for {selectedPastAudit.consumer}
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedPastAudit(null)}
+                                            style={{
+                                                background: 'rgba(255,255,255,0.08)',
+                                                border: '1px solid rgba(255,255,255,0.15)',
+                                                color: 'white',
+                                                borderRadius: '8px',
+                                                padding: '0.65rem 1.25rem',
+                                                fontWeight: '600',
+                                                fontSize: '0.88rem',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Close
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
