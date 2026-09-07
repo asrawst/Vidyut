@@ -199,11 +199,9 @@ const AdminDashboard = ({
         document.documentElement.removeAttribute('data-theme');
     }, []);
 
-    // Fetch inspectors directory from Supabase — fires only once auth session is confirmed
+    // Fetch inspectors directory from Supabase
     useEffect(() => {
-        const fetchInspectors = async (session) => {
-            if (!session) return; // Don't query if not authenticated
-
+        const fetchInspectors = async () => {
             const { data, error } = await supabase
                 .from('inspectors')
                 .select('*')
@@ -212,25 +210,44 @@ const AdminDashboard = ({
             if (error) {
                 console.error("Error loading inspectors from Supabase:", error.message);
             } else if (data) {
-                const formatted = data.map(ins => ({
-                    name: ins.display_name,
-                    badgeId: ins.badge_id || 'INS-GEN-01',
-                    email: ins.email,
-                    discom: ins.discom || user?.discom || 'DISCOM',
-                    created: ins.created_at ? new Date(ins.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Aug 10, 2026'
-                }));
+                const emailToName = {};
+                const formatted = data.map(ins => {
+                    if (ins.email && ins.display_name) {
+                        emailToName[ins.email.toLowerCase()] = ins.display_name;
+                    }
+                    return {
+                        name: ins.display_name,
+                        badgeId: ins.badge_id || 'INS-GEN-01',
+                        email: ins.email,
+                        discom: ins.discom || user?.discom || 'DISCOM',
+                        created: ins.created_at ? new Date(ins.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Aug 10, 2026'
+                    };
+                });
                 setInspectorsDetails(formatted);
+                localStorage.setItem('vidyut_inspectors_details', JSON.stringify(formatted));
+
+                // Reconcile any tasks or calendar entries whose inspector got renamed
+                setInspectionCalendar(prev => {
+                    const next = prev.map(c => {
+                        const insObj = formatted.find(i => 
+                            i.name === c.inspector || 
+                            (c.inspector && i.name.toLowerCase() === c.inspector.toLowerCase()) ||
+                            (c.inspector && (i.name.replace(/^Inspector\s+/i, '').toLowerCase() === c.inspector.replace(/^Inspector\s+/i, '').toLowerCase())) ||
+                            (i.email && i.email.toLowerCase() === (c.inspector || '').toLowerCase())
+                        );
+                        return insObj ? { ...c, inspector: insObj.name } : c;
+                    });
+                    localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(next));
+                    return next;
+                });
             }
         };
 
-        // Get the current session immediately (handles page refresh on Vercel)
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            fetchInspectors(session);
-        });
+        fetchInspectors();
 
-        // Also listen for future auth state changes (login events)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            fetchInspectors(session);
+        // Also listen for future auth state changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+            fetchInspectors();
         });
 
         // Load all active inspection tasks from Supabase DB for instant sync
@@ -239,12 +256,28 @@ const AdminDashboard = ({
                 const { data: tasksData, error: tasksErr } = await supabase
                     .from('inspection_tasks')
                     .select('*');
+
+                const { data: insData } = await supabase
+                    .from('inspectors')
+                    .select('*');
+
+                const emailToName = {};
+                if (insData) {
+                    insData.forEach(i => {
+                        if (i.email && i.display_name) emailToName[i.email.toLowerCase()] = i.display_name;
+                    });
+                }
+
                 if (tasksData && !tasksErr) {
                     const assignedMap = {};
                     const statusMap = {};
                     tasksData.forEach(t => {
-                        if (t.inspector_name) {
-                            assignedMap[t.consumer_id] = t.inspector_name;
+                        let resolvedName = t.inspector_name;
+                        if (t.inspector_email && emailToName[t.inspector_email.toLowerCase()]) {
+                            resolvedName = emailToName[t.inspector_email.toLowerCase()];
+                        }
+                        if (resolvedName) {
+                            assignedMap[t.consumer_id] = resolvedName;
                         }
                         statusMap[t.consumer_id] = t.status || 'Initiated';
                     });
@@ -255,12 +288,18 @@ const AdminDashboard = ({
                     localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(tasksData));
 
                     // Sync Inspection Tab (Field Inspection Calendar) strictly with real DB tasks
-                    const realCalendar = tasksData.map(task => ({
-                        consumer: task.consumer_id,
-                        zone: task.zone || (task.transformer_id ? `Transformer ${task.transformer_id}` : 'Delhi Grid Area'),
-                        inspector: task.inspector_name,
-                        status: task.status || 'Initiated'
-                    }));
+                    const realCalendar = tasksData.map(task => {
+                        let resolvedName = task.inspector_name;
+                        if (task.inspector_email && emailToName[task.inspector_email.toLowerCase()]) {
+                            resolvedName = emailToName[task.inspector_email.toLowerCase()];
+                        }
+                        return {
+                            consumer: task.consumer_id,
+                            zone: task.zone || (task.transformer_id ? `Transformer ${task.transformer_id}` : 'Delhi Grid Area'),
+                            inspector: resolvedName,
+                            status: task.status || 'Initiated'
+                        };
+                    });
                     setInspectionCalendar(realCalendar);
                     localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(realCalendar));
                 }
@@ -663,8 +702,13 @@ const AdminDashboard = ({
         setInspectorsDetails(prev => prev.filter(item => item.email !== insToDelete.email));
     };
 
-    // Update inspector details in Supabase DB & state
+    // Update inspector details in Supabase DB & state with full cascading to tasks & calendar
     const handleUpdateInspector = async (oldEmail, updatedIns) => {
+        const oldInspectorObj = inspectorsDetails.find(item => item.email === oldEmail);
+        const oldName = oldInspectorObj?.name;
+        const newName = updatedIns.name;
+        const newEmail = updatedIns.email;
+
         const { error } = await supabase
             .from('inspectors')
             .update({
@@ -680,7 +724,78 @@ const AdminDashboard = ({
             alert(`Database update warning: ${error.message}`);
         }
 
-        setInspectorsDetails(prev => prev.map(item => item.email === oldEmail ? updatedIns : item));
+        // 1. Update inspectors directory state & localStorage
+        const updatedList = inspectorsDetails.map(item => item.email === oldEmail ? updatedIns : item);
+        setInspectorsDetails(updatedList);
+        localStorage.setItem('vidyut_inspectors_details', JSON.stringify(updatedList));
+
+        // 2. Cascade inspector name change across active tasks, calendar, and assignedInspectors
+        if (oldName && newName && oldName !== newName) {
+            // Update assignedInspectors
+            setAssignedInspectors(prev => {
+                const next = { ...prev };
+                Object.keys(next).forEach(cid => {
+                    if (next[cid] === oldName) {
+                        next[cid] = newName;
+                    }
+                });
+                localStorage.setItem('vidyut_assigned_inspectors', JSON.stringify(next));
+                return next;
+            });
+
+            // Update Field Inspection Calendar
+            setInspectionCalendar(prev => {
+                const next = prev.map(cal => cal.inspector === oldName ? { ...cal, inspector: newName } : cal);
+                localStorage.setItem('vidyut_inspection_calendar', JSON.stringify(next));
+                return next;
+            });
+
+            // Update Supabase inspection_tasks table by email
+            try {
+                await supabase
+                    .from('inspection_tasks')
+                    .update({
+                        inspector_name: newName,
+                        inspector_email: newEmail,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('inspector_email', oldEmail);
+            } catch (err) {
+                console.error("Error updating tasks with new inspector name:", err);
+            }
+
+            // Also update Supabase inspection_tasks by old inspector_name
+            try {
+                await supabase
+                    .from('inspection_tasks')
+                    .update({
+                        inspector_name: newName,
+                        inspector_email: newEmail,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('inspector_name', oldName);
+            } catch (err) {
+                console.error("Error updating tasks by old inspector name:", err);
+            }
+
+            // Update local assigned tasks cache
+            try {
+                const savedTasks = JSON.parse(localStorage.getItem('vidyut_assigned_tasks') || '[]');
+                const updatedTasks = savedTasks.map(t => (t.inspector_name === oldName || t.inspector_email === oldEmail) ? { ...t, inspector_name: newName, inspector_email: newEmail } : t);
+                localStorage.setItem('vidyut_assigned_tasks', JSON.stringify(updatedTasks));
+            } catch (e) {}
+
+            // Broadcast inspector rename event over Supabase Realtime channel
+            try {
+                const channel = supabase.channel('admin_tasks_realtime_channel');
+                channel.send({
+                    type: 'broadcast',
+                    event: 'inspector_renamed',
+                    payload: { oldName, newName, oldEmail, newEmail }
+                }).catch(e => console.warn(e));
+            } catch (e) {}
+        }
+        setEditingInspectorName(null);
     };
 
     // Send login credential reset email to inspector via Supabase
@@ -2295,19 +2410,9 @@ const AdminDashboard = ({
                                                                     <button 
                                                                         onClick={async () => {
                                                                             const targetConsumer = ins.consumer;
-                                                                            const oldInspector = ins.inspector;
                                                                             const newInspector = editCalendarData.inspector;
-                                                                            const oldStatus = (ins.status || '').toLowerCase();
-                                                                            const isCancelled = oldStatus === 'cancelled' || oldStatus === 'canceled';
-
-                                                                            if (oldInspector && newInspector && oldInspector !== newInspector && !isCancelled) {
-                                                                                alert(
-                                                                                    `🔒 Audit Locked to ${oldInspector}\n\n` +
-                                                                                    `Consumer "${targetConsumer}" is actively assigned to ${oldInspector}.\n\n` +
-                                                                                    `It cannot be reassigned to another inspector until ${oldInspector} cancels or releases the audit.`
-                                                                                );
-                                                                                return;
-                                                                            }
+                                                                            const matchedIns = inspectorsDetails.find(i => i.name === newInspector || (newInspector && i.name.toLowerCase() === newInspector.toLowerCase()));
+                                                                            const newEmail = matchedIns?.email || '';
 
                                                                             setInspectionCalendar(prev => {
                                                                                 const next = prev.map(item => item.consumer === targetConsumer ? editCalendarData : item);
@@ -2333,14 +2438,18 @@ const AdminDashboard = ({
 
                                                                             setEditingCalendarId(null);
                                                                             try {
+                                                                                const updatePayload = {
+                                                                                    zone: editCalendarData.zone,
+                                                                                    inspector_name: editCalendarData.inspector,
+                                                                                    status: editCalendarData.status,
+                                                                                    updated_at: new Date().toISOString()
+                                                                                };
+                                                                                if (newEmail) {
+                                                                                    updatePayload.inspector_email = newEmail;
+                                                                                }
                                                                                 await supabase
                                                                                     .from('inspection_tasks')
-                                                                                    .update({
-                                                                                        zone: editCalendarData.zone,
-                                                                                        inspector_name: editCalendarData.inspector,
-                                                                                        status: editCalendarData.status,
-                                                                                        updated_at: new Date().toISOString()
-                                                                                    })
+                                                                                    .update(updatePayload)
                                                                                     .eq('consumer_id', targetConsumer);
                                                                             } catch (e) {
                                                                                 console.error(e);
