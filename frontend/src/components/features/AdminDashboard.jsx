@@ -2115,14 +2115,6 @@ const AdminDashboard = ({
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                         <span style={{ 
-                                            display: 'inline-flex', alignItems: 'center', gap: '0.4rem', 
-                                            fontSize: '0.75rem', color: '#10b981', background: 'rgba(16,185,129,0.1)', 
-                                            padding: '0.25rem 0.6rem', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.25)' 
-                                        }}>
-                                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-                                            Real-Time Synced
-                                        </span>
-                                        <span style={{ 
                                             fontSize: '0.85rem', fontWeight: '600', color: '#c8a261', 
                                             background: 'rgba(200,162,97,0.1)', padding: '0.35rem 0.75rem', borderRadius: '8px',
                                             border: '1px solid rgba(200,162,97,0.25)' 
