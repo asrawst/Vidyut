@@ -584,109 +584,46 @@ const MapComponent = ({
                             }}
                         >
                             <Tooltip direction="top" offset={[0, -28]} opacity={0.95}>
-                                <div>
-                                    <strong>{item.consumer_id}</strong> &bull; {riskPercent}% Theft Risk
+                                <div style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                                    {item.lat.toFixed(4)}&deg; N, {item.lng.toFixed(4)}&deg; E
                                 </div>
                             </Tooltip>
 
-                            <Popup className="custom-popup" closeButton={false} maxWidth={310} minWidth={260}>
-                                <div style={{ padding: '0.9rem 1.1rem' }}>
-                                    {/* Popup Header */}
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', borderBottom: '1px solid rgba(200, 162, 97, 0.2)', paddingBottom: '0.55rem', marginBottom: '0.65rem' }}>
-                                        <div>
-                                            <span style={{ fontSize: '0.68rem', color: '#c8a261', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>
-                                                Consumer Identifier
-                                            </span>
-                                            <div style={{ fontSize: '1.05rem', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.01em', marginTop: '1px' }}>
-                                                {item.consumer_id}
-                                            </div>
-                                        </div>
-                                        <span style={{
-                                            fontSize: '0.7rem',
-                                            fontWeight: '700',
-                                            textTransform: 'uppercase',
-                                            padding: '0.2rem 0.55rem',
-                                            borderRadius: '5px',
-                                            background: `${item.color}22`,
-                                            border: `1px solid ${item.color}66`,
-                                            color: item.color,
-                                            letterSpacing: '0.02em'
-                                        }}>
-                                            {item.risk_class || (item.riskType === 'critical' ? 'Critical' : 'High Risk')}
+                            <Popup className="custom-popup" closeButton={false} maxWidth={260} minWidth={190}>
+                                <div style={{ 
+                                    padding: '0.65rem 0.9rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: '0.85rem'
+                                }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                                        <span style={{ fontSize: '0.65rem', color: '#c8a261', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>
+                                            GPS Coordinates
+                                        </span>
+                                        <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.01em' }}>
+                                            {item.lat.toFixed(6)}&deg; N, {item.lng.toFixed(6)}&deg; E
                                         </span>
                                     </div>
-
-                                    {/* Risk Score Progress Bar */}
-                                    <div style={{ marginBottom: '0.85rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '0.3rem' }}>
-                                            <span style={{ color: 'rgba(255,255,255,0.7)' }}>Theft Probability:</span>
-                                            <strong style={{ color: item.color }}>{riskPercent}%</strong>
-                                        </div>
-                                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
-                                            <div style={{ width: `${riskPercent}%`, height: '100%', background: item.color, borderRadius: '3px' }} />
-                                        </div>
-                                    </div>
-
-                                    {/* Transformer & Location Details */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '0.9rem' }}>
-                                        {item.transformer_id && (
-                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <span style={{ color: 'rgba(255,255,255,0.6)' }}>Transformer:</span>
-                                                <strong style={{ color: '#ffffff' }}>{item.transformer_id}</strong>
-                                            </div>
-                                        )}
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ color: 'rgba(255,255,255,0.6)' }}>GPS Coords:</span>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                                <span style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: '#ffffff' }}>
-                                                    {item.lat.toFixed(4)}&deg; N, {item.lng.toFixed(4)}&deg; E
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => handleCopyCoords(e, item.lat, item.lng, item.consumer_id)}
-                                                    style={{ background: 'none', border: 'none', color: '#c8a261', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-                                                    title="Copy GPS coordinates"
-                                                >
-                                                    {copiedId === item.consumer_id ? <Check size={13} style={{ color: '#10b981' }} /> : <Copy size={13} />}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Action Links */}
-                                    <div style={{ display: 'flex', gap: '0.5rem', paddingTop: '0.55rem', borderTop: '1px solid rgba(200, 162, 97, 0.18)' }}>
-                                        <a
-                                            href={googleMapsUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            style={{
-                                                flex: 1,
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '0.4rem',
-                                                background: 'rgba(200, 162, 97, 0.12)',
-                                                border: '1px solid rgba(200, 162, 97, 0.35)',
-                                                color: '#c8a261',
-                                                padding: '0.45rem 0.6rem',
-                                                borderRadius: '7px',
-                                                fontSize: '0.78rem',
-                                                fontWeight: '600',
-                                                textDecoration: 'none',
-                                                transition: 'all 0.2s ease'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.background = 'rgba(200, 162, 97, 0.22)';
-                                                e.currentTarget.style.borderColor = 'rgba(200, 162, 97, 0.6)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.background = 'rgba(200, 162, 97, 0.12)';
-                                                e.currentTarget.style.borderColor = 'rgba(200, 162, 97, 0.35)';
-                                            }}
-                                        >
-                                            <ExternalLink size={13} /> Google Maps
-                                        </a>
-                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => handleCopyCoords(e, item.lat, item.lng, item.consumer_id)}
+                                        style={{
+                                            background: 'rgba(200, 162, 97, 0.12)',
+                                            border: '1px solid rgba(200, 162, 97, 0.35)',
+                                            color: '#c8a261',
+                                            cursor: 'pointer',
+                                            padding: '0.35rem 0.45rem',
+                                            borderRadius: '6px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        title="Copy GPS coordinates"
+                                    >
+                                        {copiedId === item.consumer_id ? <Check size={14} style={{ color: '#10b981' }} /> : <Copy size={14} />}
+                                    </button>
                                 </div>
                             </Popup>
                         </Marker>

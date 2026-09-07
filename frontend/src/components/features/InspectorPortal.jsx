@@ -102,9 +102,9 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
         fetchTasksFromDB();
 
-        // Subscribe to live task assignments & updates from Supabase Realtime
+        // Subscribe to live task assignments & updates from Supabase Realtime (both admin and inspector channels)
         const channel = supabase
-            .channel('inspector_portal_realtime_tasks')
+            .channel('admin_tasks_realtime_channel')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'inspection_tasks' }, () => {
                 fetchTasksFromDB();
             })
@@ -112,6 +112,15 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                 if (e.payload && e.payload.consumer_id) {
                     const cid = e.payload.consumer_id;
                     setAllAssignedTasks(prev => prev.filter(t => t.consumer_id !== cid));
+                    setPastInspections(prev => {
+                        const next = prev.filter(p => {
+                            const pCid = p.consumer || p.consumer_id;
+                            const pId = p.id || '';
+                            return pCid !== cid && pId !== cid && !String(pId).toUpperCase().includes(String(cid).toUpperCase());
+                        });
+                        localStorage.setItem('vidyut_inspector_past_inspections', JSON.stringify(next));
+                        return next;
+                    });
                     setChallans(prev => {
                         const next = prev.filter(c => c.consumer !== cid);
                         localStorage.setItem('vidyut_inspector_challans', JSON.stringify(next));
@@ -119,12 +128,36 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                     });
                 }
             })
+            .on('broadcast', { event: 'inspection_deleted' }, (e) => {
+                if (e.payload && e.payload.consumer_id) {
+                    const cid = e.payload.consumer_id;
+                    setAllAssignedTasks(prev => prev.filter(t => t.consumer_id !== cid));
+                    setPastInspections(prev => {
+                        const next = prev.filter(p => {
+                            const pCid = p.consumer || p.consumer_id;
+                            const pId = p.id || '';
+                            return pCid !== cid && pId !== cid && !String(pId).toUpperCase().includes(String(cid).toUpperCase());
+                        });
+                        localStorage.setItem('vidyut_inspector_past_inspections', JSON.stringify(next));
+                        return next;
+                    });
+                }
+            })
             .subscribe();
 
         const handleLocalTaskDeleted = (e) => {
-            if (e.detail && e.detail.consumer_id) {
-                const cid = e.detail.consumer_id;
+            if (e.detail && (e.detail.consumer_id || e.detail.consumer)) {
+                const cid = e.detail.consumer_id || e.detail.consumer;
                 setAllAssignedTasks(prev => prev.filter(t => t.consumer_id !== cid));
+                setPastInspections(prev => {
+                    const next = prev.filter(p => {
+                        const pCid = p.consumer || p.consumer_id;
+                        const pId = p.id || '';
+                        return pCid !== cid && pId !== cid && !String(pId).toUpperCase().includes(String(cid).toUpperCase());
+                    });
+                    localStorage.setItem('vidyut_inspector_past_inspections', JSON.stringify(next));
+                    return next;
+                });
                 setChallans(prev => {
                     const next = prev.filter(c => c.consumer !== cid);
                     localStorage.setItem('vidyut_inspector_challans', JSON.stringify(next));
@@ -133,12 +166,28 @@ const InspectorPortal = ({ inspector, onLogout }) => {
             }
         };
         window.addEventListener('vidyut_task_deleted', handleLocalTaskDeleted);
+        window.addEventListener('vidyut_inspection_deleted', handleLocalTaskDeleted);
+        window.addEventListener('vidyut_past_inspection_deleted', handleLocalTaskDeleted);
 
-        // Storage listener for same-browser tabs
-        const handleStorageChange = () => {
-            const saved = localStorage.getItem('vidyut_assigned_tasks');
-            if (saved) {
-                try { setAllAssignedTasks(JSON.parse(saved)); } catch (e) { console.error(e); }
+        // Storage listener for same-browser multi-tab sync
+        const handleStorageChange = (e) => {
+            if (!e.key || e.key === 'vidyut_assigned_tasks') {
+                const saved = localStorage.getItem('vidyut_assigned_tasks');
+                if (saved) {
+                    try { setAllAssignedTasks(JSON.parse(saved)); } catch (err) { console.error(err); }
+                }
+            }
+            if (!e.key || e.key === 'vidyut_inspector_past_inspections') {
+                const savedPast = localStorage.getItem('vidyut_inspector_past_inspections');
+                if (savedPast) {
+                    try { setPastInspections(JSON.parse(savedPast)); } catch (err) { console.error(err); }
+                }
+            }
+            if (!e.key || e.key === 'vidyut_inspector_challans') {
+                const savedChallans = localStorage.getItem('vidyut_inspector_challans');
+                if (savedChallans) {
+                    try { setChallans(JSON.parse(savedChallans)); } catch (err) { console.error(err); }
+                }
             }
         };
         window.addEventListener('storage', handleStorageChange);
@@ -146,6 +195,8 @@ const InspectorPortal = ({ inspector, onLogout }) => {
         return () => {
             supabase.removeChannel(channel);
             window.removeEventListener('vidyut_task_deleted', handleLocalTaskDeleted);
+            window.removeEventListener('vidyut_inspection_deleted', handleLocalTaskDeleted);
+            window.removeEventListener('vidyut_past_inspection_deleted', handleLocalTaskDeleted);
             window.removeEventListener('storage', handleStorageChange);
         };
     }, [inspector]);

@@ -2650,11 +2650,31 @@ const AdminDashboard = ({
                                                                                     return next;
                                                                                 });
 
-                                                                                // 4. Dispatch local window events for multi-tab sync
+                                                                                // 4. Also clean up Inspector Portal's Past Inspections storage
+                                                                                try {
+                                                                                    const savedPast = localStorage.getItem('vidyut_inspector_past_inspections');
+                                                                                    if (savedPast) {
+                                                                                        const parsed = JSON.parse(savedPast);
+                                                                                        if (Array.isArray(parsed)) {
+                                                                                            const nextPast = parsed.filter(p => {
+                                                                                                const pCid = p.consumer || p.consumer_id;
+                                                                                                const pId = p.id || '';
+                                                                                                return pCid !== targetConsumer && pId !== targetConsumer && !String(pId).toUpperCase().includes(targetConsumer.toUpperCase());
+                                                                                            });
+                                                                                            localStorage.setItem('vidyut_inspector_past_inspections', JSON.stringify(nextPast));
+                                                                                        }
+                                                                                    }
+                                                                                } catch (e) {
+                                                                                    console.error("Error cleaning inspector past inspections:", e);
+                                                                                }
+
+                                                                                // 5. Dispatch local window events for multi-tab sync
                                                                                 window.dispatchEvent(new CustomEvent('vidyut_task_deleted', { detail: { consumer_id: targetConsumer } }));
+                                                                                window.dispatchEvent(new CustomEvent('vidyut_inspection_deleted', { detail: { consumer_id: targetConsumer } }));
+                                                                                window.dispatchEvent(new CustomEvent('vidyut_past_inspection_deleted', { detail: { consumer_id: targetConsumer } }));
                                                                                 window.dispatchEvent(new CustomEvent('vidyut_challan_deleted', { detail: { consumer: targetConsumer } }));
 
-                                                                                // 5. Delete task and challans from Supabase Cloud Server Database
+                                                                                // 6. Delete task and challans from Supabase Cloud Server Database
                                                                                 try {
                                                                                     await supabase
                                                                                         .from('inspection_tasks')
@@ -2673,12 +2693,18 @@ const AdminDashboard = ({
                                                                                     console.error("Error deleting challan from Supabase:", e);
                                                                                 }
 
-                                                                                // 6. Broadcast task and challan deletion over Supabase Realtime channels
+                                                                                // 7. Broadcast task and challan deletion over Supabase Realtime channels
                                                                                 try {
                                                                                     const channel = supabase.channel('admin_tasks_realtime_channel');
                                                                                     channel.send({
                                                                                         type: 'broadcast',
                                                                                         event: 'task_deleted',
+                                                                                        payload: { consumer_id: targetConsumer }
+                                                                                    }).catch(e => console.warn(e));
+
+                                                                                    channel.send({
+                                                                                        type: 'broadcast',
+                                                                                        event: 'inspection_deleted',
                                                                                         payload: { consumer_id: targetConsumer }
                                                                                     }).catch(e => console.warn(e));
                                                                                 } catch (e) {}
