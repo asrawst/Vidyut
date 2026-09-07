@@ -82,11 +82,25 @@ const AdminDashboard = ({
     const [editingInspectorName, setEditingInspectorName] = useState(null);
     const [editInspectorData, setEditInspectorData] = useState({ name: '', badgeId: '', email: '', discom: '', created: '' });
     const [newInspector, setNewInspector] = useState({ name: '', badgeId: '', email: '', password: '' });
-    const [blacklistedConsumers, setBlacklistedConsumers] = useState([
-        { id: 'CON-88301', addr: 'B-4, Rohini Sector 11', severity: '3rd Repeated Bypass', fine: '₹45,000', status: 'Meter Removed' },
-        { id: 'CON-12499', addr: 'C-72, Shalimar Bagh', severity: 'Tampered Terminal Cover', fine: '₹12,500', status: 'Suspended Connection' },
-        { id: 'CON-77402', addr: 'G-12, Karol Bagh Main', severity: 'Direct Tap Hooking', fine: '₹60,000', status: 'Criminal Legal Action' },
-    ]);
+    const [blacklistedConsumers, setBlacklistedConsumers] = useState(() => {
+        const saved = localStorage.getItem('vidyut_blacklisted_consumers');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) return parsed;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        return [
+            { id: 'C0133', addr: 'Transformer T03 • Sector 5', severity: 'Direct Line Hooking', fine: '₹1,00,000', status: 'Meter Removed' },
+            { id: 'C112', addr: 'Transformer T01 • Central Feeder', severity: 'Direct Line Hooking', fine: '₹40,000', status: 'Suspended Connection' },
+        ];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('vidyut_blacklisted_consumers', JSON.stringify(blacklistedConsumers));
+    }, [blacklistedConsumers]);
     const [editingConsumerId, setEditingConsumerId] = useState(null);
     const [editConsumerData, setEditConsumerData] = useState({ id: '', addr: '', severity: '', fine: '', status: '' });
     const [newConsumerData, setNewConsumerData] = useState({ id: '', addr: '', severity: '', fine: '', status: 'Meter Removed' });
@@ -1540,13 +1554,65 @@ const AdminDashboard = ({
                                         }}
                                         style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem', alignItems: 'end' }}
                                     >
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                            <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Consumer ID *</label>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', gridColumn: challans.length > 0 ? 'span 2' : 'auto' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem' }}>Consumer ID *</label>
+                                                {challans.length > 0 && (
+                                                    <span style={{ fontSize: '0.72rem', color: '#c8a261', background: 'rgba(200,162,97,0.1)', padding: '0.15rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(200,162,97,0.25)' }}>
+                                                        {challans.length} Challan Record{challans.length === 1 ? '' : 's'} Available
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Choose Consumer from Field Penalties & Bypass Challans */}
+                                            {challans.length > 0 && (
+                                                <select 
+                                                    value={challans.some(ch => ch.consumer === newConsumerData.id) ? newConsumerData.id : ''}
+                                                    onChange={(e) => {
+                                                        const selectedConsumer = e.target.value;
+                                                        if (selectedConsumer) {
+                                                            const matchedChallan = challans.find(ch => ch.consumer === selectedConsumer);
+                                                            if (matchedChallan) {
+                                                                setNewConsumerData({
+                                                                    id: matchedChallan.consumer,
+                                                                    addr: matchedChallan.zone || 'Delhi Grid Area',
+                                                                    severity: `${matchedChallan.anomaly} (${matchedChallan.load})`,
+                                                                    fine: matchedChallan.penalty,
+                                                                    status: 'Meter Removed'
+                                                                });
+                                                            } else {
+                                                                setNewConsumerData(prev => ({ ...prev, id: selectedConsumer }));
+                                                            }
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        padding: '0.65rem 0.8rem',
+                                                        background: '#181512',
+                                                        border: '1px solid rgba(200,162,97,0.35)',
+                                                        borderRadius: '6px',
+                                                        color: '#ffffff',
+                                                        fontSize: '0.85rem',
+                                                        outline: 'none',
+                                                        cursor: 'pointer',
+                                                        marginBottom: '0.25rem'
+                                                    }}
+                                                >
+                                                    <option value="" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                                                        -- Choose Consumer from Field Penalties & Challans --
+                                                    </option>
+                                                    {challans.map((ch, idx) => (
+                                                        <option key={idx} value={ch.consumer}>
+                                                            {ch.consumer} • {ch.id} ({ch.anomaly} - {ch.penalty})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            )}
+
                                             <input 
                                                 type="text"
                                                 value={newConsumerData.id}
                                                 onChange={e => setNewConsumerData({ ...newConsumerData, id: e.target.value })}
-                                                placeholder="e.g. CON-88301"
+                                                placeholder="Or type Consumer ID manually (e.g. C0133)"
                                                 required
                                                 style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#fff', outline: 'none' }}
                                             />
