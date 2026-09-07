@@ -35,6 +35,8 @@ export default function AdminPage() {
   useEffect(() => {
     if (result) {
       localStorage.setItem('vidyut_result', JSON.stringify(result));
+    } else {
+      localStorage.removeItem('vidyut_result');
     }
   }, [result]);
 

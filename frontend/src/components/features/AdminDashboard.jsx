@@ -4,7 +4,7 @@ import {
     User, ListCollapse, Ban, TrendingUp, Calendar, AlertTriangle, 
     History as HistoryIcon, Settings as SettingsIcon, UploadCloud, 
     Download, RefreshCw, Layers, ShieldAlert, Sparkles, MapPin, 
-    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Zap, Lock 
+    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Zap, Lock, RotateCcw 
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LineChart, Line } from 'recharts';
 import MapComponent from './MapComponent';
@@ -1200,6 +1200,15 @@ const AdminDashboard = ({
         return { pie, bar };
     }, [result]);
 
+    // Handle Reset Overview (resets all graphs, charts, and loaded data back to default)
+    const handleResetOverview = () => {
+        if (setResult) {
+            setResult(null);
+        }
+        setFocusedConsumerId(null);
+        localStorage.removeItem('vidyut_result');
+    };
+
     // Handle PDF report download
     const handleDownloadPDF = () => {
         if (!result) return;
@@ -1389,6 +1398,52 @@ const AdminDashboard = ({
                     {/* Render panels dynamically based on active tab */}
                     {activeTab === 'Overview' && (
                         <div className="dashboard-panel">
+                            {/* Overview Header & Reset Action */}
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '1.25rem',
+                                flexWrap: 'wrap',
+                                gap: '0.75rem',
+                                background: 'rgba(20, 18, 15, 0.4)',
+                                border: '1px solid rgba(255, 255, 255, 0.06)',
+                                borderRadius: '12px',
+                                padding: '0.85rem 1.25rem'
+                            }}>
+                                <div>
+                                    <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '500', color: '#ffffff' }}>
+                                        Executive Telemetry & Grid Overview
+                                    </h2>
+                                    <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
+                                        Aggregated theft analytics, transformer anomaly mapping, and loss telemetry
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleResetOverview}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem',
+                                        background: 'rgba(239, 68, 68, 0.1)',
+                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        color: '#ef4444',
+                                        padding: '0.4rem 0.85rem',
+                                        borderRadius: '8px',
+                                        fontSize: '0.8rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    title="Reset all graphs, charts, and loaded telemetry to default"
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                >
+                                    <RotateCcw size={13} /> Reset Graphs & Charts
+                                </button>
+                            </div>
+
                             {/* Visualizations: Pie Chart and Bar Graphs */}
                             {result ? (
                                 <div className="charts-grid">
