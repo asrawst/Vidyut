@@ -3,8 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
     MapPin, User, ClipboardCheck, AlertTriangle, 
     ShieldAlert, Lock, Settings, LogOut, Menu, 
-    X, CheckCircle, Navigation, Map, Shield, Zap, Activity, Radio, ChevronRight, Sun, Moon, ExternalLink,
-    Eye, FileText, Check
+    X, CheckCircle, Navigation, Map, Shield, Zap, Activity, Radio, ChevronRight, Sun, Moon,
+    RefreshCw, Upload, Camera, FileCheck, Check, Info, Phone, Calendar, Download, AlertOctagon,
+    Clock, Cpu, Database, Eye, BarChart2, TrendingUp, Layers, Compass, HardHat, FileText
 } from 'lucide-react';
 import MapComponent from './MapComponent';
 import { supabase } from '../../supabaseClient';
@@ -776,7 +777,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                 letterSpacing: '-0.02em',
                                 color: '#ffffff'
                             }}>
-                                Vidyut Portal
+                                Vidyut
                             </span>
                             <span style={{
                                 fontSize: '0.65rem',
@@ -886,28 +887,6 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                             </p>
                         </div>
                     </div>
-                    <a
-                        href="/admin"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.4rem',
-                            background: 'rgba(200, 162, 97, 0.1)',
-                            border: '1px solid rgba(200, 162, 97, 0.3)',
-                            color: '#c8a261',
-                            padding: '0.4rem 0.85rem',
-                            borderRadius: '6px',
-                            fontSize: '0.8rem',
-                            fontWeight: '600',
-                            textDecoration: 'none',
-                            transition: 'all 0.2s'
-                        }}
-                        title="Open Admin Dashboard in a separate tab to operate both simultaneously"
-                    >
-                        <ExternalLink size={13} /> Open Admin Portal
-                    </a>
                 </div>
 
                 {/* CURRENT TASK VIEW */}

@@ -4,7 +4,7 @@ import {
     User, ListCollapse, Ban, TrendingUp, Calendar, AlertTriangle, 
     History as HistoryIcon, Settings as SettingsIcon, UploadCloud, 
     Download, RefreshCw, Layers, ShieldAlert, Sparkles, MapPin, 
-    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Zap, Lock, ExternalLink 
+    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Zap, Lock 
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LineChart, Line } from 'recharts';
 import MapComponent from './MapComponent';
@@ -1378,28 +1378,6 @@ const AdminDashboard = ({
                         <h1 className="header-title">{activeTab}</h1>
                     </div>
                     <div className="header-meta" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <a
-                            href="/inspector"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.4rem',
-                                background: 'rgba(16, 185, 129, 0.1)',
-                                border: '1px solid rgba(16, 185, 129, 0.3)',
-                                color: '#10b981',
-                                padding: '0.35rem 0.75rem',
-                                borderRadius: '6px',
-                                fontSize: '0.78rem',
-                                fontWeight: '600',
-                                textDecoration: 'none',
-                                transition: 'all 0.2s'
-                            }}
-                            title="Open Field Inspector Portal in a separate tab to run both simultaneously"
-                        >
-                            <ExternalLink size={13} /> Open Inspector Portal
-                        </a>
                         <span className="header-role-badge">Admin Workspace</span>
                         <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
                             Logged in as: <strong style={{ color: 'white' }}>{user?.email}</strong>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import InspectorPortal from '../components/features/InspectorPortal';
 import InspectorLoginModal from '../components/modals/InspectorLoginModal';
-import { UserCheck, ArrowLeft, ExternalLink, Lock } from 'lucide-react';
+import { UserCheck, ArrowLeft, Lock } from 'lucide-react';
 
 export default function InspectorPage() {
   const navigate = useNavigate();
@@ -69,26 +69,6 @@ export default function InspectorPage() {
           >
             <ArrowLeft size={16} /> Back to Home
           </Link>
-
-          <a
-            href="/admin"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              color: '#c8a261',
-              textDecoration: 'none',
-              fontSize: '0.85rem',
-              padding: '0.5rem 0.9rem',
-              background: 'rgba(200, 162, 97, 0.08)',
-              border: '1px solid rgba(200, 162, 97, 0.2)',
-              borderRadius: '8px'
-            }}
-          >
-            <ExternalLink size={14} /> Open Admin Portal
-          </a>
         </div>
 
         <div style={{
