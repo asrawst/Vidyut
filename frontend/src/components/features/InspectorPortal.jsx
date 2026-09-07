@@ -330,10 +330,31 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                     setChallans(prev => prev.map(c => c.id === e.payload.id ? { ...c, status: e.payload.status } : c));
                 }
             })
+            .on('broadcast', { event: 'challan_deleted' }, (e) => {
+                if (e.payload && e.payload.consumer) {
+                    setChallans(prev => {
+                        const next = prev.filter(c => c.consumer !== e.payload.consumer);
+                        localStorage.setItem('vidyut_inspector_challans', JSON.stringify(next));
+                        return next;
+                    });
+                }
+            })
             .subscribe();
+
+        const handleLocalChallanDeleted = (e) => {
+            if (e.detail && e.detail.consumer) {
+                setChallans(prev => {
+                    const next = prev.filter(c => c.consumer !== e.detail.consumer);
+                    localStorage.setItem('vidyut_inspector_challans', JSON.stringify(next));
+                    return next;
+                });
+            }
+        };
+        window.addEventListener('vidyut_challan_deleted', handleLocalChallanDeleted);
 
         return () => {
             supabase.removeChannel(challanDbChannel);
+            window.removeEventListener('vidyut_challan_deleted', handleLocalChallanDeleted);
         };
     }, []);
 

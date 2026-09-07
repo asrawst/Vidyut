@@ -546,6 +546,16 @@ const AdminDashboard = ({
                     });
                 }
             })
+            .on('broadcast', { event: 'challan_deleted' }, (event) => {
+                if (event.payload && event.payload.consumer) {
+                    const targetC = event.payload.consumer;
+                    setChallans(prev => {
+                        const next = prev.filter(c => c.consumer !== targetC);
+                        localStorage.setItem('vidyut_admin_challans', JSON.stringify(next));
+                        return next;
+                    });
+                }
+            })
             .subscribe();
 
         // Local window event listener for instant multi-tab sync
@@ -554,6 +564,17 @@ const AdminDashboard = ({
                 setChallans(prev => {
                     if (prev.some(c => c.id === e.detail.id)) return prev;
                     const next = [e.detail, ...prev];
+                    localStorage.setItem('vidyut_admin_challans', JSON.stringify(next));
+                    return next;
+                });
+            }
+        };
+
+        const handleLocalChallanDeleted = (e) => {
+            if (e.detail && e.detail.consumer) {
+                const targetC = e.detail.consumer;
+                setChallans(prev => {
+                    const next = prev.filter(c => c.consumer !== targetC);
                     localStorage.setItem('vidyut_admin_challans', JSON.stringify(next));
                     return next;
                 });
@@ -595,10 +616,17 @@ const AdminDashboard = ({
                     localStorage.setItem('vidyut_assigned_inspectors', JSON.stringify(next));
                     return next;
                 });
+                // Also remove any challan associated with the deleted consumer
+                setChallans(prev => {
+                    const next = prev.filter(c => c.consumer !== delId);
+                    localStorage.setItem('vidyut_admin_challans', JSON.stringify(next));
+                    return next;
+                });
             }
         };
 
         window.addEventListener('vidyut_challan_created', handleLocalChallan);
+        window.addEventListener('vidyut_challan_deleted', handleLocalChallanDeleted);
         window.addEventListener('vidyut_task_deleted', handleLocalTaskDeleted);
         window.addEventListener('storage', handleStorageSync);
 
@@ -607,6 +635,7 @@ const AdminDashboard = ({
             supabase.removeChannel(histChannel);
             supabase.removeChannel(challanChannel);
             window.removeEventListener('vidyut_challan_created', handleLocalChallan);
+            window.removeEventListener('vidyut_challan_deleted', handleLocalChallanDeleted);
             window.removeEventListener('vidyut_task_deleted', handleLocalTaskDeleted);
             window.removeEventListener('storage', handleStorageSync);
         };
@@ -2619,26 +2648,53 @@ const AdminDashboard = ({
                                                                                     return next;
                                                                                 });
 
-                                                                                // 3. Dispatch local window event for multi-tab sync
-                                                                                window.dispatchEvent(new CustomEvent('vidyut_task_deleted', { detail: { consumer_id: targetConsumer } }));
+                                                                                // 3. Automatically remove Challans for this consumer from state & cache
+                                                                                setChallans(prev => {
+                                                                                    const next = prev.filter(c => c.consumer !== targetConsumer);
+                                                                                    localStorage.setItem('vidyut_admin_challans', JSON.stringify(next));
+                                                                                    localStorage.setItem('vidyut_inspector_challans', JSON.stringify(next));
+                                                                                    return next;
+                                                                                });
 
-                                                                                // 4. Delete from Supabase Cloud Server Database
+                                                                                // 4. Dispatch local window events for multi-tab sync
+                                                                                window.dispatchEvent(new CustomEvent('vidyut_task_deleted', { detail: { consumer_id: targetConsumer } }));
+                                                                                window.dispatchEvent(new CustomEvent('vidyut_challan_deleted', { detail: { consumer: targetConsumer } }));
+
+                                                                                // 5. Delete task and challans from Supabase Cloud Server Database
                                                                                 try {
                                                                                     await supabase
                                                                                         .from('inspection_tasks')
                                                                                         .delete()
                                                                                         .eq('consumer_id', targetConsumer);
                                                                                 } catch (e) {
-                                                                                    console.error(e);
+                                                                                    console.error("Error deleting task from Supabase:", e);
                                                                                 }
 
-                                                                                // 5. Broadcast deletion over Supabase Realtime channel
+                                                                                try {
+                                                                                    await supabase
+                                                                                        .from('inspection_challans')
+                                                                                        .delete()
+                                                                                        .eq('consumer', targetConsumer);
+                                                                                } catch (e) {
+                                                                                    console.error("Error deleting challan from Supabase:", e);
+                                                                                }
+
+                                                                                // 6. Broadcast task and challan deletion over Supabase Realtime channels
                                                                                 try {
                                                                                     const channel = supabase.channel('admin_tasks_realtime_channel');
                                                                                     channel.send({
                                                                                         type: 'broadcast',
                                                                                         event: 'task_deleted',
                                                                                         payload: { consumer_id: targetConsumer }
+                                                                                    }).catch(e => console.warn(e));
+                                                                                } catch (e) {}
+
+                                                                                try {
+                                                                                    const challanCh = supabase.channel('admin_challans_realtime_channel');
+                                                                                    challanCh.send({
+                                                                                        type: 'broadcast',
+                                                                                        event: 'challan_deleted',
+                                                                                        payload: { consumer: targetConsumer }
                                                                                     }).catch(e => console.warn(e));
                                                                                 } catch (e) {}
                                                                             }
