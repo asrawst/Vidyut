@@ -15,11 +15,13 @@ sys.path.append(str(BASE_DIR))
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from app.api.routes import router as api_router
 
 app = FastAPI(title="Electricity Theft Detection API")
 
-import os
+# Compress JSON responses > 500 bytes by up to 90% for lightning-fast network transfer on Render
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,11 +34,17 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
+@app.head("/")
 async def root():
     """
-    Health check endpoint.
-
-    Returns:
-        dict: A simple status message confirming the API is running.
+    Fast root health check endpoint for pre-warming Render instances.
     """
-    return {"message": "Electricity Theft Detection System API is running"}
+    return {"status": "online", "message": "Electricity Theft Detection System API is running"}
+
+@app.get("/health")
+@app.head("/health")
+async def health_check():
+    """
+    Dedicated lightweight health check for keep-alive pinging.
+    """
+    return {"status": "healthy", "service": "vidyut-ml-engine"}

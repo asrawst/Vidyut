@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import AdminDashboard from '../components/features/AdminDashboard';
 import LoginModal from '../components/modals/LoginModal';
 import { Shield, ArrowLeft, Lock } from 'lucide-react';
+import { warmBackend } from '../utils/backendWarmer';
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -45,6 +46,8 @@ export default function AdminPage() {
       ...prev,
       [id]: file
     }));
+    // Proactively pre-warm Render instance as soon as the user selects a file
+    warmBackend();
   };
 
   const handleFetch = async () => {
@@ -62,13 +65,40 @@ export default function AdminPage() {
       formData.append('files', sourceFile);
       const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const API_BASE_URL = rawApiUrl.trim().replace(/\/+$/, '');
-      const response = await fetch(`${API_BASE_URL}/api/v1/analyze`, {
-        method: 'POST',
-        body: formData,
-      });
+      
+      // Perform request with retry for Render cold start recovery
+      let response = null;
+      let attempts = 0;
+      const maxAttempts = 2;
 
-      if (!response.ok) {
-        const errorText = await response.text();
+      while (attempts < maxAttempts) {
+        attempts++;
+        try {
+          response = await fetch(`${API_BASE_URL}/api/v1/analyze`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (response.ok) break;
+
+          // If Render was asleep and returned 502/503/504, wait briefly and retry once
+          if (response.status >= 500 && attempts < maxAttempts) {
+            console.warn(`Render cold start detected (status ${response.status}). Retrying analysis...`);
+            await new Promise(r => setTimeout(r, 2000));
+            continue;
+          }
+        } catch (fetchErr) {
+          if (attempts < maxAttempts) {
+            console.warn("Connection attempt failed during server spin-up. Retrying in 2s...", fetchErr);
+            await new Promise(r => setTimeout(r, 2000));
+            continue;
+          }
+          throw fetchErr;
+        }
+      }
+
+      if (!response || !response.ok) {
+        const errorText = response ? await response.text() : 'No response from server';
         throw new Error(`Server error: ${errorText}`);
       }
 

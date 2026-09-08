@@ -12,6 +12,14 @@ from app.services.ml_engine import ml_engine
 
 router = APIRouter()
 
+@router.get("/health")
+@router.head("/health")
+async def api_health():
+    """
+    Health check endpoint under /api/v1/health.
+    """
+    return {"status": "ok", "service": "vidyut-api-v1"}
+
 @router.post("/analyze")
 async def analyze_data(
     files: List[UploadFile] = File(...)
@@ -39,8 +47,8 @@ async def analyze_data(
                 continue
                 
             content = await file.read()
-            # Read into pandas
-            df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+            # Fast binary parsing directly into pandas C-engine
+            df = pd.read_csv(io.BytesIO(content), low_memory=False)
             
             # Global Type Fix: Ensure consumer_id and transformer_id are strings
             if "consumer_id" in df.columns:

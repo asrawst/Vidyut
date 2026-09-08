@@ -3,13 +3,19 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import AdminPage from './pages/AdminPage';
 import InspectorPage from './pages/InspectorPage';
+import { startKeepAlive, stopKeepAlive } from './utils/backendWarmer';
 import './App.css';
 
 function App() {
-  // Clean up any stale theme tokens
+  // Clean up any stale theme tokens and pre-warm backend on Render
   useEffect(() => {
     localStorage.removeItem('vidyut_theme');
     document.documentElement.removeAttribute('data-theme');
+    startKeepAlive();
+
+    return () => {
+      stopKeepAlive();
+    };
   }, []);
 
   return (

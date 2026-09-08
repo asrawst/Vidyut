@@ -43,14 +43,15 @@ const PIPELINE_STAGES = [
 ];
 
 const LOG_MESSAGES = [
-    "Reading raw CSV headers: consumer_id, transformer_id, kwh_consumed...",
-    "Validated 15,248 meter reading intervals with zero corrupt frames",
+    "Connecting to cloud ML runtime & warming inference pipelines...",
+    "Reading raw CSV stream: consumer_id, transformer_id, kwh_consumed...",
+    "Validated multi-node telemetry frames with zero corrupt packets",
     "Computing feeder loss metrics: delta threshold set at > 18.5%",
-    "Transformer T-05 detected with 14.8 kW anomalous power sink",
-    "Running isolation trees [depth=16, estimators=200, contamination=0.08]",
+    "Transformer T-05 detected with anomalous power sink gradient",
+    "Running isolation trees [depth=16, estimators=100, n_jobs=-1]",
     "Neural pattern classifier: abnormal off-peak meter bypass detected",
     "Cross-referencing consumer geographic polygons with substation grid map",
-    "Generated 30 critical risk flags with confidence score >= 0.88",
+    "Generated critical risk flags with confidence score >= 0.88",
     "Compiling grid health index and aggregate technical revenue loss...",
     "Executive analysis ready for visualization and field dispatch."
 ];
