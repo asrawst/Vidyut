@@ -4,6 +4,7 @@ import AdminDashboard from '../components/features/AdminDashboard';
 import LoginModal from '../components/modals/LoginModal';
 import { Shield, ArrowLeft, Lock } from 'lucide-react';
 import { warmBackend } from '../utils/backendWarmer';
+import { analyzeDatasetClientSide } from '../utils/clientMlEngine';
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -53,7 +54,6 @@ export default function AdminPage() {
   const handleFetch = async () => {
     try {
       setLoading(true);
-      const formData = new FormData();
       const sourceFile = files['source'];
 
       if (!sourceFile) {
@@ -62,49 +62,57 @@ export default function AdminPage() {
         return;
       }
 
-      formData.append('files', sourceFile);
+      // 1. Prepare parallel client analysis promise (< 150ms execution)
+      const clientAnalysisPromise = analyzeDatasetClientSide(sourceFile).catch(err => {
+        console.warn("Client analysis error:", err);
+        return null;
+      });
+
+      // 2. Prepare backend request with 2.5s maximum timeout
       const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const API_BASE_URL = rawApiUrl.trim().replace(/\/+$/, '');
-      
-      // Perform request with retry for Render cold start recovery
-      let response = null;
-      let attempts = 0;
-      const maxAttempts = 2;
+      const formData = new FormData();
+      formData.append('files', sourceFile);
 
-      while (attempts < maxAttempts) {
-        attempts++;
+      const fetchBackendWithTimeout = async () => {
         try {
-          response = await fetch(`${API_BASE_URL}/api/v1/analyze`, {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+          const response = await fetch(`${API_BASE_URL}/api/v1/analyze`, {
             method: 'POST',
             body: formData,
+            signal: controller.signal
           });
+          clearTimeout(timeoutId);
 
-          if (response.ok) break;
-
-          // If Render was asleep and returned 502/503/504, wait briefly and retry once
-          if (response.status >= 500 && attempts < maxAttempts) {
-            console.warn(`Render cold start detected (status ${response.status}). Retrying analysis...`);
-            await new Promise(r => setTimeout(r, 2000));
-            continue;
+          if (response && response.ok) {
+            const data = await response.json();
+            return data.status === 'success' ? data.data : data;
           }
-        } catch (fetchErr) {
-          if (attempts < maxAttempts) {
-            console.warn("Connection attempt failed during server spin-up. Retrying in 2s...", fetchErr);
-            await new Promise(r => setTimeout(r, 2000));
-            continue;
-          }
-          throw fetchErr;
+          return null;
+        } catch (e) {
+          return null;
         }
+      };
+
+      // 3. Minimum buffer animation delay (1.2s) for premium user feedback
+      const minAnimationPromise = new Promise(r => setTimeout(r, 1200));
+
+      // 4. Concurrently run backend fetch and client-side analysis
+      const [backendData, clientData] = await Promise.all([
+        fetchBackendWithTimeout(),
+        clientAnalysisPromise,
+        minAnimationPromise
+      ]);
+
+      const finalResult = backendData || clientData;
+
+      if (!finalResult) {
+        throw new Error("Unable to parse dataset. Please check that the uploaded file is a valid CSV.");
       }
 
-      if (!response || !response.ok) {
-        const errorText = response ? await response.text() : 'No response from server';
-        throw new Error(`Server error: ${errorText}`);
-      }
-
-      const data = await response.json();
-      const resultData = data.status === 'success' ? data.data : data;
-      setResult(resultData);
+      setResult(finalResult);
     } catch (error) {
       console.error('Error fetching data:', error);
       alert(`Error during analysis: ${error.message}`);
