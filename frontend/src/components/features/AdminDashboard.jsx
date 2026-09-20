@@ -1464,7 +1464,7 @@ const AdminDashboard = ({
                         </button>
                         <div>
                             <h1 className="header-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                Hello, {user?.discom ? user.discom.split(' ')[0] : 'Orbix'}! 👋
+                                Hello, {user?.discom ? user.discom.split(' ')[0] : 'Admin'}!
                             </h1>
                             <p style={{ margin: '2px 0 0 0', fontSize: '0.825rem', color: '#6b7280' }}>
                                 Real-time grid intelligence and theft mitigation telemetry.
