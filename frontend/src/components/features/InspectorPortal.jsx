@@ -72,6 +72,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
     }, []);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [taskSearch, setTaskSearch] = useState('');
     
     // Assigned Tasks from Supabase Database & localStorage
     const [allAssignedTasks, setAllAssignedTasks] = useState(() => {
@@ -785,113 +786,198 @@ const InspectorPortal = ({ inspector, onLogout }) => {
     };
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)', color: 'white', width: '100%', position: 'relative' }}>
-            {/* Mobile Sidebar Backdrop */}
+        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-canvas)', color: 'var(--text-primary)', width: '100%', position: 'relative' }}>
             {isSidebarOpen && window.innerWidth <= 768 && (
                 <div 
                     className="sidebar-backdrop" 
                     onClick={() => setIsSidebarOpen(false)}
                     style={{
                         position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-                        background: 'rgba(0, 0, 0, 0.6)', zIndex: 999, backdropFilter: 'blur(3px)',
-                        WebkitBackdropFilter: 'blur(3px)'
+                        background: 'rgba(0, 0, 0, 0.3)', zIndex: 999, backdropFilter: 'blur(4px)',
+                        WebkitBackdropFilter: 'blur(4px)'
                     }}
                 />
             )}
 
-            {/* Sidebar component */}
-            <aside className={`inspector-sidebar ${isSidebarOpen ? 'open' : 'collapsed'} ${isSidebarOpen ? 'mobile-open' : ''}`} style={{
-                width: isSidebarOpen ? '280px' : '70px',
-                background: 'var(--bg-secondary)',
-                borderRight: '1px solid var(--glass-border)',
+            {/* Sidebar component - Stitch White Squircle Sidebar */}
+            <aside className={`stitch-sidebar ${isSidebarOpen ? 'open' : 'collapsed'} ${isSidebarOpen ? 'mobile-open' : ''}`} style={{
+                width: isSidebarOpen ? '270px' : '70px',
+                background: 'var(--bg-card)',
+                borderRight: '1px solid var(--border-subtle)',
                 display: 'flex',
                 flexDirection: 'column',
-                transition: 'width 0.3s ease',
+                transition: 'width 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                 zIndex: 1000,
                 position: 'relative'
             }}>
                 {/* Header branding */}
                 <div style={{
-                    padding: '1.5rem',
-                    borderBottom: '1px solid var(--glass-border)',
+                    padding: isSidebarOpen ? '1.5rem 1.25rem' : '1.5rem 0.75rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: isSidebarOpen ? 'space-between' : 'center',
-                    height: '70px'
+                    height: '76px',
+                    borderBottom: '1px solid var(--border-subtle)'
                 }}>
                     {isSidebarOpen ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ 
-                                fontFamily: 'var(--font-heading)',
-                                fontWeight: '400', 
-                                fontSize: '1.35rem', 
-                                letterSpacing: '-0.02em',
-                                color: '#ffffff'
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, overflow: 'hidden' }}>
+                            <div style={{
+                                width: '34px', height: '34px', minWidth: '34px', borderRadius: '10px',
+                                background: '#18181b',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff',
+                                flexShrink: 0
                             }}>
-                                Vidyut
-                            </span>
-                            <span style={{
-                                fontSize: '0.65rem',
-                                color: 'var(--accent-blue)',
-                                border: '1px solid var(--accent-blue)',
-                                borderRadius: '4px',
-                                padding: '1px 4px',
-                                fontWeight: '600',
-                                textTransform: 'uppercase'
-                            }}>
-                                Inspector
-                            </span>
+                                <Zap size={17} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+                                <span style={{ 
+                                    fontFamily: 'var(--font-heading)',
+                                    fontWeight: '700', 
+                                    fontSize: '1.15rem', 
+                                    letterSpacing: '-0.03em',
+                                    color: 'var(--text-primary)',
+                                    lineHeight: '1.15'
+                                }}>
+                                    Vidyut
+                                </span>
+                                <span style={{
+                                    fontSize: '0.68rem',
+                                    color: '#6b7280',
+                                    fontWeight: '600',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    marginTop: '1px'
+                                }} title={inspector?.discom || 'DISCOM Grid'}>
+                                    {inspector?.discom || 'Tata Power DDL'}
+                                </span>
+                            </div>
                         </div>
-                    ) : null}
+                    ) : (
+                        <div style={{
+                            width: '34px', height: '34px', borderRadius: '10px',
+                            background: '#18181b',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff'
+                        }}>
+                            <Zap size={16} />
+                        </div>
+                    )}
                     <button 
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', flexShrink: 0 }}
                     >
-                        {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+                        {isSidebarOpen ? <X size={18} /> : <Menu size={18} />}
                     </button>
                 </div>
 
-                {/* Navigation lists */}
-                <nav style={{ padding: '1.25rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1 }}>
-                    {navItems.map((item) => (
-                        <button
-                            key={item.name}
-                            title={isSidebarOpen ? undefined : item.name}
-                            onClick={() => switchTab(item.name)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: isSidebarOpen ? 'flex-start' : 'center',
-                                gap: '0.85rem',
-                                padding: isSidebarOpen ? '0.75rem 0.9rem' : '0.75rem 0',
-                                background: activeTab === item.name ? 'rgba(200, 162, 97, 0.12)' : 'none',
-                                border: activeTab === item.name ? '1px solid rgba(200, 162, 97, 0.2)' : 'none',
-                                color: activeTab === item.name ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.6)',
-                                borderRadius: '8px',
-                                width: '100%',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                textAlign: 'left'
-                            }}
-                        >
-                            {item.icon}
-                            {isSidebarOpen && <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>{item.name}</span>}
-                        </button>
-                    ))}
-                </nav>
+                {/* Sidebar Search Bar (Stitch feature) */}
+                {isSidebarOpen && (
+                    <div style={{ padding: '0.85rem 1rem 0.25rem 1rem' }}>
+                        <div className="stitch-sidebar-search">
+                            <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                                <MapPin size={14} />
+                            </span>
+                            <input 
+                                type="text" 
+                                placeholder="Search field tasks..." 
+                                value={taskSearch}
+                                onChange={(e) => setTaskSearch(e.target.value)}
+                                style={{
+                                    border: 'none', background: 'transparent', outline: 'none',
+                                    fontSize: '0.82rem', width: '100%', minWidth: 0, flex: 1, color: 'var(--text-primary)'
+                                }}
+                            />
+                            <kbd className="search-badge">⌘ K</kbd>
+                        </div>
+                    </div>
+                )}
 
-                {/* Footer credentials & logout */}
-                <div style={{ padding: isSidebarOpen ? '1rem' : '0.75rem 0.5rem', borderTop: '1px solid var(--glass-border)' }}>
+                {/* Navigation lists */}
+                <nav style={{ padding: '0.75rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1, overflowY: 'auto' }}>
                     {isSidebarOpen && (
-                        <div style={{ marginBottom: '1rem', padding: '0 0.5rem' }}>
-                            <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'white' }}>
-                                {inspector?.displayName || 'Inspector Ravi'}
-                            </div>
-                            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginTop: '2px' }}>
-                                {inspector?.discom || 'Tata Power DDL'}
-                            </div>
+                        <div style={{ 
+                            fontSize: '0.68rem', fontWeight: '700', color: 'var(--text-muted)', 
+                            letterSpacing: '0.05em', textTransform: 'uppercase', padding: '0.5rem 0.75rem 0.25rem' 
+                        }}>
+                            Field Workspace
                         </div>
                     )}
+                    {navItems
+                        .filter((item) => !taskSearch || item.name.toLowerCase().includes(taskSearch.toLowerCase()))
+                        .map((item) => {
+                            const isActive = activeTab === item.name;
+                            return (
+                                <button
+                                    key={item.name}
+                                    title={isSidebarOpen ? undefined : item.name}
+                                    onClick={() => switchTab(item.name)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: isSidebarOpen ? 'flex-start' : 'center',
+                                        gap: '0.75rem',
+                                        padding: isSidebarOpen ? '0.65rem 0.85rem' : '0.65rem 0',
+                                        background: isActive ? '#18181b' : 'transparent',
+                                        border: 'none',
+                                        color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                                        borderRadius: '12px',
+                                        width: '100%',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease',
+                                        textAlign: 'left',
+                                        fontWeight: isActive ? '600' : '500',
+                                        fontSize: '0.86rem'
+                                    }}
+                                    onMouseEnter={e => {
+                                        if (!isActive) e.currentTarget.style.background = 'var(--bg-canvas)';
+                                    }}
+                                    onMouseLeave={e => {
+                                        if (!isActive) e.currentTarget.style.background = 'transparent';
+                                    }}
+                                >
+                                    <span style={{ color: isActive ? '#ffffff' : 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                                        {item.icon}
+                                    </span>
+                                    {isSidebarOpen && <span>{item.name}</span>}
+                                </button>
+                            );
+                        })}
+                    {isSidebarOpen && taskSearch && navItems.filter((item) => item.name.toLowerCase().includes(taskSearch.toLowerCase())).length === 0 && (
+                        <div style={{ padding: '1rem 0.75rem', fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                            No matching workspaces found
+                        </div>
+                    )}
+                </nav>
+
+                {/* Bottom Inspector Profile Card (Stitch profile component) */}
+                <div style={{ padding: isSidebarOpen ? '1rem' : '0.75rem 0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                    {isSidebarOpen ? (
+                        <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '0.6rem 0.75rem', background: 'var(--bg-canvas)', borderRadius: '12px',
+                            marginBottom: '0.75rem'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                <div style={{
+                                    width: '32px', height: '32px', borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    color: '#ffffff', fontWeight: '700', fontSize: '0.85rem'
+                                }}>
+                                    {inspector?.displayName?.charAt(0) || 'I'}
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-primary)', lineHeight: '1.2' }}>
+                                        {inspector?.displayName || 'Inspector Ravi'}
+                                    </div>
+                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600', marginTop: '1px' }}>
+                                        {inspector?.discom || 'Tata Power DDL'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : null}
+
                     <button
                         onClick={onLogout}
                         title={isSidebarOpen ? undefined : 'Logout'}
@@ -899,95 +985,122 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: isSidebarOpen ? 'flex-start' : 'center',
-                            gap: '0.85rem',
-                            padding: isSidebarOpen ? '0.75rem 0.9rem' : '0.75rem 0',
-                            background: 'rgba(239, 68, 68, 0.08)',
-                            border: '1px solid rgba(239, 68, 68, 0.15)',
+                            gap: '0.75rem',
+                            padding: isSidebarOpen ? '0.65rem 0.85rem' : '0.65rem 0',
+                            background: '#fef2f2',
+                            border: '1px solid #fee2e2',
                             color: '#ef4444',
-                            borderRadius: '8px',
+                            borderRadius: '12px',
                             width: '100%',
                             cursor: 'pointer',
-                            transition: 'all 0.2s ease'
+                            transition: 'all 0.15s ease'
                         }}
                     >
-                        <LogOut size={18} />
-                        {isSidebarOpen && <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>Logout</span>}
+                        <LogOut size={16} />
+                        {isSidebarOpen && <span style={{ fontSize: '0.84rem', fontWeight: '600' }}>Logout</span>}
                     </button>
                 </div>
             </aside>
 
             {/* Main workspace */}
-            <main style={{ flex: 1, padding: '2rem 3rem', display: 'flex', flexDirection: 'column', overflowY: 'auto', height: '100vh' }}>
+            <main style={{ flex: 1, padding: '2rem 2.5rem', display: 'flex', flexDirection: 'column', overflowY: 'auto', height: '100vh', background: 'var(--bg-canvas)' }}>
                 
-                {/* Active Tab Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                {/* Stitch Greeting Banner Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <button 
                             className="mobile-sidebar-hamburger"
                             onClick={() => setIsSidebarOpen(true)}
-                            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
+                            style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
                         >
-                            <Menu size={24} />
+                            <Menu size={22} />
                         </button>
                         <div>
-                            <h1 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontSize: '2.2rem', color: 'white', fontWeight: '400' }}>
-                                {activeTab}
+                            <h1 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontSize: '1.85rem', color: 'var(--text-primary)', fontWeight: '700', letterSpacing: '-0.03em' }}>
+                                Hello, {inspector?.displayName || 'Field Inspector'}!
                             </h1>
-                            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                Field Audit Workspace / {activeTab}
+                            <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.86rem', color: 'var(--text-muted)' }}>
+                                Field Audit & Anomaly Verification Workspace &bull; {activeTab}
                             </p>
                         </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <button
+                            onClick={() => switchTab('Current Task')}
+                            className="stitch-btn-pill stitch-btn-pill-primary"
+                        >
+                            <Activity size={15} /> Active Task ({activeTasks.length})
+                        </button>
+                    </div>
+                </div>
+
+                {/* Stitch Notice Callout Banner */}
+                <div className="stitch-notice-banner" style={{ marginBottom: '1.75rem' }}>
+                    <div className="notice-icon">
+                        <ShieldAlert size={18} />
+                    </div>
+                    <div className="notice-content">
+                        <h4>Live Anomaly Geolocation & DISCOM Cloud Sync Active</h4>
+                        <p>
+                            Assigned consumer meters are geolocated on the satellite feeder grid. Verified audits and issued challans synchronize automatically in real-time.
+                        </p>
+                    </div>
+                    <div className="notice-actions">
+                        <button 
+                            className="btn-action"
+                            onClick={() => switchTab('Past Inspections')}
+                        >
+                            View Audit Log
+                        </button>
                     </div>
                 </div>
 
                 {/* CURRENT TASK VIEW */}
                 {activeTab === 'Current Task' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
                         {currentTask ? (
                             <>
                                 {/* Task Overview Card */}
-                                <div style={{
-                                    background: 'linear-gradient(135deg, rgba(200, 162, 97, 0.08) 0%, rgba(20, 18, 15, 0.6) 100%)',
-                                    border: '1px solid rgba(200, 162, 97, 0.25)',
-                                    borderRadius: '16px',
-                                    padding: '1.5rem',
+                                <div className="stitch-card" style={{
+                                    padding: '1.75rem',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     gap: '1.25rem'
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                                         <div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
                                                 <span style={{ 
-                                                    background: 'rgba(200, 162, 97, 0.2)', color: '#c8a261', 
-                                                    padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.5px' 
+                                                    background: '#eff6ff', color: '#2563eb', 
+                                                    padding: '0.25rem 0.65rem', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: '700', letterSpacing: '0.04em' 
                                                 }}>
                                                     ACTIVE ASSIGNMENT
                                                 </span>
                                                 <span style={{
-                                                    background: (currentTask.risk_class || '').toLowerCase().includes('crit') ? 'rgba(239, 68, 68, 0.15)' : 'rgba(249, 115, 22, 0.15)',
+                                                    background: (currentTask.risk_class || '').toLowerCase().includes('crit') ? '#fef2f2' : '#fff7ed',
                                                     color: (currentTask.risk_class || '').toLowerCase().includes('crit') ? '#ef4444' : '#f97316',
-                                                    padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase'
+                                                    padding: '0.25rem 0.65rem', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: '700', textTransform: 'uppercase'
                                                 }}>
                                                     {(((currentTask.risk_score || 0.85)) * 100).toFixed(0)}% {currentTask.risk_class || 'Critical'} Risk
                                                 </span>
                                             </div>
-                                            <h2 style={{ margin: 0, fontSize: '1.6rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
-                                                Consumer <span style={{ color: 'var(--accent-blue)' }}>{currentTask.consumer_id}</span>
+                                            <h2 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontWeight: '700', letterSpacing: '-0.02em' }}>
+                                                Consumer <span style={{ color: '#2563eb' }}>{currentTask.consumer_id}</span>
                                             </h2>
-                                            <p style={{ margin: '0.25rem 0 0', color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.85rem' }}>
+                                            <p style={{ margin: '0.35rem 0 0', color: 'var(--text-muted)', fontSize: '0.86rem' }}>
                                                 Mapped to <strong>Transformer {currentTask.transformer_id}</strong> &bull; {currentTask.zone || 'Distribution Zone'} &bull; {inspector?.discom || 'DISCOM Grid'}
                                             </p>
                                         </div>
 
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                             <span style={{ 
-                                                padding: '0.4rem 0.85rem', 
-                                                borderRadius: '6px', 
-                                                background: inspectionStatus === 'Completed' ? 'rgba(16, 185, 129, 0.15)' : inspectionStatus === 'Inprocess' ? 'rgba(200, 162, 97, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-                                                color: inspectionStatus === 'Completed' ? '#10b981' : inspectionStatus === 'Inprocess' ? '#c8a261' : 'rgba(255, 255, 255, 0.8)',
-                                                border: `1px solid ${inspectionStatus === 'Completed' ? 'rgba(16, 185, 129, 0.3)' : inspectionStatus === 'Inprocess' ? 'rgba(200, 162, 97, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
-                                                fontSize: '0.85rem', fontWeight: '600'
+                                                padding: '0.45rem 0.95rem', 
+                                                borderRadius: '9999px', 
+                                                background: inspectionStatus === 'Completed' ? '#ecfdf5' : inspectionStatus === 'Inprocess' ? '#eff6ff' : '#f4f5f7',
+                                                color: inspectionStatus === 'Completed' ? '#059669' : inspectionStatus === 'Inprocess' ? '#2563eb' : 'var(--text-secondary)',
+                                                border: `1px solid ${inspectionStatus === 'Completed' ? '#d1fae5' : inspectionStatus === 'Inprocess' ? '#dbeafe' : 'rgba(0,0,0,0.06)'}`,
+                                                fontSize: '0.82rem', fontWeight: '600'
                                             }}>
                                                 Status: {inspectionStatus === 'Inprocess' ? 'In Process' : inspectionStatus}
                                             </span>
@@ -996,31 +1109,31 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                                 <button
                                                     onClick={cancelAudit}
                                                     style={{
-                                                        padding: '0.4rem 0.75rem',
-                                                        borderRadius: '6px',
-                                                        background: 'rgba(239, 68, 68, 0.08)',
+                                                        padding: '0.45rem 0.9rem',
+                                                        borderRadius: '9999px',
+                                                        background: '#fef2f2',
                                                         color: '#ef4444',
-                                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                        border: '1px solid #fee2e2',
                                                         fontSize: '0.8rem',
                                                         fontWeight: '600',
                                                         cursor: 'pointer',
                                                         display: 'inline-flex',
                                                         alignItems: 'center',
                                                         gap: '0.35rem',
-                                                        transition: 'all 0.2s ease'
+                                                        transition: 'all 0.15s ease'
                                                     }}
                                                     title="Decline or cancel this audit before starting"
                                                 >
-                                                    <X size={14} /> Cancel / Decline Audit
+                                                    <X size={14} /> Cancel Audit
                                                 </button>
                                             ) : (
                                                 <span
                                                     style={{
-                                                        padding: '0.4rem 0.65rem',
-                                                        borderRadius: '6px',
-                                                        background: 'rgba(255, 255, 255, 0.04)',
-                                                        color: 'rgba(255, 255, 255, 0.4)',
-                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                        padding: '0.45rem 0.85rem',
+                                                        borderRadius: '9999px',
+                                                        background: '#f4f5f7',
+                                                        color: 'var(--text-muted)',
+                                                        border: '1px solid rgba(0,0,0,0.06)',
                                                         fontSize: '0.78rem',
                                                         display: 'inline-flex',
                                                         alignItems: 'center',
@@ -1036,9 +1149,9 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
                                     {/* Task Switcher if inspector has multiple active assigned consumers */}
                                     {activeTasks.length > 1 && (
-                                        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.75rem' }}>
-                                            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '0.5rem' }}>
-                                                Switch Active Assigned Audit ({activeTasks.length} pending):
+                                        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem' }}>
+                                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700', display: 'block', marginBottom: '0.5rem' }}>
+                                                Pending Tasks In Queue ({activeTasks.length}):
                                             </span>
                                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                                 {activeTasks.map(t => (
@@ -1046,22 +1159,22 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                                         key={t.consumer_id}
                                                         onClick={() => setSelectedConsumerId(t.consumer_id)}
                                                         style={{
-                                                            padding: '0.35rem 0.75rem',
-                                                            borderRadius: '6px',
-                                                            background: currentTask?.consumer_id === t.consumer_id ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
-                                                            color: currentTask?.consumer_id === t.consumer_id ? '#000000' : 'rgba(255, 255, 255, 0.8)',
-                                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                            padding: '0.35rem 0.85rem',
+                                                            borderRadius: '9999px',
+                                                            background: currentTask?.consumer_id === t.consumer_id ? '#18181b' : 'var(--bg-canvas)',
+                                                            color: currentTask?.consumer_id === t.consumer_id ? '#ffffff' : 'var(--text-secondary)',
+                                                            border: '1px solid rgba(0,0,0,0.06)',
                                                             fontSize: '0.8rem',
                                                             fontWeight: '600',
                                                             cursor: 'pointer',
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             gap: '0.35rem',
-                                                            transition: 'all 0.2s'
+                                                            transition: 'all 0.15s'
                                                         }}
                                                     >
                                                         <span>{t.consumer_id} (Tr: {t.transformer_id})</span>
-                                                        <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>&bull; {(((t.risk_score || 0.85)) * 100).toFixed(0)}%</span>
+                                                        <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>&bull; {(((t.risk_score || 0.85)) * 100).toFixed(0)}%</span>
                                                     </button>
                                                 ))}
                                             </div>
@@ -1070,25 +1183,19 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                 </div>
 
                                 {/* Map Panel */}
-                                <div style={{ 
-                                    background: 'var(--glass-bg)', 
-                                    border: '1px solid var(--glass-border)', 
-                                    borderRadius: '16px', 
-                                    padding: '1.5rem',
-                                    position: 'relative'
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                        <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <Map size={18} style={{ color: 'var(--accent-blue)' }} />
+                                <div className="stitch-card" style={{ padding: '1.75rem', position: 'relative' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                                        <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <Map size={18} style={{ color: '#2563eb' }} />
                                             Map: Assigned Route & Meter Coordinates
                                         </h3>
-                                        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', background: 'rgba(255,255,255,0.05)', padding: '0.35rem 0.75rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-canvas)', padding: '0.35rem 0.75rem', borderRadius: '9999px', border: '1px solid var(--border-subtle)', fontWeight: '600' }}>
                                             GPS: {currentTask.latitude}&deg; N, {currentTask.longitude}&deg; E
                                         </div>
                                     </div>
                                     
                                     {/* Leaflet Map with real coordinates & auto-zoom flyTo */}
-                                    <div style={{ height: '440px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                    <div style={{ height: '440px', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
                                         <MapComponent 
                                             data={activeMapData} 
                                             focusedConsumerId={currentTask?.consumer_id}
@@ -1097,80 +1204,79 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                 </div>
 
                                 {/* Interactive Inspection Stepper */}
-                                <div style={{ 
-                                    background: 'var(--glass-bg)', 
-                                    border: '1px solid var(--glass-border)', 
-                                    borderRadius: '16px', 
-                                    padding: '2rem'
-                                }}>
-                                    <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: 'white' }}>
+                                <div className="stitch-card" style={{ padding: '2rem' }}>
+                                    <h3 style={{ margin: '0 0 1.75rem 0', fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: '700' }}>
                                         Field Audit Status Stepper
                                     </h3>
                                     
                                     {/* Stepper progress layout */}
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', marginBottom: '2.5rem', padding: '0 3rem' }}>
-                                        {/* Horizontal connecting lines */}
+                                        {/* Horizontal connecting line */}
                                         <div style={{ 
-                                            position: 'absolute', top: '20px', left: '10%', right: '10%', height: '3px', 
-                                            background: 'rgba(255,255,255,0.08)', zIndex: 1 
+                                            position: 'absolute', top: '21px', left: '12%', right: '12%', height: '3px', 
+                                            background: '#e4e4e7', zIndex: 1, borderRadius: '9999px' 
                                         }}>
                                             <div style={{ 
                                                 width: inspectionStatus === 'Initiate' ? '0%' : inspectionStatus === 'Inprocess' ? '50%' : '100%', 
-                                                height: '100%', background: 'var(--accent-blue)', transition: 'width 0.3s ease' 
+                                                height: '100%', background: '#18181b', transition: 'width 0.3s cubic-bezier(0.16, 1, 0.3, 1)', borderRadius: '9999px'
                                             }} />
                                         </div>
 
                                         {/* Step: Initiate */}
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, position: 'relative' }}>
                                             <div style={{ 
-                                                width: '42px', height: '42px', borderRadius: '50%', background: getStepStyle('Initiate').bg,
-                                                border: `2px solid ${getStepStyle('Initiate').border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color: getStepStyle('Initiate').color, fontWeight: '700', transition: 'all 0.3s'
+                                                width: '44px', height: '44px', borderRadius: '50%', 
+                                                background: inspectionStatus === 'Completed' || inspectionStatus === 'Inprocess' ? '#18181b' : '#18181b',
+                                                border: '2px solid #18181b', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                color: '#ffffff', fontWeight: '700', fontSize: '0.9rem', transition: 'all 0.3s'
                                             }}>
                                                 1
                                             </div>
-                                            <span style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem', color: 'white' }}>Initiate</span>
+                                            <span style={{ fontSize: '0.82rem', fontWeight: '700', marginTop: '0.5rem', color: 'var(--text-primary)' }}>Initiate</span>
                                         </div>
 
                                         {/* Step: In Process */}
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, position: 'relative' }}>
                                             <div style={{ 
-                                                width: '42px', height: '42px', borderRadius: '50%', background: getStepStyle('Inprocess').bg,
-                                                border: `2px solid ${getStepStyle('Inprocess').border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color: getStepStyle('Inprocess').color, fontWeight: '700', transition: 'all 0.3s'
+                                                width: '44px', height: '44px', borderRadius: '50%', 
+                                                background: inspectionStatus === 'Completed' || inspectionStatus === 'Inprocess' ? '#18181b' : '#ffffff',
+                                                border: `2px solid ${inspectionStatus === 'Completed' || inspectionStatus === 'Inprocess' ? '#18181b' : '#d4d4d8'}`, 
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                color: inspectionStatus === 'Completed' || inspectionStatus === 'Inprocess' ? '#ffffff' : '#a1a1aa', 
+                                                fontWeight: '700', fontSize: '0.9rem', transition: 'all 0.3s'
                                             }}>
                                                 2
                                             </div>
-                                            <span style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem', color: 'white' }}>In Process</span>
+                                            <span style={{ fontSize: '0.82rem', fontWeight: '700', marginTop: '0.5rem', color: inspectionStatus === 'Inprocess' || inspectionStatus === 'Completed' ? 'var(--text-primary)' : 'var(--text-muted)' }}>In Process</span>
                                         </div>
 
                                         {/* Step: Completed */}
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, position: 'relative' }}>
                                             <div style={{ 
-                                                width: '42px', height: '42px', borderRadius: '50%', background: getStepStyle('Completed').bg,
-                                                border: `2px solid ${getStepStyle('Completed').border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color: getStepStyle('Completed').color, fontWeight: '700', transition: 'all 0.3s'
+                                                width: '44px', height: '44px', borderRadius: '50%', 
+                                                background: inspectionStatus === 'Completed' ? '#059669' : '#ffffff',
+                                                border: `2px solid ${inspectionStatus === 'Completed' ? '#059669' : '#d4d4d8'}`, 
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                color: inspectionStatus === 'Completed' ? '#ffffff' : '#a1a1aa', 
+                                                fontWeight: '700', fontSize: '0.9rem', transition: 'all 0.3s'
                                             }}>
                                                 3
                                             </div>
-                                            <span style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem', color: 'white' }}>Completed</span>
+                                            <span style={{ fontSize: '0.82rem', fontWeight: '700', marginTop: '0.5rem', color: inspectionStatus === 'Completed' ? '#059669' : 'var(--text-muted)' }}>Completed</span>
                                         </div>
                                     </div>
 
                                     {/* Dynamic Stepper Action Controls */}
-                                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+                                    <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1.75rem', display: 'flex', justifyContent: 'center' }}>
                                         {inspectionStatus === 'Initiate' && (
                                             <div style={{ textAlign: 'center' }}>
-                                                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
-                                                    Confirm you have arrived at the geolocated installation site for consumer <strong style={{ color: 'white' }}>{currentTask.consumer_id}</strong> on <strong>Transformer {currentTask.transformer_id}</strong> ({currentTask.zone}).
+                                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1.25rem', maxWidth: '540px' }}>
+                                                    Confirm you have arrived at the geolocated installation site for consumer <strong style={{ color: 'var(--text-primary)' }}>{currentTask.consumer_id}</strong> on <strong>Transformer {currentTask.transformer_id}</strong> ({currentTask.zone}).
                                                 </p>
                                                 <button
                                                     onClick={() => updateTaskStatus('Inprocess')}
-                                                    style={{
-                                                        background: '#ffffff', color: '#000000', padding: '0.75rem 2.2rem', 
-                                                        borderRadius: '8px', fontWeight: '600', cursor: 'pointer', border: 'none',
-                                                        fontSize: '0.95rem'
-                                                    }}
+                                                    className="stitch-btn-pill stitch-btn-pill-primary"
+                                                    style={{ padding: '0.75rem 2.25rem' }}
                                                 >
                                                     Start On-Site Audit
                                                 </button>
@@ -1178,37 +1284,41 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                         )}
 
                                         {inspectionStatus === 'Inprocess' && (
-                                            <div style={{ width: '100%', maxWidth: '520px' }}>
-                                                <h4 style={{ color: 'white', margin: '0 0 1rem 0', fontSize: '0.95rem' }}>
+                                            <div style={{ width: '100%', maxWidth: '560px' }}>
+                                                <h4 style={{ color: 'var(--text-primary)', margin: '0 0 1.25rem 0', fontSize: '0.95rem', fontWeight: '700' }}>
                                                     Audit Checklist for Consumer {currentTask.consumer_id} (Transformer {currentTask.transformer_id})
                                                 </h4>
                                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '500' }}>
                                                         <input 
                                                             type="checkbox" 
                                                             checked={checkList.sealIntact}
                                                             onChange={e => setCheckList({...checkList, sealIntact: e.target.checked})}
+                                                            style={{ width: '16px', height: '16px', accentColor: '#18181b' }}
                                                         /> Meter Seals Untouched
                                                     </label>
-                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '500' }}>
                                                         <input 
                                                             type="checkbox" 
                                                             checked={checkList.hookingCheck}
                                                             onChange={e => setCheckList({...checkList, hookingCheck: e.target.checked})}
+                                                            style={{ width: '16px', height: '16px', accentColor: '#18181b' }}
                                                         /> Checked for Pole Hooking
                                                     </label>
-                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '500' }}>
                                                         <input 
                                                             type="checkbox" 
                                                             checked={checkList.bypassDetected}
                                                             onChange={e => setCheckList({...checkList, bypassDetected: e.target.checked})}
+                                                            style={{ width: '16px', height: '16px', accentColor: '#18181b' }}
                                                         /> No Shunt/Bypass Found
                                                     </label>
-                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '500' }}>
                                                         <input 
                                                             type="checkbox" 
                                                             checked={checkList.terminalSecure}
                                                             onChange={e => setCheckList({...checkList, terminalSecure: e.target.checked})}
+                                                            style={{ width: '16px', height: '16px', accentColor: '#18181b' }}
                                                         /> Terminal Box Secured
                                                     </label>
                                                 </div>
@@ -1218,20 +1328,17 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                                     value={auditNotes}
                                                     onChange={e => setAuditNotes(e.target.value)}
                                                     style={{
-                                                        width: '100%', height: '80px', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
-                                                        borderRadius: '8px', color: 'white', padding: '0.75rem', fontSize: '0.85rem', outline: 'none', marginBottom: '1.25rem',
-                                                        resize: 'vertical'
+                                                        width: '100%', height: '85px', background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)',
+                                                        borderRadius: '12px', color: 'var(--text-primary)', padding: '0.75rem 1rem', fontSize: '0.86rem', outline: 'none', marginBottom: '1.5rem',
+                                                        resize: 'vertical', boxSizing: 'border-box'
                                                     }}
                                                 />
 
                                                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                                                     <button
                                                         onClick={completeInspection}
-                                                        style={{
-                                                            background: '#ffffff', color: '#000000', padding: '0.75rem 2rem', 
-                                                            borderRadius: '8px', fontWeight: '600', cursor: 'pointer', border: 'none',
-                                                            fontSize: '0.95rem'
-                                                        }}
+                                                        className="stitch-btn-pill stitch-btn-pill-primary"
+                                                        style={{ padding: '0.75rem 2.25rem' }}
                                                     >
                                                         Submit Inspection Details
                                                     </button>
@@ -1243,10 +1350,7 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                             </>
                         ) : (
                             /* Standby State when no active task remains in queue */
-                            <div style={{ 
-                                background: 'var(--glass-bg)', 
-                                border: '1px solid var(--glass-border)', 
-                                borderRadius: '16px', 
+                            <div className="stitch-card" style={{ 
                                 padding: '3.5rem 2rem',
                                 textAlign: 'center',
                                 display: 'flex',
@@ -1257,28 +1361,23 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                 {pastInspectionsList.length > 0 ? (
                                     <>
                                         <div style={{
-                                            width: '68px', height: '68px', borderRadius: '50%',
-                                            background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)',
+                                            width: '64px', height: '64px', borderRadius: '50%',
+                                            background: '#ecfdf5', border: '1px solid #d1fae5',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: '#10b981', marginBottom: '1.25rem'
+                                            color: '#059669', marginBottom: '1.25rem'
                                         }}>
-                                            <CheckCircle size={34} />
+                                            <CheckCircle size={32} />
                                         </div>
-                                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+                                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.35rem', color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontWeight: '700' }}>
                                             All Assigned Audits Completed
                                         </h3>
-                                        <p style={{ maxWidth: '520px', margin: '0 0 1.5rem 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                        <p style={{ maxWidth: '520px', margin: '0 0 1.5rem 0', color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.6' }}>
                                             All field inspection tasks assigned to <strong>{inspector?.displayName || 'your account'}</strong> for <strong>{inspector?.discom || 'your DISCOM'}</strong> have been successfully verified.
                                         </p>
                                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
                                             <button
                                                 onClick={() => switchTab('Past Inspections')}
-                                                style={{
-                                                    background: '#c8a261', color: '#000000', padding: '0.65rem 1.5rem',
-                                                    borderRadius: '8px', fontWeight: '600', cursor: 'pointer', border: 'none',
-                                                    fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                                                    transition: 'all 0.2s'
-                                                }}
+                                                className="stitch-btn-pill stitch-btn-pill-primary"
                                             >
                                                 <ClipboardCheck size={16} /> View Past Inspections ({pastInspectionsList.length})
                                             </button>
@@ -1288,22 +1387,22 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                     <>
                                         <div style={{
                                             width: '64px', height: '64px', borderRadius: '50%',
-                                            background: 'rgba(200, 162, 97, 0.1)', border: '1px solid rgba(200, 162, 97, 0.2)',
+                                            background: '#eff6ff', border: '1px solid #dbeafe',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: '#c8a261', marginBottom: '1.25rem'
+                                            color: '#2563eb', marginBottom: '1.25rem'
                                         }}>
                                             <MapPin size={28} />
                                         </div>
-                                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.35rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+                                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.35rem', color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontWeight: '700' }}>
                                             No Active Field Audits Assigned
                                         </h3>
-                                        <p style={{ maxWidth: '500px', margin: '0 0 1.5rem 0', color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                        <p style={{ maxWidth: '500px', margin: '0 0 1.5rem 0', color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.6' }}>
                                             You are currently on standby for <strong>{inspector?.discom || 'your DISCOM'}</strong>. Once your administrator uploads consumption logs and assigns anomaly audit tasks to <strong>{inspector?.displayName || 'your account'}</strong>, the route, meter pins, and transformer mapping will automatically appear here.
                                         </p>
                                         <span style={{
-                                            background: 'rgba(16, 185, 129, 0.1)', color: '#10b981',
-                                            border: '1px solid rgba(16, 185, 129, 0.25)',
-                                            padding: '0.35rem 0.9rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600'
+                                            background: '#ecfdf5', color: '#059669',
+                                            border: '1px solid #d1fae5',
+                                            padding: '0.35rem 0.9rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: '600'
                                         }}>
                                             Status: Connected & Standby
                                         </span>
@@ -1316,37 +1415,37 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
                 {/* ACCOUNT DETAILS VIEW */}
                 {activeTab === 'Account Details' && (
-                    <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '2rem', maxWidth: '600px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
-                            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-blue) 0%, #9c7446 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: '600', color: 'white' }}>
+                    <div className="stitch-card" style={{ padding: '2rem', maxWidth: '640px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '2rem' }}>
+                            <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(135deg, #18181b 0%, #3f3f46 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', fontWeight: '700', color: '#ffffff' }}>
                                 {inspector?.displayName?.charAt(0) || 'I'}
                             </div>
                             <div>
-                                <h3 style={{ margin: 0, color: 'white', fontSize: '1.35rem' }}>{inspector?.displayName || 'Field Inspector'}</h3>
-                                <p style={{ margin: '0.25rem 0 0 0', color: 'var(--accent-blue)', fontSize: '0.85rem', fontWeight: '600' }}>Senior Field Inspector</p>
+                                <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.35rem', fontWeight: '700' }}>{inspector?.displayName || 'Field Inspector'}</h3>
+                                <p style={{ margin: '0.25rem 0 0 0', color: '#2563eb', fontSize: '0.86rem', fontWeight: '600' }}>Senior Field Inspector</p>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Badge ID</span>
-                                <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: '500' }}>{inspector?.badgeId || 'INS-DEL-88402'}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '500' }}>Badge ID</span>
+                                <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: '600' }}>{inspector?.badgeId || 'INS-DEL-88402'}</span>
                             </div>
-                            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Email</span>
-                                <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: '500' }}>{inspector?.email}</span>
+                            <div style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '500' }}>Email</span>
+                                <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: '600' }}>{inspector?.email}</span>
                             </div>
-                            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Active Division</span>
-                                <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: '500' }}>{inspector?.discom || 'Tata Power DDL'}</span>
+                            <div style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '500' }}>Active Division</span>
+                                <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: '600' }}>{inspector?.discom || 'Tata Power DDL'}</span>
                             </div>
-                            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Current Substation Zone</span>
-                                <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: '500' }}>Sector 5 West Central Feeder</span>
+                            <div style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '500' }}>Current Substation Zone</span>
+                                <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: '600' }}>Sector 5 West Central Feeder</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Active Timings Shift</span>
-                                <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: '500' }}>09:00 AM - 06:00 PM (Day Shift)</span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '500' }}>Active Timings Shift</span>
+                                <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: '600' }}>09:00 AM - 06:00 PM (Day Shift)</span>
                             </div>
                         </div>
                     </div>
@@ -1355,68 +1454,68 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                 {/* PAST INSPECTIONS VIEW */}
                 {activeTab === 'Past Inspections' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', overflow: 'hidden' }}>
-                            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div className="stitch-card" style={{ overflow: 'hidden' }}>
+                            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                                 <div>
-                                    <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'white' }}>Historical Audit Log</h3>
-                                    <p style={{ margin: '0.25rem 0 0', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)', fontWeight: '700' }}>Historical Audit Log</h3>
+                                    <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
                                         Click any inspection record to view its on-site GPS coordinates, map telemetry, checklist, and audit findings.
                                     </p>
                                 </div>
-                                <span style={{ background: 'rgba(200, 162, 97, 0.12)', color: '#c8a261', border: '1px solid rgba(200, 162, 97, 0.25)', padding: '0.35rem 0.8rem', borderRadius: '20px', fontSize: '0.78rem', fontWeight: '600' }}>
+                                <span style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #dbeafe', padding: '0.35rem 0.85rem', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: '700' }}>
                                     {pastInspectionsList.length} Completed Record{pastInspectionsList.length !== 1 ? 's' : ''} (Global Sync)
                                 </span>
                             </div>
 
                             {pastInspectionsList.length === 0 ? (
-                                <div style={{ padding: '3rem 2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
-                                    <ClipboardCheck size={36} style={{ marginBottom: '0.75rem', opacity: 0.4 }} />
-                                    <p style={{ margin: 0, fontSize: '0.95rem' }}>No past inspections completed yet.</p>
-                                    <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem' }}>When you complete active assigned field audits, they will appear here automatically.</p>
+                                <div style={{ padding: '3.5rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                    <ClipboardCheck size={36} style={{ marginBottom: '0.75rem', opacity: 0.5 }} />
+                                    <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)' }}>No past inspections completed yet.</p>
+                                    <p style={{ margin: '0.35rem 0 0', fontSize: '0.82rem' }}>When you complete active assigned field audits, they will appear here automatically.</p>
                                 </div>
                             ) : (
                                 <div style={{ overflowX: 'auto' }}>
                                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                                         <thead>
-                                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>AUDIT ID</th>
-                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>CONSUMER ID</th>
-                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>ZONE / TRANSFORMER</th>
-                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>INSPECTOR</th>
-                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>DATE & TIME</th>
-                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>STATUS</th>
-                                                <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600', textAlign: 'center' }}>ACTION</th>
+                                            <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-canvas)' }}>
+                                                <th style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>AUDIT ID</th>
+                                                <th style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>CONSUMER ID</th>
+                                                <th style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>ZONE / TRANSFORMER</th>
+                                                <th style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>INSPECTOR</th>
+                                                <th style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>DATE & TIME</th>
+                                                <th style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>RESULT</th>
+                                                <th style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', textAlign: 'center' }}>ACTION</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {pastInspectionsList.map((ins, i) => (
+                                            {pastInspectionsList.map((ins, idx) => (
                                                 <tr 
-                                                    key={ins.id || i} 
+                                                    key={idx} 
                                                     onClick={() => setSelectedPastAudit(ins)}
-                                                    style={{ 
-                                                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                    style={{
+                                                        borderBottom: '1px solid var(--border-subtle)',
                                                         cursor: 'pointer',
                                                         transition: 'background 0.15s ease'
                                                     }}
-                                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(200, 162, 97, 0.06)'}
+                                                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-canvas)'}
                                                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                                 >
-                                                    <td style={{ padding: '1rem', fontWeight: '600', color: '#c8a261' }}>{ins.id}</td>
-                                                    <td style={{ padding: '1rem', color: 'white', fontWeight: '600' }}>{ins.consumer}</td>
-                                                    <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>
+                                                    <td style={{ padding: '1rem', fontWeight: '700', color: 'var(--text-primary)' }}>{ins.id}</td>
+                                                    <td style={{ padding: '1rem', color: '#2563eb', fontWeight: '600' }}>{ins.consumer}</td>
+                                                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>
                                                         {ins.zone} {ins.transformer_id ? `(Tr: ${ins.transformer_id})` : ''}
                                                     </td>
-                                                    <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>{ins.inspector_name}</td>
-                                                    <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>{ins.date}</td>
+                                                    <td style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{ins.inspector_name}</td>
+                                                    <td style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>{ins.date}</td>
                                                     <td style={{ padding: '1rem' }}>
                                                         <span style={{ 
-                                                            background: 'rgba(16,185,129,0.12)', 
-                                                            color: '#10b981', 
-                                                            border: '1px solid rgba(16,185,129,0.25)', 
+                                                            background: '#ecfdf5', 
+                                                            color: '#059669', 
+                                                            border: '1px solid #d1fae5', 
                                                             padding: '0.25rem 0.65rem', 
-                                                            borderRadius: '4px', 
+                                                            borderRadius: '9999px', 
                                                             fontSize: '0.75rem', 
-                                                            fontWeight: '600',
+                                                            fontWeight: '700',
                                                             whiteSpace: 'nowrap',
                                                             display: 'inline-block'
                                                         }}>
@@ -1429,22 +1528,10 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                                                 e.stopPropagation();
                                                                 setSelectedPastAudit(ins);
                                                             }}
-                                                            style={{
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                gap: '0.35rem',
-                                                                background: 'rgba(200, 162, 97, 0.15)',
-                                                                border: '1px solid rgba(200, 162, 97, 0.3)',
-                                                                color: '#c8a261',
-                                                                padding: '0.35rem 0.75rem',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.78rem',
-                                                                fontWeight: '600',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s'
-                                                            }}
+                                                            className="stitch-btn-pill stitch-btn-pill-secondary"
+                                                            style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
                                                         >
-                                                            <Eye size={13} /> View Audit & Map
+                                                            <Eye size={13} /> View Audit
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -1455,14 +1542,14 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                             )}
                         </div>
 
-                        {/* Interactive Past Audit Detail Modal with Map */}
+                        {/* Interactive Past Audit Detail Modal with Map - 24px Squircle Card */}
                         {selectedPastAudit && (
                             <div 
                                 onClick={() => setSelectedPastAudit(null)}
                                 style={{
                                     position: 'fixed',
                                     top: 0, left: 0, width: '100vw', height: '100vh',
-                                    background: 'rgba(0, 0, 0, 0.75)',
+                                    background: 'rgba(0, 0, 0, 0.4)',
                                     backdropFilter: 'blur(6px)',
                                     WebkitBackdropFilter: 'blur(6px)',
                                     zIndex: 2000,
@@ -1473,47 +1560,44 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                 }}
                             >
                                 <div 
+                                    className="stitch-modal-card"
                                     onClick={e => e.stopPropagation()}
                                     style={{
-                                        background: '#12110e',
-                                        border: '1px solid rgba(200, 162, 97, 0.35)',
-                                        borderRadius: '18px',
                                         maxWidth: '850px',
                                         width: '100%',
                                         maxHeight: '90vh',
                                         overflowY: 'auto',
                                         padding: '2rem',
-                                        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7)',
                                         position: 'relative'
                                     }}
                                 >
                                     {/* Modal Header */}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1.25rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1.25rem' }}>
                                         <div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                                                <span style={{ background: 'rgba(200, 162, 97, 0.2)', color: '#c8a261', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: '700' }}>
+                                                <span style={{ background: 'var(--bg-canvas)', color: 'var(--text-primary)', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: '700' }}>
                                                     {selectedPastAudit.id}
                                                 </span>
-                                                <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: '700' }}>
+                                                <span style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #d1fae5', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: '700' }}>
                                                     VERIFIED AUDIT
                                                 </span>
                                             </div>
-                                            <h2 style={{ margin: 0, fontSize: '1.5rem', color: 'white', fontFamily: 'var(--font-heading)' }}>
-                                                Inspection Details: Consumer <span style={{ color: 'var(--accent-blue)' }}>{selectedPastAudit.consumer}</span>
+                                            <h2 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontWeight: '700', letterSpacing: '-0.02em' }}>
+                                                Inspection Details: Consumer <span style={{ color: '#2563eb' }}>{selectedPastAudit.consumer}</span>
                                             </h2>
-                                            <p style={{ margin: '0.25rem 0 0', color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>
+                                            <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                                                 Transformer {selectedPastAudit.transformer_id} &bull; {selectedPastAudit.zone} &bull; Audited on {selectedPastAudit.date}
                                             </p>
                                         </div>
                                         <button
                                             onClick={() => setSelectedPastAudit(null)}
                                             style={{
-                                                background: 'rgba(255,255,255,0.05)',
-                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                background: 'var(--bg-canvas)',
+                                                border: '1px solid var(--border-subtle)',
                                                 borderRadius: '50%',
                                                 width: '32px', height: '32px',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color: 'white', cursor: 'pointer'
+                                                color: 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.2s'
                                             }}
                                         >
                                             <X size={16} />
@@ -1525,14 +1609,14 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                         {/* Left: Map */}
                                         <div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                                <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'white', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                                    <MapPin size={14} style={{ color: '#c8a261' }} /> Geolocated Meter Pin
+                                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                    <MapPin size={14} style={{ color: '#2563eb' }} /> Geolocated Meter Pin
                                                 </span>
-                                                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                                                     {selectedPastAudit.latitude}&deg; N, {selectedPastAudit.longitude}&deg; E
                                                 </span>
                                             </div>
-                                            <div style={{ height: '340px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                            <div style={{ height: '340px', borderRadius: '14px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
                                                 <MapComponent
                                                     data={{
                                                         results: [{
@@ -1552,57 +1636,57 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
                                         {/* Right: Telemetry & Checklist */}
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '1rem' }}>
-                                                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>
+                                            <div style={{ background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', borderRadius: '14px', padding: '1rem' }}>
+                                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem', fontWeight: '700' }}>
                                                     Audit Metadata
                                                 </span>
                                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.85rem' }}>
                                                     <div>
-                                                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>Inspector:</span>
-                                                        <div style={{ color: 'white', fontWeight: '500' }}>{selectedPastAudit.inspector_name}</div>
+                                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Inspector:</span>
+                                                        <div style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{selectedPastAudit.inspector_name}</div>
                                                     </div>
                                                     <div>
-                                                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>DISCOM:</span>
-                                                        <div style={{ color: 'white', fontWeight: '500' }}>{selectedPastAudit.discom}</div>
+                                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>DISCOM:</span>
+                                                        <div style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{selectedPastAudit.discom}</div>
                                                     </div>
                                                     <div>
-                                                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>Risk Class:</span>
-                                                        <div style={{ color: '#ef4444', fontWeight: '600' }}>{selectedPastAudit.risk_class}</div>
+                                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Risk Class:</span>
+                                                        <div style={{ color: '#ef4444', fontWeight: '700' }}>{selectedPastAudit.risk_class}</div>
                                                     </div>
                                                     <div>
-                                                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>Risk Score:</span>
-                                                        <div style={{ color: '#c8a261', fontWeight: '600' }}>{((selectedPastAudit.risk_score || 0.85) * 100).toFixed(0)}%</div>
+                                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Risk Score:</span>
+                                                        <div style={{ color: 'var(--text-primary)', fontWeight: '700' }}>{((selectedPastAudit.risk_score || 0.85) * 100).toFixed(0)}%</div>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* Checklist summary */}
-                                            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '1rem' }}>
-                                                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>
+                                            <div style={{ background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', borderRadius: '14px', padding: '1rem' }}>
+                                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem', fontWeight: '700' }}>
                                                     Field Checklist Verified
                                                 </span>
                                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontSize: '0.8rem' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#059669', fontWeight: '600' }}>
                                                         <Check size={14} /> Physical Seal Intact
                                                     </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#059669', fontWeight: '600' }}>
                                                         <Check size={14} /> Pole Hooking Checked
                                                     </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#059669', fontWeight: '600' }}>
                                                         <Check size={14} /> Bypass Line Verified
                                                     </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#059669', fontWeight: '600' }}>
                                                         <Check size={14} /> Terminal Sealed
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* Notes */}
-                                            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '1rem' }}>
-                                                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', display: 'block', marginBottom: '0.35rem' }}>
+                                            <div style={{ background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', borderRadius: '14px', padding: '1rem' }}>
+                                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.35rem', fontWeight: '700' }}>
                                                     Inspector Notes
                                                 </span>
-                                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', lineHeight: '1.4' }}>
+                                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
                                                     {selectedPastAudit.notes || 'On-site audit completed and synchronized with DISCOM server.'}
                                                 </p>
                                             </div>
@@ -1610,41 +1694,20 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                     </div>
 
                                     {/* Action Bar */}
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.25rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem' }}>
                                         <button
                                             onClick={() => {
                                                 setChallanForm(prev => ({ ...prev, consumerId: selectedPastAudit.consumer }));
                                                 setSelectedPastAudit(null);
                                                 switchTab('Create Challan');
                                             }}
-                                            style={{
-                                                background: '#c8a261',
-                                                color: '#000000',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                padding: '0.65rem 1.4rem',
-                                                fontWeight: '600',
-                                                fontSize: '0.88rem',
-                                                cursor: 'pointer',
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '0.4rem'
-                                            }}
+                                            className="stitch-btn-pill stitch-btn-pill-primary"
                                         >
                                             <AlertTriangle size={15} /> Issue Challan for {selectedPastAudit.consumer}
                                         </button>
                                         <button
                                             onClick={() => setSelectedPastAudit(null)}
-                                            style={{
-                                                background: 'rgba(255,255,255,0.08)',
-                                                border: '1px solid rgba(255,255,255,0.15)',
-                                                color: 'white',
-                                                borderRadius: '8px',
-                                                padding: '0.65rem 1.25rem',
-                                                fontWeight: '600',
-                                                fontSize: '0.88rem',
-                                                cursor: 'pointer'
-                                            }}
+                                            className="stitch-btn-pill stitch-btn-pill-secondary"
                                         >
                                             Close
                                         </button>
@@ -1659,14 +1722,14 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                 {activeTab === 'Create Challan' && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem' }}>
                         {/* Challan creation form */}
-                        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '2rem' }}>
-                            <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: 'white' }}>Issue Penalty / Load Bypass Challan</h3>
+                        <div className="stitch-card" style={{ padding: '2rem' }}>
+                            <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: '700' }}>Issue Penalty / Load Bypass Challan</h3>
                             <form onSubmit={handleChallanSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Consumer Account ID *</label>
+                                        <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>Consumer Account ID *</label>
                                         {pastInspectionOptions.length > 0 && (
-                                            <span style={{ fontSize: '0.72rem', color: '#c8a261', background: 'rgba(200,162,97,0.1)', padding: '0.15rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(200,162,97,0.25)' }}>
+                                            <span style={{ fontSize: '0.72rem', color: '#2563eb', background: '#eff6ff', padding: '0.15rem 0.5rem', borderRadius: '9999px', border: '1px solid #dbeafe', fontWeight: '700' }}>
                                                 {pastInspectionOptions.length} Past Audited Record{pastInspectionOptions.length > 1 ? 's' : ''}
                                             </span>
                                         )}
@@ -1683,17 +1746,17 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                             }}
                                             style={{
                                                 padding: '0.7rem 1rem',
-                                                background: '#181512',
-                                                border: '1px solid rgba(200,162,97,0.3)',
-                                                borderRadius: '8px',
-                                                color: '#ffffff',
+                                                background: 'var(--bg-canvas)',
+                                                border: '1px solid var(--border-subtle)',
+                                                borderRadius: '12px',
+                                                color: 'var(--text-primary)',
                                                 fontSize: '0.88rem',
                                                 outline: 'none',
                                                 cursor: 'pointer',
                                                 marginBottom: '0.35rem'
                                             }}
                                         >
-                                            <option value="" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                                            <option value="">
                                                 -- Select Consumer from Past Inspections --
                                             </option>
                                             {pastInspectionOptions.map((opt, idx) => (
@@ -1712,20 +1775,20 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                         placeholder="Or enter Consumer ID manually (e.g. C0133)"
                                         required
                                         style={{
-                                            padding: '0.7rem 1rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)',
-                                            borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                            padding: '0.7rem 1rem', background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)',
+                                            borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none'
                                         }}
                                     />
                                 </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                    <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Theft Anomaly Class *</label>
+                                    <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>Theft Anomaly Class *</label>
                                     <select
                                         value={challanForm.anomaly}
                                         onChange={e => setChallanForm({...challanForm, anomaly: e.target.value})}
                                         style={{
-                                            padding: '0.7rem 1rem', background: '#12100e', border: '1px solid rgba(255,255,255,0.08)',
-                                            borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none', cursor: 'pointer'
+                                            padding: '0.7rem 1rem', background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)',
+                                            borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none', cursor: 'pointer'
                                         }}
                                     >
                                         <option value="Bypassing meter">Meter Bypassing</option>
@@ -1737,20 +1800,20 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Detected Load (kW)</label>
+                                        <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>Detected Load (kW)</label>
                                         <input 
                                             type="number" 
                                             value={challanForm.load}
                                             onChange={e => setChallanForm({...challanForm, load: e.target.value})}
                                             placeholder="e.g. 5.5"
                                             style={{
-                                                padding: '0.7rem 1rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)',
-                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                                padding: '0.7rem 1rem', background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)',
+                                                borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none'
                                             }}
                                         />
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Assess Penalty Sum (INR) *</label>
+                                        <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>Assess Penalty Sum (INR) *</label>
                                         <input 
                                             type="number" 
                                             value={challanForm.penalty}
@@ -1758,32 +1821,30 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                                             placeholder="e.g. 25000"
                                             required
                                             style={{
-                                                padding: '0.7rem 1rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)',
-                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                                padding: '0.7rem 1rem', background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)',
+                                                borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none'
                                             }}
                                         />
                                     </div>
                                 </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                    <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Evidence / Narrative Details</label>
+                                    <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>Evidence / Narrative Details</label>
                                     <textarea 
                                         value={challanForm.details}
                                         onChange={e => setChallanForm({...challanForm, details: e.target.value})}
                                         placeholder="Describe findings, wire hooking details etc."
                                         style={{
-                                            padding: '0.7rem 1rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)',
-                                            borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none', height: '80px'
+                                            padding: '0.7rem 1rem', background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)',
+                                            borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none', height: '80px'
                                         }}
                                     />
                                 </div>
 
                                 <button
                                     type="submit"
-                                    style={{
-                                        background: '#ffffff', color: '#000000', padding: '0.75rem 1.5rem', 
-                                        borderRadius: '8px', fontWeight: '600', cursor: 'pointer', alignSelf: 'flex-start', marginTop: '0.5rem'
-                                    }}
+                                    className="stitch-btn-pill stitch-btn-pill-primary"
+                                    style={{ alignSelf: 'flex-start', marginTop: '0.5rem' }}
                                 >
                                     Issue Challan
                                 </button>
@@ -1791,19 +1852,19 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                         </div>
 
                         {/* Pinned Issued Challans List */}
-                        <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'white' }}>Active Challans (Current Session)</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', maxHeight: '420px' }}>
+                        <div className="stitch-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: '700' }}>Active Challans (Current Session)</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', maxHeight: '440px' }}>
                                 {challans.map((ch) => (
-                                    <div key={ch.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                    <div key={ch.id} style={{ padding: '1rem', background: 'var(--bg-canvas)', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                            <span style={{ fontWeight: '600', color: 'white', fontSize: '0.9rem' }}>{ch.id} ({ch.consumer})</span>
-                                            <span style={{ fontSize: '0.75rem', background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '1px 6px', borderRadius: '4px', fontWeight: '600' }}>{ch.status}</span>
+                                            <span style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '0.88rem' }}>{ch.id} ({ch.consumer})</span>
+                                            <span style={{ fontSize: '0.72rem', background: '#fef2f2', color: '#ef4444', border: '1px solid #fee2e2', padding: '2px 8px', borderRadius: '9999px', fontWeight: '700' }}>{ch.status}</span>
                                         </div>
-                                        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                             <span>Violation: {ch.anomaly}</span>
                                             <span>Connected load: {ch.load}</span>
-                                            <span style={{ color: 'var(--accent-blue)', fontWeight: '600' }}>Penalty: {ch.penalty}</span>
+                                            <span style={{ color: '#2563eb', fontWeight: '700' }}>Penalty: {ch.penalty}</span>
                                         </div>
                                     </div>
                                 ))}
@@ -1814,17 +1875,17 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
                 {/* FILE COMPLAINT VIEW */}
                 {activeTab === 'File Complain' && (
-                    <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '2rem', maxWidth: '600px' }}>
-                        <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: 'white' }}>Log Grid Damage / Technical Complaint</h3>
+                    <div className="stitch-card" style={{ padding: '2rem', maxWidth: '640px' }}>
+                        <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: '700' }}>Log Grid Damage / Technical Complaint</h3>
                         <form onSubmit={handleComplaintSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Category of Complaint</label>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>Category of Complaint</label>
                                 <select
                                     value={complaintForm.category}
                                     onChange={e => setComplaintForm({...complaintForm, category: e.target.value})}
                                     style={{
-                                        padding: '0.7rem 1rem', background: '#12100e', border: '1px solid rgba(255, 255, 255, 0.08)',
-                                        borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none', cursor: 'pointer'
+                                        padding: '0.7rem 1rem', background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)',
+                                        borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none', cursor: 'pointer'
                                     }}
                                 >
                                     <option value="Meter Damage">Burnt / Damaged Meter Box</option>
@@ -1835,15 +1896,16 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Priority Severity</label>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>Priority Severity</label>
                                 <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.25rem' }}>
                                     {['Low', 'Medium', 'Critical'].map(level => (
-                                        <label key={level} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                        <label key={level} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '500' }}>
                                             <input 
                                                 type="radio" 
                                                 name="severity" 
                                                 checked={complaintForm.severity === level}
                                                 onChange={() => setComplaintForm({...complaintForm, severity: level})}
+                                                style={{ accentColor: '#18181b' }}
                                             /> {level}
                                         </label>
                                     ))}
@@ -1851,25 +1913,23 @@ const InspectorPortal = ({ inspector, onLogout }) => {
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Technical Details / Comments</label>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>Technical Details / Comments</label>
                                 <textarea 
                                     value={complaintForm.details}
                                     onChange={e => setComplaintForm({...complaintForm, details: e.target.value})}
                                     placeholder="Enter physical site conditions, transformer serials etc."
                                     required
                                     style={{
-                                        padding: '0.7rem 1rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)',
-                                        borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none', height: '100px'
+                                        padding: '0.7rem 1rem', background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)',
+                                        borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none', height: '100px'
                                     }}
                                 />
                             </div>
 
                             <button
                                 type="submit"
-                                style={{
-                                    background: '#ffffff', color: '#000000', padding: '0.75rem 2rem', 
-                                    borderRadius: '8px', fontWeight: '600', cursor: 'pointer', alignSelf: 'flex-start', marginTop: '0.5rem'
-                                }}
+                                className="stitch-btn-pill stitch-btn-pill-primary"
+                                style={{ alignSelf: 'flex-start', marginTop: '0.5rem' }}
                             >
                                 Submit Report
                             </button>
@@ -1879,34 +1939,34 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
                 {/* LOGIN HISTORY VIEW */}
                 {activeTab === 'Login History' && (
-                    <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', overflow: 'hidden' }}>
-                        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                            <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'white' }}>Session Logs</h3>
+                    <div className="stitch-card" style={{ overflow: 'hidden' }}>
+                        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-subtle)' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: '700' }}>Session Logs</h3>
                         </div>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                             <thead>
-                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-                                    <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>TIMESTAMP</th>
-                                    <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>EVENT TYPE</th>
-                                    <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>IP ADDRESS</th>
-                                    <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>DEVICE AGENT</th>
-                                    <th style={{ padding: '1rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', fontWeight: '600' }}>STATUS</th>
+                                <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-canvas)' }}>
+                                    <th style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>TIMESTAMP</th>
+                                    <th style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>EVENT TYPE</th>
+                                    <th style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>IP ADDRESS</th>
+                                    <th style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>DEVICE AGENT</th>
+                                    <th style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>STATUS</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                    <td style={{ padding: '1rem', color: 'white' }}>Today, 19:38</td>
-                                    <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>Active Session (Portal)</td>
-                                    <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>192.168.1.45</td>
-                                    <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>Chrome Mobile / iOS</td>
-                                    <td style={{ padding: '1rem' }}><span style={{ color: '#10b981', fontWeight: '600', fontSize: '0.8rem' }}>Connected</span></td>
+                                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                                    <td style={{ padding: '1rem', color: 'var(--text-primary)', fontWeight: '600' }}>Today, 19:38</td>
+                                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Active Session (Portal)</td>
+                                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>192.168.1.45</td>
+                                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Chrome Mobile / iOS</td>
+                                    <td style={{ padding: '1rem' }}><span style={{ color: '#059669', background: '#ecfdf5', border: '1px solid #d1fae5', padding: '2px 8px', borderRadius: '9999px', fontWeight: '700', fontSize: '0.75rem' }}>Connected</span></td>
                                 </tr>
-                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                    <td style={{ padding: '1rem', color: 'white' }}>Aug 15, 2026 09:12</td>
-                                    <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>Session Closed</td>
-                                    <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>192.168.1.102</td>
-                                    <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>Safari Mobile / iOS</td>
-                                    <td style={{ padding: '1rem' }}><span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>Terminated</span></td>
+                                <tr>
+                                    <td style={{ padding: '1rem', color: 'var(--text-primary)', fontWeight: '600' }}>Aug 15, 2026 09:12</td>
+                                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Session Closed</td>
+                                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>192.168.1.102</td>
+                                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Safari Mobile / iOS</td>
+                                    <td style={{ padding: '1rem' }}><span style={{ color: 'var(--text-muted)', background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', padding: '2px 8px', borderRadius: '9999px', fontWeight: '600', fontSize: '0.75rem' }}>Terminated</span></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -1915,33 +1975,33 @@ const InspectorPortal = ({ inspector, onLogout }) => {
 
                 {/* SETTINGS VIEW */}
                 {activeTab === 'Settings' && (
-                    <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '2rem', maxWidth: '600px' }}>
-                        <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: 'white' }}>Portal Configuration</h3>
+                    <div className="stitch-card" style={{ padding: '2rem', maxWidth: '640px' }}>
+                        <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: '700' }}>Portal Configuration</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Map Render Style</label>
-                                <select style={{ padding: '0.7rem 1rem', background: '#12100e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' }}>
-                                    <option>Dark Mode Vector tiles (CARTO)</option>
-                                    <option>Satellite Orthophoto maps</option>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>Map Render Style</label>
+                                <select style={{ padding: '0.7rem 1rem', background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none', cursor: 'pointer' }}>
                                     <option>Standard Street Map (OpenStreetMap)</option>
+                                    <option>Satellite Orthophoto maps</option>
+                                    <option>High Contrast Vector tiles</option>
                                 </select>
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Offline Sync Syncing</label>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>Offline Sync Syncing</label>
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.25rem' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'white' }}>
-                                        <input type="checkbox" defaultChecked /> Auto Sync over cellular networks (3G/4G/5G)
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '500' }}>
+                                        <input type="checkbox" defaultChecked style={{ accentColor: '#18181b' }} /> Auto Sync over cellular networks (3G/4G/5G)
                                     </label>
                                 </div>
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>GPS Tracking Precision</label>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>GPS Tracking Precision</label>
                                 <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.25rem' }}>
                                     {['High Precision', 'Battery Saver'].map(mode => (
-                                        <label key={mode} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'white' }}>
-                                            <input type="radio" name="gps-mode" defaultChecked={mode === 'High Precision'} /> {mode}
+                                        <label key={mode} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '500' }}>
+                                            <input type="radio" name="gps-mode" defaultChecked={mode === 'High Precision'} style={{ accentColor: '#18181b' }} /> {mode}
                                         </label>
                                     ))}
                                 </div>

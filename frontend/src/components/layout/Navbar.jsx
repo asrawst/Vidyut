@@ -44,24 +44,26 @@ const Navbar = ({
             top: 0,
             left: 0,
             right: 0,
-            background: 'transparent',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'rgba(255, 255, 255, 0.88)',
+            borderBottom: '1px solid var(--border-subtle)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
             zIndex: 999,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '1rem 2rem',
-            height: '70px'
+            padding: '1rem 3rem',
+            height: '74px'
         }}>
-            <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+            <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
                 <div className="nav-logo">
-                    <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'white' }}>
+                    <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
                         <span style={{ 
                             fontFamily: 'var(--font-heading)',
-                            fontWeight: '400', 
+                            fontWeight: '800', 
                             fontSize: '1.45rem', 
-                            letterSpacing: '-0.02em',
-                            color: '#ffffff'
+                            letterSpacing: '-0.035em',
+                            color: '#09090b'
                         }}>
                             Vidyut
                         </span>
@@ -71,45 +73,43 @@ const Navbar = ({
                 <div className="desktop-nav" style={{ display: 'flex', alignItems: 'center' }}>
                     <ul className="nav-links" style={{ display: 'flex', listStyle: 'none', gap: '2rem', margin: 0, padding: 0 }}>
                         <li>
-                            <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); onAboutClick(); }} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '0.88rem', fontWeight: '500', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                About <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>▼</span>
+                            <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); onAboutClick(); }} style={{ color: '#52525b', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500', transition: 'color 0.15s' }}>
+                                About
                             </a>
                         </li>
                         <li>
-                            <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); onServicesClick(); }} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '0.88rem', fontWeight: '500', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                Services <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>▼</span>
+                            <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); onServicesClick(); }} style={{ color: '#52525b', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500', transition: 'color 0.15s' }}>
+                                Services
                             </a>
                         </li>
                     </ul>
                 </div>
             </div>
 
-            <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
                 {/* Desktop Action Buttons */}
                 <div className="desktop-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     {user ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', fontWeight: '500' }}>
+                            <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: '600' }}>
                                 {user.displayName || user.email?.split('@')[0]}
                             </span>
                             <button 
                                 onClick={onLogoutClick} 
                                 style={{
-                                    background: 'rgba(239, 68, 68, 0.1)',
-                                    border: '1px solid rgba(239, 68, 68, 0.2)',
-                                    borderRadius: '8px',
-                                    padding: '0.4rem 0.8rem',
+                                    background: '#fef2f2',
+                                    border: '1px solid #fee2e2',
+                                    borderRadius: '9999px',
+                                    padding: '0.45rem 1rem',
                                     color: '#ef4444',
-                                    fontSize: '0.85rem',
+                                    fontSize: '0.84rem',
                                     fontWeight: '600',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '0.35rem',
-                                    transition: 'all 0.2s'
+                                    transition: 'all 0.15s'
                                 }}
-                                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'; }}
-                                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'; }}
                             >
                                 <LogOut size={14} /> Logout
                             </button>
@@ -118,43 +118,15 @@ const Navbar = ({
                         <>
                             <button 
                                 onClick={onLoginClick} 
-                                style={{
-                                    background: 'transparent',
-                                    border: '1px solid rgba(255, 255, 255, 0.4)',
-                                    borderRadius: '8px',
-                                    padding: '0.55rem 1.4rem',
-                                    color: 'white',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '500',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem'
-                                }}
-                                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#ffffff'; }}
-                                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
+                                className="stitch-btn-pill stitch-btn-pill-secondary"
+                                style={{ padding: '0.5rem 1.25rem', fontSize: '0.86rem', fontWeight: '600' }}
                             >
-                                Admin <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>▼</span>
+                                Admin <span style={{ fontSize: '0.65rem', opacity: 0.6, marginLeft: '2px' }}>▼</span>
                             </button>
                             <button 
                                 onClick={onInspectorClick} 
-                                style={{
-                                    background: '#ffffff',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    padding: '0.55rem 1.5rem',
-                                    color: '#000000',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem'
-                                }}
-                                onMouseOver={(e) => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                                onMouseOut={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                                className="stitch-btn-pill stitch-btn-pill-primary"
+                                style={{ padding: '0.5rem 1.45rem', fontSize: '0.86rem', fontWeight: '600' }}
                             >
                                 Inspector
                             </button>
@@ -168,16 +140,16 @@ const Navbar = ({
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         className="menu-toggle-btn"
                         style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '8px',
+                            background: '#ffffff',
+                            border: '1px solid #eaeaea',
+                            borderRadius: '6px',
                             padding: '0.5rem',
-                            color: 'white',
+                            color: '#000000',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            transition: 'all 0.2s',
+                            transition: 'all 0.15s',
                         }}
                     >
                         <Menu size={20} />
@@ -188,13 +160,12 @@ const Navbar = ({
                             position: 'absolute',
                             top: '60px',
                             right: '20px',
-                            background: 'rgba(15, 23, 42, 0.95)',
-                            backdropFilter: 'blur(16px)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '12px',
+                            background: '#ffffff',
+                            border: '1px solid #eaeaea',
+                            borderRadius: '10px',
                             padding: '0.5rem',
                             minWidth: '180px',
-                            boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)'
                         }}>
                             <div className="menu-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                 <button className="menu-item-float" onClick={() => handleMobileLinkClick(onAboutClick)} style={menuItemStyle}>
@@ -203,9 +174,9 @@ const Navbar = ({
                                 <button className="menu-item-float" onClick={() => handleMobileLinkClick(onServicesClick)} style={menuItemStyle}>
                                     <Sliders size={14} /> Services
                                 </button>
-                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0.25rem 0' }}></div>
+                                <div style={{ height: '1px', background: '#eaeaea', margin: '0.25rem 0' }}></div>
                                 {user ? (
-                                    <button className="menu-item-float" onClick={handleLogout} style={{ ...menuItemStyle, color: '#ef4444' }}>
+                                    <button className="menu-item-float" onClick={handleLogout} style={{ ...menuItemStyle, color: '#dc2626' }}>
                                         <LogOut size={14} /> Logout
                                     </button>
                                 ) : (
@@ -234,13 +205,13 @@ const menuItemStyle = {
     padding: '0.6rem 0.8rem',
     background: 'none',
     border: 'none',
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: '#4b5563',
     fontSize: '0.85rem',
     cursor: 'pointer',
     borderRadius: '6px',
     width: '100%',
     textAlign: 'left',
-    transition: 'all 0.2s'
+    transition: 'all 0.15s'
 };
 
 export default Navbar;

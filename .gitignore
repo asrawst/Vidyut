@@ -1,11 +1,14 @@
 # Dependencies
 node_modules/
+**/node_modules/
 .pnp
 .pnp.js
 
 # Build output
 dist/
+**/dist/
 build/
+**/build/
 
 # Environment variables - NEVER commit these
 .env

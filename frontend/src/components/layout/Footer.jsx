@@ -14,9 +14,9 @@ const Footer = ({ onAboutClick }) => {
                             <span style={{ 
                                 fontFamily: 'var(--font-heading)', 
                                 fontSize: '1.45rem', 
-                                fontWeight: '400', 
-                                color: 'white',
-                                letterSpacing: '-0.02em'
+                                fontWeight: '700', 
+                                color: '#000000',
+                                letterSpacing: '-0.03em'
                             }}>
                                 Vidyut
                             </span>

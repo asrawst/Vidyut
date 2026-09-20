@@ -35,8 +35,8 @@ export default function InspectorPage() {
     return (
       <div style={{
         minHeight: '100vh',
-        background: '#0a0d14',
-        color: '#fff',
+        background: '#fafafa',
+        color: '#000000',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -58,12 +58,12 @@ export default function InspectorPage() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.4rem',
-              color: 'rgba(255,255,255,0.7)',
+              color: '#666666',
               textDecoration: 'none',
               fontSize: '0.9rem',
               padding: '0.5rem 0.9rem',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: '#ffffff',
+              border: '1px solid #eaeaea',
               borderRadius: '8px'
             }}
           >
@@ -75,31 +75,31 @@ export default function InspectorPage() {
           maxWidth: '440px',
           width: '100%',
           textAlign: 'center',
-          background: 'rgba(15, 23, 42, 0.85)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
+          background: '#ffffff',
+          border: '1px solid #eaeaea',
           borderRadius: '16px',
           padding: '2.5rem',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
+          boxShadow: '0 20px 40px rgba(0,0,0,0.06)'
         }}>
           <div style={{
             width: '60px',
             height: '60px',
             borderRadius: '50%',
-            background: 'rgba(16, 185, 129, 0.12)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
+            background: '#f4f4f5',
+            border: '1px solid #eaeaea',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 1.5rem auto',
-            color: '#10b981'
+            color: '#000000'
           }}>
-            <UserCheck size={30} />
+            <UserCheck size={28} />
           </div>
 
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.75rem', margin: '0 0 0.5rem 0' }}>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.75rem', fontWeight: '600', letterSpacing: '-0.02em', margin: '0 0 0.5rem 0', color: '#000000' }}>
             Field Inspector Portal
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', margin: '0 0 2rem 0' }}>
+          <p style={{ color: '#666666', fontSize: '0.9rem', margin: '0 0 2rem 0', lineHeight: '1.5' }}>
             Sign in to execute assigned onsite audits, submit bypass evidence photos, and issue digital compounding challans.
           </p>
 
@@ -108,11 +108,11 @@ export default function InspectorPage() {
             style={{
               width: '100%',
               padding: '0.85rem',
-              background: '#10b981',
-              color: '#000',
+              background: '#000000',
+              color: '#ffffff',
               border: 'none',
               borderRadius: '8px',
-              fontWeight: '600',
+              fontWeight: '500',
               fontSize: '0.95rem',
               cursor: 'pointer',
               display: 'flex',
@@ -139,7 +139,7 @@ export default function InspectorPage() {
   }
 
   return (
-    <div className="inspector-page-wrapper" style={{ minHeight: '100vh', background: '#0a0d14' }}>
+    <div className="inspector-page-wrapper" style={{ minHeight: '100vh', background: '#fafafa' }}>
       <InspectorPortal
         inspector={inspector}
         onLogout={handleLogout}

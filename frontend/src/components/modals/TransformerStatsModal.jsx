@@ -14,34 +14,36 @@ const TransformerStatsModal = ({ isOpen, onClose, data }) => {
     return (
         <div className="modal-overlay" style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex',
-            justifyContent: 'center', alignItems: 'center', zIndex: 1000
+            backgroundColor: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
         }}>
-            <div className="modal-content" style={{
-                background: '#1e293b', padding: '2rem', borderRadius: '12px',
-                width: '90%', maxWidth: '1000px', maxHeight: '90vh', overflowY: 'auto',
-                border: '1px solid rgba(255, 255, 255, 0.1)', color: 'white', position: 'relative'
+            <div className="stitch-modal-card" style={{
+                background: '#ffffff', padding: '2.5rem', borderRadius: '24px',
+                width: '90%', maxWidth: '980px', maxHeight: '88vh', overflowY: 'auto',
+                border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', position: 'relative'
             }}>
                 <button
                     onClick={onClose}
                     style={{
-                        position: 'absolute', top: '1rem', right: '1rem',
-                        background: 'none', border: 'none', color: 'rgba(255, 255, 255, 0.6)',
-                        cursor: 'pointer'
+                        position: 'absolute', top: '1.25rem', right: '1.25rem',
+                        background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)',
+                        cursor: 'pointer', borderRadius: '50%', width: '32px', height: '32px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s'
                     }}
                 >
-                    <X size={24} />
+                    <X size={16} />
                 </button>
 
-                <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: '700', letterSpacing: '-0.03em', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem', color: 'var(--text-primary)' }}>
                     Transformer Risk Analysis
                 </h2>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                     {/* PIE CHART */}
-                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
-                        <h3 style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '1.1rem' }}>Anomaly Distribution</h3>
-                        <div style={{ height: '300px' }}>
+                    <div style={{ background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', padding: '1.25rem', borderRadius: '16px' }}>
+                        <h3 style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-primary)' }}>Anomaly Distribution</h3>
+                        <div style={{ height: '280px' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
@@ -50,25 +52,25 @@ const TransformerStatsModal = ({ isOpen, onClose, data }) => {
                                         cy="50%"
                                         labelLine={false}
                                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                        outerRadius={100}
-                                        fill="#8884d8"
+                                        outerRadius={95}
+                                        fill="#18181b"
                                         dataKey="anomalies_detected"
                                         nameKey="transformer_id"
                                     >
                                         {data.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
                                     <Tooltip 
                                         contentStyle={{ 
-                                            background: 'rgba(18, 16, 14, 0.95)', 
-                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
-                                            borderRadius: '8px', 
-                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                                            background: '#ffffff', 
+                                            border: '1px solid var(--border-subtle)', 
+                                            borderRadius: '12px', 
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                                             padding: '0.5rem 0.75rem' 
                                         }}
-                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
-                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
+                                        itemStyle={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.85rem' }}
+                                        labelStyle={{ color: 'var(--text-muted)', fontWeight: '600', marginBottom: '0.2rem' }}
                                     />
                                     <Legend />
                                 </PieChart>
@@ -77,31 +79,31 @@ const TransformerStatsModal = ({ isOpen, onClose, data }) => {
                     </div>
 
                     {/* BAR CHART */}
-                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
-                        <h3 style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '1.1rem' }}>Anomalies by Transformer</h3>
-                        <div style={{ height: '300px' }}>
+                    <div style={{ background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', padding: '1.25rem', borderRadius: '16px' }}>
+                        <h3 style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-primary)' }}>Anomalies by Transformer</h3>
+                        <div style={{ height: '280px' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     data={data}
                                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                                 >
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                    <XAxis dataKey="transformer_id" stroke="rgba(255,255,255,0.6)" />
-                                    <YAxis stroke="rgba(255,255,255,0.6)" />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
+                                    <XAxis dataKey="transformer_id" stroke="#71717a" />
+                                    <YAxis stroke="#71717a" />
                                     <Tooltip 
-                                        cursor={{ fill: 'transparent' }} 
+                                        cursor={{ fill: 'rgba(0,0,0,0.04)' }} 
                                         contentStyle={{ 
-                                            background: 'rgba(18, 16, 14, 0.95)', 
-                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
-                                            borderRadius: '8px', 
-                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                                            background: '#ffffff', 
+                                            border: '1px solid var(--border-subtle)', 
+                                            borderRadius: '12px', 
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                                             padding: '0.5rem 0.75rem' 
                                         }}
-                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
-                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
+                                        itemStyle={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.85rem' }}
+                                        labelStyle={{ color: 'var(--text-muted)', fontWeight: '600', marginBottom: '0.2rem' }}
                                     />
                                     <Legend />
-                                    <Bar dataKey="anomalies_detected" name="Anomalies" fill="#8884d8">
+                                    <Bar dataKey="anomalies_detected" name="Anomalies" fill="#18181b" radius={[6, 6, 0, 0]}>
                                         {data.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
@@ -113,26 +115,26 @@ const TransformerStatsModal = ({ isOpen, onClose, data }) => {
                 </div>
 
                 {/* TABLE */}
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
-                    <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Detailed Data</h3>
+                <div style={{ background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', padding: '1.25rem', borderRadius: '16px' }}>
+                    <h3 style={{ marginBottom: '1rem', fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-primary)' }}>Detailed Transformer Breakdown</h3>
                     <div className="table-wrapper">
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                             <thead>
-                                <tr style={{ background: 'rgba(255,255,255,0.05)', textAlign: 'left' }}>
-                                    <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Transformer ID</th>
-                                    <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Count of Anomalies</th>
-                                    <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Status</th>
+                                <tr style={{ background: '#f4f5f7', textAlign: 'left' }}>
+                                    <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontWeight: '700', fontSize: '0.75rem', textTransform: 'uppercase' }}>Transformer ID</th>
+                                    <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontWeight: '700', fontSize: '0.75rem', textTransform: 'uppercase' }}>Count of Anomalies</th>
+                                    <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontWeight: '700', fontSize: '0.75rem', textTransform: 'uppercase' }}>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {data.map((item, index) => (
-                                    <tr key={index} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                        <td style={{ padding: '0.75rem' }}>{item.transformer_id}</td>
-                                        <td style={{ padding: '0.75rem' }}>{item.anomalies_detected}</td>
+                                    <tr key={index} style={{ borderBottom: '1px solid var(--border-subtle)', background: '#ffffff' }}>
+                                        <td style={{ padding: '0.75rem', color: 'var(--text-primary)', fontWeight: '600' }}>{item.transformer_id}</td>
+                                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{item.anomalies_detected}</td>
                                         <td style={{ padding: '0.75rem' }}>
                                             <span style={{
-                                                background: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5',
-                                                padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem'
+                                                background: '#fef2f2', color: '#ef4444', border: '1px solid #fee2e2',
+                                                padding: '0.2rem 0.55rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '700'
                                             }}>
                                                 High Risk
                                             </span>

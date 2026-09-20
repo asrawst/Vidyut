@@ -13,25 +13,23 @@ const AboutUsModal = ({ onClose }) => {
             left: 0,
             width: '100vw',
             height: '100vh',
-            background: 'rgba(0, 0, 0, 0.7)',
+            background: 'rgba(0, 0, 0, 0.4)',
             backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 1000
         }}>
-            <div style={{
-                background: 'rgba(18, 16, 14, 0.85)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid var(--glass-border)',
+            <div className="stitch-modal-card" style={{
+                background: '#ffffff',
+                border: '1px solid var(--border-subtle)',
                 padding: '2.5rem',
                 borderRadius: '24px',
                 width: '90%',
-                maxWidth: '800px',
-                maxHeight: '90vh',
+                maxWidth: '780px',
+                maxHeight: '88vh',
                 overflowY: 'auto',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
                 position: 'relative',
                 color: 'var(--text-secondary)'
             }}>
@@ -39,64 +37,52 @@ const AboutUsModal = ({ onClose }) => {
                     onClick={onClose}
                     style={{
                         position: 'absolute',
-                        top: '1.5rem',
-                        right: '1.5rem',
-                        background: 'none',
-                        border: 'none',
-                        color: 'rgba(255,255,255,0.5)',
+                        top: '1.25rem',
+                        right: '1.25rem',
+                        background: 'var(--bg-canvas)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'var(--text-secondary)',
                         cursor: 'pointer',
-                        padding: '0.5rem',
+                        padding: '0.4rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         borderRadius: '50%',
-                        transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={e => {
-                        e.target.style.background = 'rgba(255,255,255,0.1)';
-                        e.target.style.color = 'white';
-                    }}
-                    onMouseLeave={e => {
-                        e.target.style.background = 'none';
-                        e.target.style.color = 'rgba(255,255,255,0.5)';
+                        transition: 'all 0.15s'
                     }}
                 >
-                    <X size={24} />
+                    <X size={16} />
                 </button>
 
                 <h2 style={{
-                    fontSize: '2.2rem',
-                    marginBottom: '2rem',
+                    fontSize: '1.85rem',
+                    marginBottom: '1.75rem',
                     fontFamily: 'var(--font-heading)',
-                    color: 'white',
-                    fontWeight: '400',
+                    color: 'var(--text-primary)',
+                    fontWeight: '700',
+                    letterSpacing: '-0.03em',
                     textAlign: 'center'
                 }}>About Vidyut</h2>
 
-                <div style={{ fontSize: '0.95rem', lineHeight: '1.7', color: 'rgba(255,255,255,0.7)', display: 'flex', flexDirection: 'column', gap: '1.75rem', textAlign: 'left' }}>
-                    <div>
-                        <h3 style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-heading)', fontWeight: '400', marginBottom: '0.5rem', fontSize: '1.25rem' }}>Why existing systems fall short</h3>
-                        <p>Most current electricity theft detection methods depend on manual inspections, fixed rules, or single indicators. These approaches struggle to scale, generate many false positives, and often miss complex or well-hidden cases of non-technical losses.</p>
+                <div style={{ fontSize: '0.92rem', lineHeight: '1.7', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
+                    <div style={{ background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', padding: '1.25rem', borderRadius: '16px' }}>
+                        <h3 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontWeight: '700', marginBottom: '0.35rem', fontSize: '1.05rem' }}>Why existing systems fall short</h3>
+                        <p style={{ margin: 0 }}>Most current electricity theft detection methods depend on manual inspections, fixed rules, or single indicators. These approaches struggle to scale, generate many false positives, and often miss complex or well-hidden cases of non-technical losses.</p>
                     </div>
 
-                    <div>
-                        <h3 style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-heading)', fontWeight: '400', marginBottom: '0.5rem', fontSize: '1.25rem' }}>Our approach</h3>
-                        <p>This system is built using a research-driven, multi-layer anomaly detection framework. Rather than relying on one signal, it analyzes electricity usage from multiple perspectives to capture different forms of suspicious behavior and reduce blind spots.</p>
+                    <div style={{ background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', padding: '1.25rem', borderRadius: '16px' }}>
+                        <h3 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontWeight: '700', marginBottom: '0.35rem', fontSize: '1.05rem' }}>Our approach</h3>
+                        <p style={{ margin: 0 }}>This system is built using a research-driven, multi-layer anomaly detection framework. Rather than relying on one signal, it analyzes electricity usage from multiple perspectives to capture different forms of suspicious behavior and reduce blind spots.</p>
                     </div>
 
-                    <div>
-                        <h3 style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-heading)', fontWeight: '400', marginBottom: '0.5rem', fontSize: '1.25rem' }}>How the system works</h3>
-                        <p>Smart-meter consumption patterns are analyzed over time to detect abnormal changes. Consumers are evaluated relative to nearby peers connected to the same transformer, providing local context. Transformer-level loss analysis captures grid-side irregularities, while voltage and power-quality signals act as physical indicators. Seasonal and contextual factors are applied to avoid false alarms.</p>
+                    <div style={{ background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', padding: '1.25rem', borderRadius: '16px' }}>
+                        <h3 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontWeight: '700', marginBottom: '0.35rem', fontSize: '1.05rem' }}>How the system works</h3>
+                        <p style={{ margin: 0 }}>Smart-meter consumption patterns are analyzed over time to detect abnormal changes. Consumers are evaluated relative to nearby peers connected to the same transformer, providing local context. Transformer-level loss analysis captures grid-side irregularities, while voltage and power-quality signals act as physical indicators.</p>
                     </div>
 
-                    <div>
-                        <h3 style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-heading)', fontWeight: '400', marginBottom: '0.5rem', fontSize: '1.25rem' }}>What makes it different</h3>
-                        <p>All signals are normalized and combined into a single risk score that prioritizes a small set of cases for inspection. The system does not label theft; it supports explainable, risk-based decision making with humans in the loop. Location-based analysis further highlights geographic hotspots for efficient inspection planning.</p>
-                    </div>
-
-                    <div>
-                        <h3 style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-heading)', fontWeight: '400', marginBottom: '0.5rem', fontSize: '1.25rem' }}>The problem we solve</h3>
-                        <p>The system helps utilities move from reactive checks to targeted, data-driven inspections, reducing non-technical losses and improving grid visibility while maintaining transparency and control.</p>
+                    <div style={{ background: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)', padding: '1.25rem', borderRadius: '16px' }}>
+                        <h3 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontWeight: '700', marginBottom: '0.35rem', fontSize: '1.05rem' }}>The problem we solve</h3>
+                        <p style={{ margin: 0 }}>The system helps utilities move from reactive checks to targeted, data-driven inspections, reducing non-technical losses and improving grid visibility while maintaining transparency and control.</p>
                     </div>
                 </div>
             </div>

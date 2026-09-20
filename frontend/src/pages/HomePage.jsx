@@ -47,72 +47,71 @@ export default function HomePage() {
   };
 
   const cardContainerStyle = {
-    background: 'var(--glass-bg)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: '16px',
-    padding: '2rem',
+    background: '#ffffff',
+    border: '1px solid rgba(0, 0, 0, 0.05)',
+    borderRadius: '20px',
+    padding: '2.25rem',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-    boxShadow: '0 20px 45px rgba(0, 0, 0, 0.6)',
+    boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.03)',
     position: 'relative',
     overflow: 'hidden',
-    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
   };
 
   const badgeStyle = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '0.45rem',
-    color: '#c8a261',
+    color: '#09090b',
     fontSize: '0.78rem',
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: '0.06em',
+    letterSpacing: '0.04em',
     padding: '0.35rem 0.85rem',
-    borderRadius: '20px',
-    background: 'rgba(200, 162, 97, 0.12)',
-    border: '1px solid rgba(200, 162, 97, 0.25)'
+    borderRadius: '9999px',
+    background: '#f4f5f7',
+    border: '1px solid rgba(0, 0, 0, 0.06)'
   };
 
   const primaryBtnStyle = {
     flex: 1,
     minWidth: '140px',
-    padding: '0.7rem 1.4rem',
-    background: '#ffffff',
-    color: '#000000',
-    border: 'none',
-    borderRadius: '8px',
+    padding: '0.75rem 1.5rem',
+    background: '#09090b',
+    color: '#ffffff',
+    border: '1px solid #09090b',
+    borderRadius: '9999px',
     fontWeight: '600',
-    fontSize: '0.88rem',
+    fontSize: '0.875rem',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '0.45rem',
-    transition: 'all 0.2s ease',
-    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.3)'
+    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
   };
 
   const secondaryBtnStyle = {
-    padding: '0.7rem 1.1rem',
-    background: 'transparent',
-    border: '1px solid rgba(255, 255, 255, 0.25)',
-    borderRadius: '8px',
-    color: '#ffffff',
+    padding: '0.75rem 1.25rem',
+    background: '#ffffff',
+    border: '1px solid #e4e4e7',
+    borderRadius: '9999px',
+    color: '#09090b',
     fontSize: '0.85rem',
-    fontWeight: '500',
+    fontWeight: '600',
     textDecoration: 'none',
     display: 'flex',
     alignItems: 'center',
     gap: '0.4rem',
-    transition: 'all 0.2s ease'
+    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)'
   };
 
   return (
-    <div className="container" style={{ maxWidth: '100%', padding: 0, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="container" style={{ maxWidth: '100%', padding: 0, minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff' }}>
       <Navbar
         user={user}
         onLoginClick={() => setIsLoginModalOpen(true)}
@@ -122,11 +121,11 @@ export default function HomePage() {
         onInspectorClick={() => setIsInspectorModalOpen(true)}
       />
 
-      <main className="main-content" style={{ padding: '0 2rem' }}>
+      <main className="main-content" style={{ padding: 0, width: '100%' }}>
         <Hero />
 
         {/* Multi-Portal Command Panels */}
-        <section id="portal-section" style={{ maxWidth: '1200px', margin: '0 auto 4.5rem auto', width: '100%', scrollMarginTop: '100px' }}>
+        <section id="portal-section" style={{ maxWidth: '1200px', margin: '4rem auto 4.5rem auto', width: '100%', padding: '0 2rem', scrollMarginTop: '100px' }}>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
@@ -137,29 +136,29 @@ export default function HomePage() {
             <div 
               style={cardContainerStyle}
               onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'rgba(200, 162, 97, 0.4)';
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 25px 50px rgba(0, 0, 0, 0.7), 0 0 25px rgba(200, 162, 97, 0.08)';
+                e.currentTarget.style.borderColor = '#000000';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)';
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--glass-border)';
+                e.currentTarget.style.borderColor = '#eaeaea';
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 20px 45px rgba(0, 0, 0, 0.6)';
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)';
               }}
             >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                   <div style={badgeStyle}>
-                    <Shield size={15} /> Admin Command Center
+                    <Shield size={14} /> Admin Command Center
                   </div>
-                  <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', padding: '0.25rem 0.65rem', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', fontFamily: 'var(--font-mono)' }}>
+                  <span style={{ fontSize: '0.75rem', background: '#f4f4f5', border: '1px solid #eaeaea', padding: '0.2rem 0.6rem', borderRadius: '4px', color: '#666666', fontFamily: 'var(--font-mono)' }}>
                     /admin
                   </span>
                 </div>
-                <h3 style={{ margin: '0 0 0.65rem 0', fontSize: '1.5rem', color: 'white', fontWeight: '400', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>
+                <h3 style={{ margin: '0 0 0.65rem 0', fontSize: '1.35rem', color: '#000000', fontWeight: '600', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>
                   Grid Oversight & ML Intelligence
                 </h3>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', fontFamily: 'var(--font-body)' }}>
+                <p style={{ margin: 0, color: '#666666', fontSize: '0.9rem', lineHeight: '1.6', fontFamily: 'var(--font-body)' }}>
                   Analyze electricity theft signals, dispatch tasks to inspectors, manage penalties, tariffs, and view live geospatial GIS heatmaps.
                 </p>
               </div>
@@ -175,15 +174,15 @@ export default function HomePage() {
                   }}
                   style={primaryBtnStyle}
                   onMouseEnter={e => {
-                    e.currentTarget.style.opacity = '0.9';
+                    e.currentTarget.style.backgroundColor = '#27272a';
                     e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.opacity = '1';
+                    e.currentTarget.style.backgroundColor = '#09090b';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  Launch Admin <ArrowRight size={15} />
+                  Launch Admin <ArrowRight size={14} />
                 </button>
                 <a
                   href="/admin"
@@ -191,16 +190,16 @@ export default function HomePage() {
                   rel="noopener noreferrer"
                   style={secondaryBtnStyle}
                   onMouseEnter={e => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)';
+                    e.currentTarget.style.backgroundColor = '#f4f5f7';
+                    e.currentTarget.style.borderColor = '#d4d4d8';
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)';
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                    e.currentTarget.style.borderColor = '#e4e4e7';
                   }}
                   title="Open Admin Dashboard in a separate browser tab to run simultaneously with Inspector Portal"
                 >
-                  <ExternalLink size={14} /> New Tab
+                  <ExternalLink size={13} /> New Tab
                 </a>
               </div>
             </div>
@@ -209,29 +208,29 @@ export default function HomePage() {
             <div 
               style={cardContainerStyle}
               onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'rgba(200, 162, 97, 0.4)';
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 25px 50px rgba(0, 0, 0, 0.7), 0 0 25px rgba(200, 162, 97, 0.08)';
+                e.currentTarget.style.borderColor = 'rgba(0,0,0,0.12)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 12px 32px -4px rgba(0, 0, 0, 0.08)';
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--glass-border)';
+                e.currentTarget.style.borderColor = 'rgba(0,0,0,0.05)';
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 20px 45px rgba(0, 0, 0, 0.6)';
+                e.currentTarget.style.boxShadow = '0 4px 20px -2px rgba(0, 0, 0, 0.03)';
               }}
             >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                   <div style={badgeStyle}>
-                    <UserCheck size={15} /> Field Inspector Workspace
+                    <UserCheck size={14} /> Field Inspector Workspace
                   </div>
-                  <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', padding: '0.25rem 0.65rem', borderRadius: '6px', color: 'rgba(255,255,255,0.6)', fontFamily: 'var(--font-mono)' }}>
+                  <span style={{ fontSize: '0.75rem', background: '#f4f5f7', border: '1px solid rgba(0,0,0,0.06)', padding: '0.25rem 0.65rem', borderRadius: '9999px', color: '#71717a', fontFamily: 'var(--font-mono)' }}>
                     /inspector
                   </span>
                 </div>
-                <h3 style={{ margin: '0 0 0.65rem 0', fontSize: '1.5rem', color: 'white', fontWeight: '400', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>
+                <h3 style={{ margin: '0 0 0.65rem 0', fontSize: '1.35rem', color: '#09090b', fontWeight: '600', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>
                   Onsite Audits & Challan Issuance
                 </h3>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', fontFamily: 'var(--font-body)' }}>
+                <p style={{ margin: 0, color: '#71717a', fontSize: '0.9rem', lineHeight: '1.6', fontFamily: 'var(--font-body)' }}>
                   Execute real-time field audits, record bypass photos, capture GPS meter coordinates, and issue digital compounding challans.
                 </p>
               </div>
@@ -247,15 +246,15 @@ export default function HomePage() {
                   }}
                   style={primaryBtnStyle}
                   onMouseEnter={e => {
-                    e.currentTarget.style.opacity = '0.9';
+                    e.currentTarget.style.backgroundColor = '#27272a';
                     e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.opacity = '1';
+                    e.currentTarget.style.backgroundColor = '#09090b';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  Launch Inspector <ArrowRight size={15} />
+                  Launch Inspector <ArrowRight size={14} />
                 </button>
                 <a
                   href="/inspector"
@@ -263,16 +262,16 @@ export default function HomePage() {
                   rel="noopener noreferrer"
                   style={secondaryBtnStyle}
                   onMouseEnter={e => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)';
+                    e.currentTarget.style.backgroundColor = '#f4f5f7';
+                    e.currentTarget.style.borderColor = '#d4d4d8';
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)';
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                    e.currentTarget.style.borderColor = '#e4e4e7';
                   }}
                   title="Open Field Inspector Portal in a separate browser tab to run simultaneously with Admin"
                 >
-                  <ExternalLink size={14} /> New Tab
+                  <ExternalLink size={13} /> New Tab
                 </a>
               </div>
             </div>

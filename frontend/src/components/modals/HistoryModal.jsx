@@ -100,95 +100,100 @@ const HistoryModal = ({ user, onClose, onLoadHistory }) => {
             left: 0,
             width: '100vw',
             height: '100vh',
-            background: 'rgba(0, 0, 0, 0.7)',
+            background: 'rgba(0, 0, 0, 0.4)',
             backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 1000
         }}>
-            <div style={{
-                background: 'rgba(17, 24, 39, 0.95)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                padding: '2rem',
+            <div className="stitch-modal-card" style={{
+                background: '#ffffff',
+                border: '1px solid var(--border-subtle)',
+                padding: '2.5rem',
                 borderRadius: '24px',
                 width: '90%',
-                maxWidth: '600px',
-                maxHeight: '80vh',
+                maxWidth: '640px',
+                maxHeight: '82vh',
                 display: 'flex',
                 flexDirection: 'column',
-                position: 'relative',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                position: 'relative'
             }}>
                 <button
                     onClick={onClose}
                     style={{
                         position: 'absolute',
-                        top: '1.5rem',
-                        right: '1.5rem',
-                        background: 'none',
-                        border: 'none',
-                        color: 'rgba(255,255,255,0.5)',
+                        top: '1.25rem',
+                        right: '1.25rem',
+                        background: 'var(--bg-canvas)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'var(--text-secondary)',
                         cursor: 'pointer',
-                        padding: '0.5rem',
+                        padding: '0.4rem',
                         borderRadius: '50%',
-                        transition: 'all 0.2s'
+                        transition: 'all 0.15s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                     }}
                 >
-                    <X size={24} />
+                    <X size={16} />
                 </button>
 
                 <h2 style={{
-                    fontSize: '1.8rem',
+                    fontSize: '1.5rem',
                     marginBottom: '1.5rem',
-                    color: 'white',
+                    color: 'var(--text-primary)',
+                    fontWeight: '700',
+                    letterSpacing: '-0.03em',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.75rem'
                 }}>
-                    <Calendar size={28} color="#60a5fa" />
+                    <Calendar size={22} color="#2563eb" />
                     Scan History
                 </h2>
 
                 <div style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem' }}>
                     {loading ? (
-                        <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>Loading history...</p>
+                        <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>Loading history...</p>
                     ) : error ? (
                         <p style={{ color: '#ef4444', textAlign: 'center' }}>{error}</p>
                     ) : history.length === 0 ? (
-                        <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>No scan history found.</p>
+                        <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>No scan history found.</p>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             {history.map((item) => (
                                 <div
                                     key={item.id}
                                     onClick={() => handleSelect(item)}
                                     style={{
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        borderRadius: '12px',
-                                        padding: '1rem',
+                                        background: 'var(--bg-canvas)',
+                                        border: '1px solid var(--border-subtle)',
+                                        borderRadius: '14px',
+                                        padding: '1rem 1.25rem',
                                         cursor: 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'space-between',
-                                        transition: 'all 0.2s'
+                                        transition: 'all 0.15s'
                                     }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#18181b'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
                                 >
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white', fontWeight: '500' }}>
-                                            <FileText size={16} color="#a855f7" />
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.92rem' }}>
+                                            <FileText size={16} color="#2563eb" />
                                             {item.fileName || 'Unknown File'}
                                         </div>
-                                        <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
+                                        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                                             {formatDate(item.timestamp)}
                                         </div>
                                     </div>
 
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <ChevronRight size={20} color="rgba(255,255,255,0.3)" />
+                                        <ChevronRight size={18} color="var(--text-muted)" />
                                     </div>
                                 </div>
                             ))}

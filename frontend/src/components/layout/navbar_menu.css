@@ -1,30 +1,27 @@
 /* Floating Menu Container */
 .floating-menu {
     position: absolute;
-    top: calc(100% + 1rem);
+    top: calc(100% + 0.75rem);
     right: 0;
-    width: 250px;
-    /* Compact width */
-    background: #0b1015;
-    /* Very dark blue/black background */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 0.75rem;
+    width: 260px;
+    background: #ffffff;
+    border: 1px solid #eaeaea;
+    border-radius: 10px;
+    padding: 0.5rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
+    gap: 0.25rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
     z-index: 1000;
-    animation: fadeIn 0.2s ease-out;
+    animation: fadeIn 0.15s ease-out;
 }
 
 /* Animations */
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(-5px);
+        transform: translateY(-4px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -35,40 +32,39 @@
 .menu-list {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.2rem;
 }
 
 /* Individual Menu Item */
 .menu-item-float {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.2rem;
     text-decoration: none;
     background: transparent;
     border: none;
-    padding: 0.75rem;
+    padding: 0.65rem 0.75rem;
     cursor: pointer;
     text-align: left;
-    transition: all 0.2s;
-    border-radius: 8px;
+    transition: all 0.15s ease;
+    border-radius: 6px;
 }
 
 .menu-item-float:hover {
-    background: rgba(255, 255, 255, 0.05);
-    /* Subtle hover background */
+    background: #f4f4f5;
 }
 
 .menu-item-title {
-    color: #ffffff;
-    font-size: 0.95rem;
+    color: #000000;
+    font-size: 0.875rem;
     font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.5rem;
 }
 
 .menu-item-desc {
-    color: rgba(255, 255, 255, 0.5);
+    color: #666666;
     font-size: 0.75rem;
     line-height: 1.3;
     margin-left: 2px;

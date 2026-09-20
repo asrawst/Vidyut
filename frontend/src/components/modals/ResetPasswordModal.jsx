@@ -58,24 +58,24 @@ const ResetPasswordModal = ({ onClose, onSuccess }) => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0, 0, 0, 0.75)',
+            background: 'rgba(0, 0, 0, 0.4)',
             backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 9999,
             padding: '1rem'
         }}>
-            <div style={{
-                background: 'linear-gradient(135deg, rgba(22, 20, 18, 0.95) 0%, rgba(14, 12, 10, 0.98) 100%)',
-                border: '1px solid rgba(200, 162, 97, 0.3)',
-                borderRadius: '16px',
-                padding: '2rem',
+            <div className="stitch-modal-card" style={{
+                background: '#ffffff',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '24px',
+                padding: '2.5rem',
                 width: '100%',
-                maxWidth: '440px',
+                maxWidth: '460px',
                 position: 'relative',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(200, 162, 97, 0.15)',
-                color: 'white'
+                color: 'var(--text-primary)'
             }}>
                 {/* Close Button */}
                 <button
@@ -84,17 +84,17 @@ const ResetPasswordModal = ({ onClose, onSuccess }) => {
                         position: 'absolute',
                         top: '1.25rem',
                         right: '1.25rem',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        background: 'var(--bg-canvas)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: '50%',
                         width: '32px',
                         height: '32px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'rgba(255, 255, 255, 0.6)',
+                        color: 'var(--text-secondary)',
                         cursor: 'pointer',
-                        transition: 'all 0.2s'
+                        transition: 'all 0.15s'
                     }}
                 >
                     <X size={16} />
@@ -103,23 +103,23 @@ const ResetPasswordModal = ({ onClose, onSuccess }) => {
                 {/* Header */}
                 <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
                     <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '12px',
-                        background: 'rgba(200, 162, 97, 0.15)',
-                        border: '1px solid rgba(200, 162, 97, 0.3)',
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: '50%',
+                        background: '#eff6ff',
+                        border: '1px solid #dbeafe',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        margin: '0 auto 1rem auto',
-                        color: '#c8a261'
+                        margin: '0 auto 0.85rem auto',
+                        color: '#2563eb'
                     }}>
-                        <Lock size={24} />
+                        <Lock size={20} />
                     </div>
-                    <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '600', letterSpacing: '-0.02em' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
                         Set New Password
                     </h2>
-                    <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                    <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.86rem', color: 'var(--text-muted)' }}>
                         Enter your new secure password for your Vidyut account.
                     </p>
                 </div>
@@ -133,17 +133,17 @@ const ResetPasswordModal = ({ onClose, onSuccess }) => {
                         alignItems: 'center',
                         gap: '0.75rem'
                     }}>
-                        <CheckCircle size={48} color="#10b981" />
-                        <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#10b981' }}>Password Updated!</h3>
-                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>
+                        <CheckCircle size={44} color="#059669" />
+                        <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#059669', fontWeight: '700' }}>Password Updated!</h3>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                             Redirecting to your workspace...
                         </p>
                     </div>
                 ) : (
-                    <form onSubmit={handleReset} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <form onSubmit={handleReset} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
                         {/* New Password */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                            <label style={{ color: 'rgba(255, 255, 255, 0.75)', fontSize: '0.85rem', fontWeight: '500' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>
                                 New Password
                             </label>
                             <div style={{ position: 'relative' }}>
@@ -156,11 +156,11 @@ const ResetPasswordModal = ({ onClose, onSuccess }) => {
                                     style={{
                                         padding: '0.75rem 1rem',
                                         paddingRight: '2.5rem',
-                                        borderRadius: '8px',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        background: 'rgba(0, 0, 0, 0.25)',
-                                        color: 'white',
-                                        fontSize: '0.95rem',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border-subtle)',
+                                        background: 'var(--bg-canvas)',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '0.9rem',
                                         outline: 'none',
                                         width: '100%',
                                         boxSizing: 'border-box'
@@ -176,18 +176,18 @@ const ResetPasswordModal = ({ onClose, onSuccess }) => {
                                         transform: 'translateY(-50%)',
                                         background: 'none',
                                         border: 'none',
-                                        color: 'rgba(255, 255, 255, 0.4)',
+                                        color: 'var(--text-muted)',
                                         cursor: 'pointer'
                                     }}
                                 >
-                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                 </button>
                             </div>
                         </div>
 
                         {/* Confirm New Password */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                            <label style={{ color: 'rgba(255, 255, 255, 0.75)', fontSize: '0.85rem', fontWeight: '500' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>
                                 Confirm New Password
                             </label>
                             <input
@@ -198,11 +198,11 @@ const ResetPasswordModal = ({ onClose, onSuccess }) => {
                                 placeholder="••••••••"
                                 style={{
                                     padding: '0.75rem 1rem',
-                                    borderRadius: '8px',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    background: 'rgba(0, 0, 0, 0.25)',
-                                    color: 'white',
-                                    fontSize: '0.95rem',
+                                    borderRadius: '12px',
+                                    border: '1px solid var(--border-subtle)',
+                                    background: 'var(--bg-canvas)',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '0.9rem',
                                     outline: 'none',
                                     width: '100%',
                                     boxSizing: 'border-box'
@@ -212,11 +212,11 @@ const ResetPasswordModal = ({ onClose, onSuccess }) => {
 
                         {error && (
                             <div style={{
-                                padding: '0.6rem 0.9rem',
-                                background: 'rgba(239, 68, 68, 0.12)',
-                                border: '1px solid rgba(239, 68, 68, 0.3)',
-                                borderRadius: '6px',
-                                color: '#f87171',
+                                padding: '0.65rem 0.9rem',
+                                background: '#fef2f2',
+                                border: '1px solid #fee2e2',
+                                borderRadius: '12px',
+                                color: '#dc2626',
                                 fontSize: '0.85rem'
                             }}>
                                 {error}
@@ -226,17 +226,11 @@ const ResetPasswordModal = ({ onClose, onSuccess }) => {
                         <button
                             type="submit"
                             disabled={loading}
+                            className="stitch-btn-pill stitch-btn-pill-primary"
                             style={{
                                 marginTop: '0.5rem',
                                 padding: '0.85rem',
-                                borderRadius: '8px',
-                                border: 'none',
-                                background: loading ? 'rgba(255,255,255,0.4)' : '#ffffff',
-                                color: '#000000',
-                                fontSize: '0.95rem',
-                                fontWeight: '600',
-                                cursor: loading ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s'
+                                width: '100%'
                             }}
                         >
                             {loading ? 'Updating Password...' : 'Save New Password'}

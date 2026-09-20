@@ -1,19 +1,49 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  --bg-primary: #0a0908;       /* Deep warm black from reference image */
-  --bg-secondary: #12100e;     /* Deep warm dark brown-charcoal */
-  --text-primary: #ffffff;
-  --text-secondary: #a29d96;   /* Warm sand/grey from reference image */
-  --accent-blue: #c8a261;      /* Bright warm luxury gold/copper */
-  --accent-glow: rgba(200, 162, 97, 0.3);
-  --glass-bg: rgba(18, 16, 14, 0.85);
-  --glass-border: rgba(200, 162, 97, 0.12); /* Subtle gold glass border */
-  --card-hover: rgba(200, 162, 97, 0.06);
-  --font-heading: 'Lora', Georgia, serif;
-  --font-mono: 'Courier New', Courier, monospace;
-  /* Fallback for tech vibe */
-  --font-body: 'Inter', system-ui, sans-serif;
+  /* Stitch / Wink UI Light Theme Tokens */
+  --bg-canvas: #f4f5f7;
+  --bg-primary: #f4f5f7;
+  --bg-secondary: #ffffff;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-pill-track: #f0f2f5;
+  --bg-hover: #f9fafb;
+  
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  
+  --accent-dark: #18181b;
+  --accent-black: #09090b;
+  --accent-blue: #2563eb;
+  
+  /* Soft Pastel Badge Tokens */
+  --badge-green-bg: #e8f8ee;
+  --badge-green-text: #16a34a;
+  --badge-red-bg: #fef2f2;
+  --badge-red-text: #ef4444;
+  --badge-amber-bg: #fef3c7;
+  --badge-amber-text: #d97706;
+  --badge-blue-bg: #eff6ff;
+  --badge-blue-text: #2563eb;
+  
+  --border-subtle: #eef0f4;
+  --border-default: #e5e7eb;
+  --border-card: rgba(0, 0, 0, 0.04);
+  
+  --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  --card-shadow-hover: 0 10px 25px -4px rgba(0, 0, 0, 0.08), 0 4px 10px -2px rgba(0, 0, 0, 0.03);
+  --modal-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.15), 0 0 1px 1px rgba(0, 0, 0, 0.05);
+
+  --radius-card: 20px;
+  --radius-modal: 24px;
+  --radius-pill: 9999px;
+  --radius-button: 12px;
+
+  --font-heading: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 }
 
 * {
@@ -24,18 +54,18 @@
 
 body {
   font-family: var(--font-body);
-  background-color: var(--bg-primary);
-  background-image:
-    linear-gradient(rgba(2, 2, 2, 0.9), rgba(2, 2, 2, 0.9));
+  background-color: var(--bg-canvas);
   color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--bg-canvas);
 }
 
 button {
@@ -46,6 +76,7 @@ button {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
-  font-weight: 400;
+  font-weight: 700;
   color: var(--text-primary);
+  letter-spacing: -0.025em;
 }

@@ -124,7 +124,7 @@ const ResultsDisplay = ({ data }) => {
     return (
         <div className="results-container">
             <div style={{ position: 'relative', marginBottom: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <h2 className="section-title" style={{ margin: 0 }}>Analysis Report</h2>
+                <h2 className="section-title" style={{ margin: 0, color: '#000000' }}>Analysis Report</h2>
                 <button
                     onClick={handleDownloadPDF}
                     style={{
@@ -133,20 +133,21 @@ const ResultsDisplay = ({ data }) => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
-                        background: '#ffffff',
-                        color: '#000000',
+                        background: '#09090b',
+                        color: '#ffffff',
                         border: 'none',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '8px',
+                        padding: '0.6rem 1.25rem',
+                        borderRadius: '9999px',
                         cursor: 'pointer',
                         fontWeight: '600',
-                        fontSize: '0.9rem',
-                        transition: 'opacity 0.2s'
+                        fontSize: '0.85rem',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
                     }}
-                    onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-                    onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#27272a'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#09090b'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                    <Download size={16} /> Download PDF
+                    <Download size={15} /> Download PDF
                 </button>
             </div>
 
@@ -175,15 +176,15 @@ const ResultsDisplay = ({ data }) => {
                         onClick={() => setIsStatsModalOpen(true)}
                         style={{
                             position: 'absolute', bottom: '10px', right: '10px',
-                            background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)',
+                            background: '#f4f4f5', border: '1px solid #eaeaea', color: '#000000',
                             cursor: 'pointer', padding: '5px', borderRadius: '50%',
                             transition: 'background 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}
                         title="View Transformer Stats"
-                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eaeaea'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f4f4f5'}
                     >
-                        <PieChartIcon size={20} />
+                        <PieChartIcon size={18} />
                     </button>
                 </div>
             </div>
@@ -219,9 +220,9 @@ const ResultsDisplay = ({ data }) => {
                                                     value={inspectionStatus[item.consumer_id] || ""}
                                                     onChange={(e) => handleStatusChange(item.consumer_id, e.target.value)}
                                                     style={{
-                                                        background: 'rgba(0, 0, 0, 0.2)',
-                                                        border: `1px solid ${getStatusColor(inspectionStatus[item.consumer_id])}`,
-                                                        color: inspectionStatus[item.consumer_id] ? getStatusColor(inspectionStatus[item.consumer_id]) : 'rgba(255, 255, 255, 0.7)',
+                                                        background: '#ffffff',
+                                                        border: `1px solid ${inspectionStatus[item.consumer_id] ? getStatusColor(inspectionStatus[item.consumer_id]) : '#eaeaea'}`,
+                                                        color: '#000000',
                                                         padding: '0.4rem 0.8rem',
                                                         borderRadius: '6px',
                                                         fontSize: '0.85rem',

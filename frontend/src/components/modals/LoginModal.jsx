@@ -252,7 +252,7 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
             left: 0,
             width: '100vw',
             height: '100vh',
-            background: 'rgba(5, 7, 15, 0.75)',
+            background: 'rgba(0, 0, 0, 0.4)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
             display: 'flex',
@@ -260,17 +260,15 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
             alignItems: 'center',
             zIndex: 1000
         }}>
-            <div className="modal-content" style={{
-                background: 'var(--glass-bg)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '16px',
+            <div className="stitch-modal-card" style={{
+                background: '#ffffff',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '24px',
                 padding: '2.5rem',
-                width: '450px',
-                boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.02)',
+                width: '460px',
+                maxWidth: '92vw',
                 position: 'relative',
-                animation: 'fade-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                animation: 'fade-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)'
             }}>
                 {/* Close Button */}
                 <button 
@@ -278,32 +276,38 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                     onClick={onClose} 
                     style={{ 
                         position: 'absolute',
-                        top: '1.5rem',
-                        right: '1.5rem',
-                        background: 'rgba(255, 255, 255, 0.05)', 
-                        border: '1px solid rgba(255, 255, 255, 0.08)', 
+                        top: '1.25rem',
+                        right: '1.25rem',
+                        background: 'var(--bg-canvas)', 
+                        border: '1px solid var(--border-subtle)', 
                         borderRadius: '50%',
-                        width: '36px',
-                        height: '36px',
+                        width: '32px',
+                        height: '32px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'rgba(255, 255, 255, 0.7)', 
+                        color: 'var(--text-secondary)', 
                         cursor: 'pointer',
-                        transition: 'all 0.2s'
+                        transition: 'all 0.15s'
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)'; }}
                 >
-                    <X size={18} />
+                    <X size={16} />
                 </button>
 
                 {/* Title */}
-                <div style={{ marginBottom: '2rem' }}>
-                    <h2 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontSize: '1.85rem', fontWeight: '400', color: 'white', letterSpacing: '-0.02em' }}>
+                <div style={{ marginBottom: '1.75rem', textAlign: 'center' }}>
+                    <div style={{
+                        width: '46px', height: '46px', borderRadius: '50%',
+                        background: '#eff6ff', border: '1px solid #dbeafe',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        margin: '0 auto 0.85rem auto', color: '#2563eb'
+                    }}>
+                        <Eye size={20} />
+                    </div>
+                    <h2 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontSize: '1.65rem', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
                         {isSignUp ? 'Admin SignUp' : 'Admin Login'}
                     </h2>
-                    <p style={{ margin: '0.35rem 0 0 0', fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <p style={{ margin: '0.35rem 0 0 0', fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                         {isSignUp ? 'Create your administrator portal account' : 'Sign in to access the administrator panel'}
                     </p>
                 </div>
@@ -311,11 +315,11 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                 {/* Error Banner */}
                 {error && (
                     <div style={{ 
-                        background: 'rgba(239, 68, 68, 0.12)', 
-                        border: '1px solid rgba(239, 68, 68, 0.3)', 
+                        background: '#fef2f2', 
+                        border: '1px solid #fecaca', 
                         borderRadius: '12px', 
                         padding: '0.75rem 1rem', 
-                        color: '#fca5a5', 
+                        color: '#dc2626', 
                         fontSize: '0.85rem', 
                         marginBottom: '1.25rem',
                         lineHeight: '1.4'
@@ -325,11 +329,11 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                 )}
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
                     
                     {/* Email Input */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                        <label style={{ color: 'rgba(255, 255, 255, 0.75)', fontSize: '0.85rem', fontWeight: '500' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                        <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>
                             Email Address
                         </label>
                         <input
@@ -339,23 +343,20 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                             required
                             style={{
                                 padding: '0.75rem 1rem',
-                                borderRadius: '8px',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
-                                background: 'rgba(0, 0, 0, 0.25)',
-                                color: 'white',
-                                fontSize: '0.95rem',
-                                outline: 'none',
-                                transition: 'border-color 0.2s'
+                                borderRadius: '12px',
+                                border: '1px solid var(--border-subtle)',
+                                background: 'var(--bg-canvas)',
+                                color: 'var(--text-primary)',
+                                fontSize: '0.9rem',
+                                outline: 'none'
                             }}
                             placeholder="e.g. admin@vidyut.com"
-                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
-                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
                         />
                     </div>
 
                     {/* Password Input */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                        <label style={{ color: 'rgba(255, 255, 255, 0.75)', fontSize: '0.85rem', fontWeight: '500' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                        <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>
                             Password
                         </label>
                         <div style={{ position: 'relative' }}>
@@ -367,17 +368,15 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                                 style={{
                                     padding: '0.75rem 1rem',
                                     paddingRight: '2.5rem',
-                                    borderRadius: '8px',
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                                    background: 'rgba(0, 0, 0, 0.25)',
-                                    color: 'white',
-                                    fontSize: '0.95rem',
+                                    borderRadius: '12px',
+                                    border: '1px solid var(--border-subtle)',
+                                    background: 'var(--bg-canvas)',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '0.9rem',
                                     outline: 'none',
                                     width: '100%',
-                                    transition: 'border-color 0.2s'
+                                    boxSizing: 'border-box'
                                 }}
-                                onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
-                                onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
                                 placeholder="••••••••"
                             />
                             <button
@@ -390,13 +389,13 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                                     transform: 'translateY(-50%)',
                                     background: 'none',
                                     border: 'none',
-                                    color: 'rgba(255, 255, 255, 0.4)',
+                                    color: 'var(--text-muted)',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center'
                                 }}
                             >
-                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
                         </div>
                         {!isSignUp && (
@@ -408,9 +407,9 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                                     style={{
                                         background: 'none',
                                         border: 'none',
-                                        color: '#c8a261',
+                                        color: '#2563eb',
                                         fontSize: '0.8rem',
-                                        fontWeight: '500',
+                                        fontWeight: '600',
                                         cursor: forgotLoading ? 'not-allowed' : 'pointer',
                                         padding: 0,
                                         opacity: forgotLoading ? 0.6 : 0.9
@@ -425,10 +424,10 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                     {forgotMessage && (
                         <div style={{
                             padding: '0.6rem 0.9rem',
-                            background: 'rgba(16, 185, 129, 0.12)',
-                            border: '1px solid rgba(16, 185, 129, 0.3)',
-                            borderRadius: '6px',
-                            color: '#34d399',
+                            background: '#ecfdf5',
+                            border: '1px solid #a7f3d0',
+                            borderRadius: '12px',
+                            color: '#059669',
                             fontSize: '0.85rem',
                             lineHeight: '1.4'
                         }}>
@@ -440,8 +439,8 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                     {isSignUp && (
                         <>
                             {/* Confirm Password */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                <label style={{ color: 'rgba(255, 255, 255, 0.75)', fontSize: '0.85rem', fontWeight: '500' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>
                                     Confirm Password
                                 </label>
                                 <input
@@ -451,23 +450,20 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                                     required
                                     style={{
                                         padding: '0.75rem 1rem',
-                                        borderRadius: '8px',
-                                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                                        background: 'rgba(0, 0, 0, 0.25)',
-                                        color: 'white',
-                                        fontSize: '0.95rem',
-                                        outline: 'none',
-                                        transition: 'border-color 0.2s'
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border-subtle)',
+                                        background: 'var(--bg-canvas)',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '0.9rem',
+                                        outline: 'none'
                                     }}
                                     placeholder="••••••••"
-                                    onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
-                                    onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
                                 />
                             </div>
 
                             {/* State Dropdown */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                <label style={{ color: 'rgba(255, 255, 255, 0.75)', fontSize: '0.85rem', fontWeight: '500' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>
                                     Select State
                                 </label>
                                 <select
@@ -476,22 +472,19 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                                     required
                                     style={{
                                         padding: '0.75rem 1rem',
-                                        borderRadius: '8px',
-                                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                                        background: 'rgba(18, 16, 14, 0.8)',
-                                        color: selectedState ? 'white' : 'rgba(255, 255, 255, 0.4)',
-                                        fontSize: '0.95rem',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border-subtle)',
+                                        background: 'var(--bg-canvas)',
+                                        color: selectedState ? 'var(--text-primary)' : 'var(--text-muted)',
+                                        fontSize: '0.9rem',
                                         outline: 'none',
                                         cursor: 'pointer',
-                                        width: '100%',
-                                        transition: 'border-color 0.2s'
+                                        width: '100%'
                                     }}
-                                    onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
-                                    onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
                                 >
-                                    <option value="" disabled style={{ color: 'rgba(255,255,255,0.3)' }}>-- Choose State --</option>
+                                    <option value="" disabled>-- Choose State --</option>
                                     {Object.keys(STATES_DISCOMS).map((state) => (
-                                        <option key={state} value={state} style={{ background: '#12100e', color: 'white' }}>
+                                        <option key={state} value={state} style={{ background: '#ffffff', color: '#000000' }}>
                                             {state}
                                         </option>
                                     ))}
@@ -499,8 +492,8 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                             </div>
 
                             {/* DISCOM Dropdown */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                <label style={{ color: 'rgba(255, 255, 255, 0.75)', fontSize: '0.85rem', fontWeight: '500' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>
                                     Select DISCOM
                                 </label>
                                 <select
@@ -510,23 +503,20 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                                     disabled={!selectedState}
                                     style={{
                                         padding: '0.75rem 1rem',
-                                        borderRadius: '8px',
-                                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                                        background: 'rgba(18, 16, 14, 0.8)',
-                                        color: selectedDiscom ? 'white' : 'rgba(255, 255, 255, 0.4)',
-                                        fontSize: '0.95rem',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border-subtle)',
+                                        background: 'var(--bg-canvas)',
+                                        color: selectedDiscom ? 'var(--text-primary)' : 'var(--text-muted)',
+                                        fontSize: '0.9rem',
                                         outline: 'none',
                                         cursor: selectedState ? 'pointer' : 'not-allowed',
                                         opacity: selectedState ? 1 : 0.6,
-                                        width: '100%',
-                                        transition: 'border-color 0.2s'
+                                        width: '100%'
                                     }}
-                                    onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
-                                    onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
                                 >
-                                    <option value="" disabled style={{ color: 'rgba(255,255,255,0.3)' }}>-- Select DISCOM --</option>
+                                    <option value="" disabled>-- Select DISCOM --</option>
                                     {selectedState && STATES_DISCOMS[selectedState].map((discom) => (
-                                        <option key={discom} value={discom} style={{ background: '#12100e', color: 'white' }}>
+                                        <option key={discom} value={discom} style={{ background: '#ffffff', color: '#000000' }}>
                                             {discom}
                                         </option>
                                     ))}
@@ -539,28 +529,19 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                     <button
                         type="submit"
                         disabled={loading}
+                        className="stitch-btn-pill stitch-btn-pill-primary"
                         style={{
-                            marginTop: '1rem',
+                            marginTop: '0.5rem',
                             padding: '0.85rem',
-                            borderRadius: '8px',
-                            border: 'none',
-                            background: '#ffffff',
-                            color: '#000000',
-                            fontSize: '0.95rem',
-                            fontWeight: '600',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            opacity: loading ? 0.7 : 1,
-                            transition: 'all 0.2s'
+                            width: '100%'
                         }}
-                        onMouseOver={(e) => { if (!loading) { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
-                        onMouseOut={(e) => { if (!loading) { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; } }}
                     >
-                        {loading ? 'Processing...' : isSignUp ? 'Continue' : 'Login'}
+                        {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Login to Admin Portal'}
                     </button>
 
                     {/* Toggle Link */}
-                    <div style={{ textAlign: 'center', marginTop: '0.75rem' }}>
-                        <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.4)' }}>
+                    <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                             {isSignUp ? 'Already have an account? ' : 'Or new here? '}
                         </span>
                         <button
@@ -569,9 +550,9 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
                             style={{
                                 background: 'none',
                                 border: 'none',
-                                color: 'var(--accent-blue)',
+                                color: 'var(--text-primary)',
                                 fontSize: '0.85rem',
-                                fontWeight: '600',
+                                fontWeight: '700',
                                 cursor: 'pointer',
                                 padding: 0,
                                 textDecoration: 'underline'

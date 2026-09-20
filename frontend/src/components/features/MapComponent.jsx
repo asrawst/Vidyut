@@ -13,17 +13,16 @@ const BASEMAPS = {
     streets: {
         name: 'Street View',
         icon: '🗺️',
+        base: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        maxZoom: 19
+    },
+    osm: {
+        name: 'Standard OSM',
+        icon: '🧭',
         base: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
-    },
-    dark: {
-        name: 'Dark Matter',
-        icon: '🌙',
-        base: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-        reference: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
-        attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin',
-        maxZoom: 16
     },
     satellite: {
         name: 'Satellite',
@@ -48,7 +47,7 @@ const createPinIcon = (color, isTarget = false, riskType = 'critical') => {
     const html = `
         <div class="custom-map-pin ${isTarget ? 'is-target' : ''}" style="--pin-color: ${color};">
             ${pulseHtml}
-            <div class="pin-head" style="background: ${color}; box-shadow: 0 0 ${isTarget ? '16px' : '8px'} ${color}90, 0 4px 10px rgba(0,0,0,0.5);">
+            <div class="pin-head" style="background: ${color}; box-shadow: 0 0 ${isTarget ? '12px' : '6px'} ${color}80, 0 2px 6px rgba(0,0,0,0.2);">
                 <span class="pin-symbol">${iconSymbol}</span>
             </div>
             <div class="pin-stem" style="border-top-color: ${color};"></div>
@@ -121,7 +120,7 @@ const MapComponent = ({
     height = '100%',
     showControls = true
 }) => {
-    const [basemapKey, setBasemapKey] = useState('streets'); // Default to high-contrast streets for clear visibility
+    const [basemapKey, setBasemapKey] = useState('streets'); // Default to light tiles
     const [copiedId, setCopiedId] = useState(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [fitBoundsTrigger, setFitBoundsTrigger] = useState(0);
@@ -156,13 +155,13 @@ const MapComponent = ({
                 const risk = (item.risk_class || '').toLowerCase();
                 const isSelected = item.consumer_id === focusedConsumerId;
                 
-                let color = '#f59e0b'; // High / Moderate amber
+                let color = '#d97706'; // High / Moderate amber
                 let riskType = 'high';
                 if (risk === 'critical' || risk.includes('crit') || (item.aggregate_risk_score ?? item.risk_score ?? 0) >= 0.8) {
-                    color = '#ef4444'; // Red
+                    color = '#dc2626'; // Red
                     riskType = 'critical';
                 } else if (risk === 'low' || risk === 'normal' || risk.includes('safe') || risk.includes('verif')) {
-                    color = '#10b981'; // Green
+                    color = '#059669'; // Green
                     riskType = 'normal';
                 }
 
@@ -230,11 +229,11 @@ const MapComponent = ({
                 right: isFullscreen ? 0 : 'auto',
                 bottom: isFullscreen ? 0 : 'auto',
                 zIndex: isFullscreen ? 99999 : 1,
-                borderRadius: isFullscreen ? '0' : '14px',
+                borderRadius: isFullscreen ? '0' : '12px',
                 overflow: 'hidden',
-                border: isFullscreen ? 'none' : '1px solid rgba(255,255,255,0.12)',
-                boxShadow: isFullscreen ? 'none' : '0 12px 36px rgba(0,0,0,0.45)',
-                background: '#0d1117'
+                border: isFullscreen ? 'none' : '1px solid #eaeaea',
+                boxShadow: isFullscreen ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+                background: '#f4f4f5'
             }}
         >
             <style>{`
@@ -275,7 +274,7 @@ const MapComponent = ({
                 }
                 .pin-symbol {
                     line-height: 1;
-                    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+                    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
                 }
                 .pin-stem {
                     width: 0;
@@ -292,7 +291,7 @@ const MapComponent = ({
                     bottom: -6px;
                     width: 14px;
                     height: 5px;
-                    background: rgba(0, 0, 0, 0.45);
+                    background: rgba(0, 0, 0, 0.25);
                     border-radius: 50%;
                     filter: blur(1.5px);
                     z-index: 1;
@@ -325,40 +324,38 @@ const MapComponent = ({
                     100% { transform: scale(1.9); opacity: 0; }
                 }
 
-                /* Modern Dark Glassmorphic Popup - Matched to Vidyut Luxury Palette */
+                /* Modern Light Glassmorphic Popup - Vercel Design */
                 .leaflet-popup-close-button {
                     display: none !important;
                 }
                 .leaflet-popup-content-wrapper {
-                    background: rgba(18, 16, 14, 0.96) !important;
-                    backdrop-filter: blur(14px) !important;
-                    -webkit-backdrop-filter: blur(14px) !important;
-                    border: 1px solid rgba(200, 162, 97, 0.35) !important;
-                    border-radius: 14px !important;
-                    box-shadow: 0 20px 45px rgba(0,0,0,0.85), 0 0 20px rgba(200, 162, 97, 0.12) !important;
+                    background: #ffffff !important;
+                    border: 1px solid #eaeaea !important;
+                    border-radius: 10px !important;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.08) !important;
                     padding: 0 !important;
-                    color: #f1f5f9 !important;
+                    color: #000000 !important;
                 }
                 .leaflet-popup-content {
                     margin: 0 !important;
                     line-height: 1.4 !important;
                 }
                 .leaflet-popup-tip {
-                    background: rgba(18, 16, 14, 0.96) !important;
-                    border: 1px solid rgba(200, 162, 97, 0.35) !important;
+                    background: #ffffff !important;
+                    border: 1px solid #eaeaea !important;
                 }
                 .leaflet-container {
                     font-family: inherit !important;
-                    background: #0f0e0c !important;
+                    background: #fafafa !important;
                 }
                 .leaflet-tooltip {
-                    background: rgba(18, 16, 14, 0.96) !important;
-                    border: 1px solid rgba(200, 162, 97, 0.4) !important;
+                    background: #000000 !important;
+                    border: 1px solid #000000 !important;
                     color: #ffffff !important;
-                    font-weight: 600 !important;
+                    font-weight: 500 !important;
                     font-size: 0.78rem !important;
                     border-radius: 6px !important;
-                    box-shadow: 0 4px 16px rgba(0,0,0,0.6) !important;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
                     padding: 3px 8px !important;
                 }
             `}</style>
@@ -384,17 +381,16 @@ const MapComponent = ({
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '0.6rem',
-                        background: 'rgba(18, 16, 14, 0.92)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(200, 162, 97, 0.25)',
+                        background: '#ffffff',
+                        border: '1px solid #eaeaea',
                         borderRadius: '8px',
                         padding: '0.4rem 0.8rem',
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                         fontSize: '0.8rem',
-                        color: '#fff'
+                        color: '#000000'
                     }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: '600' }}>
-                            <Compass size={14} style={{ color: '#c8a261' }} />
+                            <Compass size={14} style={{ color: '#000000' }} />
                             {stats.total} {stats.total === 1 ? 'Location' : 'Locations'}
                         </span>
                         {stats.critical > 0 && (
@@ -402,12 +398,12 @@ const MapComponent = ({
                                 display: 'inline-flex', 
                                 alignItems: 'center', 
                                 gap: '0.25rem',
-                                color: '#ef4444', 
-                                background: 'rgba(239,68,68,0.15)',
-                                border: '1px solid rgba(239,68,68,0.3)',
+                                color: '#dc2626', 
+                                background: '#fef2f2',
+                                border: '1px solid #fee2e2',
                                 padding: '1px 6px',
                                 borderRadius: '4px',
-                                fontWeight: '700',
+                                fontWeight: '600',
                                 fontSize: '0.72rem'
                             }}>
                                 <Zap size={11} /> {stats.critical} Critical
@@ -421,12 +417,11 @@ const MapComponent = ({
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.4rem',
-                        background: 'rgba(18, 16, 14, 0.92)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(200, 162, 97, 0.25)',
+                        background: '#ffffff',
+                        border: '1px solid #eaeaea',
                         borderRadius: '8px',
                         padding: '0.3rem',
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.5)'
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
                     }}>
                         {/* Basemap Switcher Buttons */}
                         {Object.entries(BASEMAPS).map(([key, config]) => (
@@ -435,13 +430,13 @@ const MapComponent = ({
                                 type="button"
                                 onClick={() => setBasemapKey(key)}
                                 style={{
-                                    background: basemapKey === key ? 'rgba(200, 162, 97, 0.25)' : 'transparent',
-                                    border: basemapKey === key ? '1px solid #c8a261' : '1px solid transparent',
-                                    color: basemapKey === key ? '#ffffff' : 'rgba(255,255,255,0.7)',
+                                    background: basemapKey === key ? '#000000' : 'transparent',
+                                    border: 'none',
+                                    color: basemapKey === key ? '#ffffff' : '#666666',
                                     padding: '0.3rem 0.6rem',
                                     borderRadius: '6px',
                                     fontSize: '0.75rem',
-                                    fontWeight: '600',
+                                    fontWeight: '500',
                                     cursor: 'pointer',
                                     display: 'inline-flex',
                                     alignItems: 'center',
@@ -455,7 +450,7 @@ const MapComponent = ({
                             </button>
                         ))}
 
-                        <div style={{ width: '1px', height: '18px', background: 'rgba(200, 162, 97, 0.25)', margin: '0 0.15rem' }} />
+                        <div style={{ width: '1px', height: '18px', background: '#eaeaea', margin: '0 0.15rem' }} />
 
                         {/* Fit Bounds Button */}
                         <button
@@ -463,12 +458,12 @@ const MapComponent = ({
                             onClick={() => setFitBoundsTrigger(prev => prev + 1)}
                             style={{
                                 background: 'transparent',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                color: 'rgba(255,255,255,0.85)',
+                                border: '1px solid #eaeaea',
+                                color: '#000000',
                                 padding: '0.3rem 0.55rem',
                                 borderRadius: '6px',
                                 fontSize: '0.75rem',
-                                fontWeight: '600',
+                                fontWeight: '500',
                                 cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -476,7 +471,7 @@ const MapComponent = ({
                             }}
                             title="Recenter and fit all markers"
                         >
-                            <Navigation size={13} style={{ color: '#c8a261' }} /> Fit All
+                            <Navigation size={13} style={{ color: '#000000' }} /> Fit All
                         </button>
 
                         {/* Fullscreen Button */}
@@ -485,8 +480,8 @@ const MapComponent = ({
                             onClick={toggleFullscreen}
                             style={{
                                 background: 'transparent',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                color: 'rgba(255,255,255,0.85)',
+                                border: '1px solid #eaeaea',
+                                color: '#000000',
                                 padding: '0.3rem 0.45rem',
                                 borderRadius: '6px',
                                 fontSize: '0.75rem',
@@ -509,28 +504,27 @@ const MapComponent = ({
                     bottom: '14px',
                     left: '14px',
                     zIndex: 1000,
-                    background: 'rgba(18, 16, 14, 0.92)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(200, 162, 97, 0.25)',
+                    background: '#ffffff',
+                    border: '1px solid #eaeaea',
                     borderRadius: '8px',
                     padding: '0.45rem 0.75rem',
                     fontSize: '0.72rem',
-                    color: '#e2e8f0',
+                    color: '#111827',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.9rem',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.5)'
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: '#ef4444', display: 'inline-block', boxShadow: '0 0 6px #ef4444' }} />
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} />
                         <span style={{ fontWeight: '500' }}>Critical Theft</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: '#f59e0b', display: 'inline-block', boxShadow: '0 0 6px #f59e0b' }} />
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#d97706', display: 'inline-block' }} />
                         <span style={{ fontWeight: '500' }}>High Suspicion</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: '#10b981', display: 'inline-block', boxShadow: '0 0 6px #10b981' }} />
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#059669', display: 'inline-block' }} />
                         <span style={{ fontWeight: '500' }}>Verified Normal</span>
                     </div>
                 </div>
@@ -598,10 +592,10 @@ const MapComponent = ({
                                     gap: '0.85rem'
                                 }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                                        <span style={{ fontSize: '0.65rem', color: '#c8a261', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>
+                                        <span style={{ fontSize: '0.65rem', color: '#666666', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>
                                             GPS Coordinates
                                         </span>
-                                        <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.01em' }}>
+                                        <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: '700', color: '#000000', letterSpacing: '-0.01em' }}>
                                             {item.lat.toFixed(6)}&deg; N, {item.lng.toFixed(6)}&deg; E
                                         </span>
                                     </div>
@@ -609,9 +603,9 @@ const MapComponent = ({
                                         type="button"
                                         onClick={(e) => handleCopyCoords(e, item.lat, item.lng, item.consumer_id)}
                                         style={{
-                                            background: 'rgba(200, 162, 97, 0.12)',
-                                            border: '1px solid rgba(200, 162, 97, 0.35)',
-                                            color: '#c8a261',
+                                            background: '#f4f4f5',
+                                            border: '1px solid #eaeaea',
+                                            color: '#000000',
                                             cursor: 'pointer',
                                             padding: '0.35rem 0.45rem',
                                             borderRadius: '6px',
@@ -622,7 +616,7 @@ const MapComponent = ({
                                         }}
                                         title="Copy GPS coordinates"
                                     >
-                                        {copiedId === item.consumer_id ? <Check size={14} style={{ color: '#10b981' }} /> : <Copy size={14} />}
+                                        {copiedId === item.consumer_id ? <Check size={14} style={{ color: '#059669' }} /> : <Copy size={14} />}
                                     </button>
                                 </div>
                             </Popup>

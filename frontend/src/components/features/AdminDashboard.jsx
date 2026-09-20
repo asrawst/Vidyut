@@ -4,7 +4,8 @@ import {
     User, ListCollapse, Ban, TrendingUp, Calendar, AlertTriangle, 
     History as HistoryIcon, Settings as SettingsIcon, UploadCloud, 
     Download, RefreshCw, Layers, ShieldAlert, Sparkles, MapPin, 
-    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Zap, Lock, RotateCcw 
+    CheckCircle, UserCheck, LogOut, CheckSquare, Plus, Mail, Building2, Map, Menu, X, Edit2, Trash2, Activity, Zap, Lock, RotateCcw,
+    Search, ArrowUpRight, TrendingDown, Bell, ChevronRight
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LineChart, Line } from 'recharts';
 import MapComponent from './MapComponent';
@@ -63,6 +64,10 @@ const AdminDashboard = ({
 }) => {
     const navigate = useNavigate();
     const { tab: urlTab } = useParams();
+
+    const [chartPeriod, setChartPeriod] = useState('Month');
+    const [sidebarSearch, setSidebarSearch] = useState('');
+    const [bannerVisible, setBannerVisible] = useState(true);
 
     const [activeTab, setActiveTab] = useState(() => {
         if (urlTab && SLUG_TO_TAB[urlTab.toLowerCase()]) {
@@ -1298,100 +1303,185 @@ const AdminDashboard = ({
                     <button 
                         className="mobile-sidebar-close-btn"
                         onClick={() => setIsSidebarOpen(false)}
-                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                        style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
                     >
                         <X size={20} />
                     </button>
                 </div>
 
+                {/* Stitch Sidebar Search Bar */}
+                <div className="stitch-sidebar-search">
+                    <Search size={14} />
+                    <input 
+                        type="text" 
+                        placeholder="Search menu..." 
+                        value={sidebarSearch}
+                        onChange={(e) => setSidebarSearch(e.target.value)}
+                    />
+                    <kbd>⌘ K</kbd>
+                </div>
+
                 <nav className="sidebar-nav">
-                    <button 
-                        className={`nav-item ${activeTab === 'Overview' ? 'active' : ''}`}
-                        onClick={() => switchTab('Overview')}
-                    >
-                        <Layers size={18} /> Overview
-                    </button>
-                    <button 
-                        className={`nav-item ${activeTab === 'Account Details' ? 'active' : ''}`}
-                        onClick={() => switchTab('Account Details')}
-                    >
-                        <User size={18} /> Account Details
-                    </button>
-                    <button 
-                        className={`nav-item ${activeTab === 'Transformer List' ? 'active' : ''}`}
-                        onClick={() => switchTab('Transformer List')}
-                    >
-                        <ListCollapse size={18} /> Transformer List
-                    </button>
-                    <button 
-                        className={`nav-item ${activeTab === 'Blacklisted Consumer' ? 'active' : ''}`}
-                        onClick={() => switchTab('Blacklisted Consumer')}
-                    >
-                        <Ban size={18} /> Blacklisted Consumer
-                    </button>
-                    <button 
-                        className={`nav-item ${activeTab === 'Loss Recovery' ? 'active' : ''}`}
-                        onClick={() => switchTab('Loss Recovery')}
-                    >
-                        <TrendingUp size={18} /> Loss Recovery
-                    </button>
-                    <button 
-                        className={`nav-item ${activeTab === 'Inspection' ? 'active' : ''}`}
-                        onClick={() => switchTab('Inspection')}
-                    >
-                        <Calendar size={18} /> Inspection
-                    </button>
-                    <button 
-                        className={`nav-item ${activeTab === 'Inspector List' ? 'active' : ''}`}
-                        onClick={() => switchTab('Inspector List')}
-                    >
-                        <UserCheck size={18} /> Inspector List
-                    </button>
-                    <button 
-                        className={`nav-item ${activeTab === 'Priority' ? 'active' : ''}`}
-                        onClick={() => switchTab('Priority')}
-                    >
-                        <ShieldAlert size={18} /> Priority
-                    </button>
-                    <button 
-                        className={`nav-item ${activeTab === 'History' ? 'active' : ''}`}
-                        onClick={() => switchTab('History')}
-                    >
-                        <HistoryIcon size={18} /> History
-                    </button>
-                    <button 
-                        className={`nav-item ${activeTab === 'Settings' ? 'active' : ''}`}
-                        onClick={() => switchTab('Settings')}
-                    >
-                        <SettingsIcon size={18} /> Settings
-                    </button>
+                    {/* CORE CATEGORY */}
+                    {(!sidebarSearch || 'overview'.includes(sidebarSearch.toLowerCase()) || 'account details'.includes(sidebarSearch.toLowerCase())) && (
+                        <div className="sidebar-category-header">Core Management</div>
+                    )}
+                    {(!sidebarSearch || 'overview'.includes(sidebarSearch.toLowerCase())) && (
+                        <button 
+                            className={`nav-item ${activeTab === 'Overview' ? 'active' : ''}`}
+                            onClick={() => switchTab('Overview')}
+                        >
+                            <Layers size={18} /> Overview
+                        </button>
+                    )}
+                    {(!sidebarSearch || 'account details'.includes(sidebarSearch.toLowerCase())) && (
+                        <button 
+                            className={`nav-item ${activeTab === 'Account Details' ? 'active' : ''}`}
+                            onClick={() => switchTab('Account Details')}
+                        >
+                            <User size={18} /> Account Details
+                        </button>
+                    )}
+
+                    {/* GRID INTELLIGENCE CATEGORY */}
+                    {(!sidebarSearch || 'transformer list'.includes(sidebarSearch.toLowerCase()) || 'priority'.includes(sidebarSearch.toLowerCase()) || 'loss recovery'.includes(sidebarSearch.toLowerCase())) && (
+                        <div className="sidebar-category-header">Grid Intelligence</div>
+                    )}
+                    {(!sidebarSearch || 'transformer list'.includes(sidebarSearch.toLowerCase())) && (
+                        <button 
+                            className={`nav-item ${activeTab === 'Transformer List' ? 'active' : ''}`}
+                            onClick={() => switchTab('Transformer List')}
+                        >
+                            <ListCollapse size={18} /> Transformer List
+                        </button>
+                    )}
+                    {(!sidebarSearch || 'priority'.includes(sidebarSearch.toLowerCase())) && (
+                        <button 
+                            className={`nav-item ${activeTab === 'Priority' ? 'active' : ''}`}
+                            onClick={() => switchTab('Priority')}
+                        >
+                            <ShieldAlert size={18} /> Priority
+                        </button>
+                    )}
+                    {(!sidebarSearch || 'loss recovery'.includes(sidebarSearch.toLowerCase())) && (
+                        <button 
+                            className={`nav-item ${activeTab === 'Loss Recovery' ? 'active' : ''}`}
+                            onClick={() => switchTab('Loss Recovery')}
+                        >
+                            <TrendingUp size={18} /> Loss Recovery
+                        </button>
+                    )}
+
+                    {/* FIELD AUDITS CATEGORY */}
+                    {(!sidebarSearch || 'inspection'.includes(sidebarSearch.toLowerCase()) || 'inspector list'.includes(sidebarSearch.toLowerCase()) || 'blacklisted consumer'.includes(sidebarSearch.toLowerCase())) && (
+                        <div className="sidebar-category-header">Field Operations</div>
+                    )}
+                    {(!sidebarSearch || 'inspection'.includes(sidebarSearch.toLowerCase())) && (
+                        <button 
+                            className={`nav-item ${activeTab === 'Inspection' ? 'active' : ''}`}
+                            onClick={() => switchTab('Inspection')}
+                        >
+                            <Calendar size={18} /> Inspection
+                        </button>
+                    )}
+                    {(!sidebarSearch || 'inspector list'.includes(sidebarSearch.toLowerCase())) && (
+                        <button 
+                            className={`nav-item ${activeTab === 'Inspector List' ? 'active' : ''}`}
+                            onClick={() => switchTab('Inspector List')}
+                        >
+                            <UserCheck size={18} /> Inspector List
+                        </button>
+                    )}
+                    {(!sidebarSearch || 'blacklisted consumer'.includes(sidebarSearch.toLowerCase())) && (
+                        <button 
+                            className={`nav-item ${activeTab === 'Blacklisted Consumer' ? 'active' : ''}`}
+                            onClick={() => switchTab('Blacklisted Consumer')}
+                        >
+                            <Ban size={18} /> Blacklisted Consumer
+                        </button>
+                    )}
+
+                    {/* SYSTEM CATEGORY */}
+                    {(!sidebarSearch || 'history'.includes(sidebarSearch.toLowerCase()) || 'settings'.includes(sidebarSearch.toLowerCase())) && (
+                        <div className="sidebar-category-header">System</div>
+                    )}
+                    {(!sidebarSearch || 'history'.includes(sidebarSearch.toLowerCase())) && (
+                        <button 
+                            className={`nav-item ${activeTab === 'History' ? 'active' : ''}`}
+                            onClick={() => switchTab('History')}
+                        >
+                            <HistoryIcon size={18} /> History
+                        </button>
+                    )}
+                    {(!sidebarSearch || 'settings'.includes(sidebarSearch.toLowerCase())) && (
+                        <button 
+                            className={`nav-item ${activeTab === 'Settings' ? 'active' : ''}`}
+                            onClick={() => switchTab('Settings')}
+                        >
+                            <SettingsIcon size={18} /> Settings
+                        </button>
+                    )}
                 </nav>
 
                 <div className="sidebar-footer">
-                    <button className="logout-btn" onClick={onLogout}>
-                        <LogOut size={16} /> Sign Out
-                    </button>
+                    <div className="sidebar-profile-card">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                            <div style={{
+                                width: '34px', height: '34px', borderRadius: '50%',
+                                background: '#18181b', color: '#ffffff', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.8rem'
+                            }}>
+                                {user?.email ? user.email.substring(0, 2).toUpperCase() : 'AD'}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                <span style={{ fontSize: '0.825rem', fontWeight: '600', color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>
+                                    {user?.email?.split('@')[0] || 'Administrator'}
+                                </span>
+                                <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>DISCOM Admin</span>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={onLogout}
+                            title="Sign Out"
+                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                        >
+                            <LogOut size={16} />
+                        </button>
+                    </div>
                 </div>
             </aside>
 
             {/* Main Content Area */}
             <main className="dashboard-main">
                 <header className="dashboard-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                         <button 
                             className="mobile-sidebar-hamburger"
                             onClick={() => setIsSidebarOpen(true)}
-                            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
+                            style={{ background: 'none', border: 'none', color: '#111827', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
                         >
                             <Menu size={22} />
                         </button>
-                        <h1 className="header-title">{activeTab}</h1>
+                        <div>
+                            <h1 className="header-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                Hello, {user?.discom ? user.discom.split(' ')[0] : 'Orbix'}! 👋
+                            </h1>
+                            <p style={{ margin: '2px 0 0 0', fontSize: '0.825rem', color: '#6b7280' }}>
+                                Real-time grid intelligence and theft mitigation telemetry.
+                            </p>
+                        </div>
                     </div>
                     <div className="header-meta" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <span className="header-role-badge">Admin Workspace</span>
-                        <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
-                            Logged in as: <strong style={{ color: 'white' }}>{user?.email}</strong>
-                        </div>
+                        <button 
+                            className="stitch-btn-pill" 
+                            style={{ width: 'auto', padding: '0.55rem 1.15rem', fontSize: '0.825rem', display: 'inline-flex', gap: '0.4rem' }}
+                            onClick={() => switchTab('Priority')}
+                        >
+                            <Zap size={14} /> Central Intelligence
+                        </button>
+                        <span className="header-role-badge">
+                            {user?.state || 'Admin Node'}
+                        </span>
                     </div>
                 </header>
 
@@ -1399,202 +1489,360 @@ const AdminDashboard = ({
                     {/* Render panels dynamically based on active tab */}
                     {activeTab === 'Overview' && (
                         <div className="dashboard-panel">
-                            {/* Overview Header & Reset Action */}
-                            <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: '1.25rem',
-                                flexWrap: 'wrap',
-                                gap: '0.75rem',
-                                background: 'rgba(20, 18, 15, 0.4)',
-                                border: '1px solid rgba(255, 255, 255, 0.06)',
-                                borderRadius: '12px',
-                                padding: '0.85rem 1.25rem'
-                            }}>
-                                <div>
-                                    <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '500', color: '#ffffff' }}>
-                                        Executive Telemetry & Grid Overview
-                                    </h2>
-                                    <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
-                                        Aggregated theft analytics, transformer anomaly mapping, and loss telemetry
-                                    </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={handleResetOverview}
-                                    style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '0.4rem',
-                                        background: 'rgba(239, 68, 68, 0.1)',
-                                        border: '1px solid rgba(239, 68, 68, 0.3)',
-                                        color: '#ef4444',
-                                        padding: '0.4rem 0.85rem',
-                                        borderRadius: '8px',
-                                        fontSize: '0.8rem',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }}
-                                    title="Reset all graphs, charts, and loaded telemetry to default"
-                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-                                >
-                                    <RotateCcw size={13} /> Reset Graphs & Charts
-                                </button>
-                            </div>
-
-                            {/* Visualizations: Pie Chart and Bar Graphs */}
-                            {result ? (
-                                <div className="charts-grid">
-                                    <div className="chart-card">
-                                        <h3>Risk Distribution</h3>
-                                        <div className="chart-container-inner">
-                                            <ResponsiveContainer width="100%" height={260}>
-                                                <PieChart>
-                                                    <Pie
-                                                        data={chartData.pie}
-                                                        cx="50%"
-                                                        cy="50%"
-                                                        innerRadius={60}
-                                                        outerRadius={90}
-                                                        paddingAngle={4}
-                                                        dataKey="value"
-                                                    >
-                                                        {chartData.pie.map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={entry.color} />
-                                                        ))}
-                                                    </Pie>
-                                                    <Tooltip 
-                                                        contentStyle={{ 
-                                                            background: 'rgba(18, 16, 14, 0.95)', 
-                                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
-                                                            borderRadius: '8px', 
-                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
-                                                            padding: '0.5rem 0.75rem' 
-                                                        }}
-                                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
-                                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
-                                                    />
-                                                    <Legend wrapperStyle={{ fontSize: '0.8rem', marginTop: '10px' }} />
-                                                </PieChart>
-                                            </ResponsiveContainer>
+                            {/* Stitch Notice Callout Banner */}
+                            {bannerVisible && (
+                                <div className="stitch-notice-banner">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                                        <div style={{
+                                            width: '38px', height: '38px', borderRadius: '12px',
+                                            background: '#f4f5f7', display: 'flex', alignItems: 'center',
+                                            justifyContent: 'center', color: '#18181b', flexShrink: 0
+                                        }}>
+                                            <Sparkles size={18} />
                                         </div>
-                                    </div>
-                                    <div className="chart-card">
-                                        <h3>Anomalies by Transformer</h3>
-                                        <div className="chart-container-inner">
-                                            <ResponsiveContainer width="100%" height={260}>
-                                                <BarChart data={chartData.bar}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" style={{ fontSize: '0.75rem' }} />
-                                                    <YAxis stroke="rgba(255,255,255,0.5)" style={{ fontSize: '0.75rem' }} />
-                                                    <Tooltip 
-                                                        cursor={{ fill: 'transparent' }}
-                                                        contentStyle={{ 
-                                                            background: 'rgba(18, 16, 14, 0.95)', 
-                                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
-                                                            borderRadius: '8px', 
-                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
-                                                            padding: '0.5rem 0.75rem' 
-                                                        }}
-                                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
-                                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
-                                                    />
-                                                    <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
-                                                    <Bar dataKey="critical" name="Critical" fill="#ef4444" stackId="a" />
-                                                    <Bar dataKey="high" name="High Risk" fill="#f97316" stackId="a" />
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="charts-grid">
-                                    {/* Pre-upload Mock Visualizations - Defaulting to 0 */}
-                                    <div className="chart-card">
-                                        <h3>Risk Distribution</h3>
-                                        <div className="chart-container-inner" style={{ position: 'relative' }}>
-                                            <div style={{ position: 'absolute', top: '45%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none', textAlign: 'center' }}>
-                                                No Data Loaded
+                                        <div>
+                                            <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#111827' }}>
+                                                Upgrade telemetry pipelines to auto-sync with edge smart transformers
                                             </div>
-                                            <ResponsiveContainer width="100%" height={260}>
-                                                <PieChart>
-                                                    <Pie
-                                                        data={[
-                                                            { name: 'Critical Risk', value: 0, color: '#ef4444' },
-                                                            { name: 'High Risk', value: 0, color: '#f97316' },
-                                                            { name: 'Normal', value: 0, color: '#10b981' }
-                                                        ]}
-                                                        cx="50%"
-                                                        cy="50%"
-                                                        innerRadius={60}
-                                                        outerRadius={90}
-                                                        paddingAngle={4}
-                                                        dataKey="value"
-                                                    >
-                                                        {[
-                                                            { color: '#ef4444' },
-                                                            { color: '#f97316' },
-                                                            { color: '#10b981' }
-                                                        ].map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={entry.color} />
-                                                        ))}
-                                                    </Pie>
-                                                    <Tooltip 
-                                                        contentStyle={{ 
-                                                            background: 'rgba(18, 16, 14, 0.95)', 
-                                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
-                                                            borderRadius: '8px', 
-                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
-                                                            padding: '0.5rem 0.75rem' 
-                                                        }}
-                                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
-                                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
-                                                    />
-                                                    <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
-                                                </PieChart>
-                                            </ResponsiveContainer>
+                                            <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '2px' }}>
+                                                Automated theft loss calculation and rapid field auditor dispatching are currently active.
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="chart-card">
-                                        <h3>Transformer Loading & Risk</h3>
-                                        <div className="chart-container-inner" style={{ position: 'relative' }}>
-                                            <div style={{ position: 'absolute', top: '45%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none', textAlign: 'center' }}>
-                                                No Data Loaded
-                                            </div>
-                                            <ResponsiveContainer width="100%" height={260}>
-                                                <BarChart data={[
-                                                    { name: 'TR-101', critical: 0, high: 0 },
-                                                    { name: 'TR-102', critical: 0, high: 0 },
-                                                    { name: 'TR-103', critical: 0, high: 0 },
-                                                    { name: 'TR-104', critical: 0, high: 0 }
-                                                ]}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" style={{ fontSize: '0.75rem' }} />
-                                                    <YAxis stroke="rgba(255,255,255,0.5)" style={{ fontSize: '0.75rem' }} />
-                                                    <Tooltip 
-                                                        cursor={{ fill: 'transparent' }}
-                                                        contentStyle={{ 
-                                                            background: 'rgba(18, 16, 14, 0.95)', 
-                                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
-                                                            borderRadius: '8px', 
-                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
-                                                            padding: '0.5rem 0.75rem' 
-                                                        }}
-                                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
-                                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
-                                                    />
-                                                    <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
-                                                    <Bar dataKey="critical" name="Critical" fill="#ef4444" stackId="a" />
-                                                    <Bar dataKey="high" name="High Risk" fill="#f97316" stackId="a" />
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <button 
+                                            onClick={() => {
+                                                const uploadEl = document.querySelector('.dashboard-upload');
+                                                if (uploadEl) {
+                                                    uploadEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                }
+                                            }}
+                                            style={{
+                                                background: '#18181b', color: '#ffffff', border: 'none',
+                                                borderRadius: '9999px', padding: '0.5rem 1.15rem',
+                                                fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer',
+                                                whiteSpace: 'nowrap'
+                                            }}
+                                        >
+                                            Explore Dataset
+                                        </button>
+                                        <button 
+                                            onClick={() => setBannerVisible(false)}
+                                            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: '4px' }}
+                                        >
+                                            <X size={16} />
+                                        </button>
                                     </div>
                                 </div>
                             )}
+
+                            {/* Stitch 4-Card Overview Performance Grid */}
+                            <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: '#111827', letterSpacing: '-0.02em' }}>
+                                        Overview performance
+                                    </h2>
+                                    <button
+                                        type="button"
+                                        onClick={handleResetOverview}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '0.4rem',
+                                            background: '#fef2f2',
+                                            border: '1px solid #fee2e2',
+                                            color: '#ef4444',
+                                            padding: '0.4rem 0.85rem',
+                                            borderRadius: '9999px',
+                                            fontSize: '0.78rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        title="Reset all graphs, charts, and loaded telemetry to default"
+                                    >
+                                        <RotateCcw size={13} /> Reset Graphs & Charts
+                                    </button>
+                                </div>
+
+                                <div className="overview-performance-grid">
+                                    {/* 1. Total Consumers */}
+                                    <div className="performance-card">
+                                        <div className="performance-card-top">
+                                            <span className="performance-card-title">Total Consumers</span>
+                                            <span className={`stat-chip ${result ? 'positive' : ''}`} style={{ background: result ? '#ecfdf5' : '#f4f4f5', color: result ? '#10b981' : '#71717a' }}>
+                                                {result ? (
+                                                    <><ArrowUpRight size={12} /> +{(result.summary?.total_consumers || result.results?.length || result.anomalies?.length || 0).toLocaleString()}</>
+                                                ) : (
+                                                    '0 Ingested'
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="performance-card-value">
+                                            {result 
+                                                ? (result.summary?.total_consumers || result.results?.length || result.anomalies?.length || 0).toLocaleString()
+                                                : '0'
+                                            }
+                                        </div>
+                                        <div className="performance-card-sub">
+                                            {result ? (selectedFile?.name ? `Dataset: ${selectedFile.name}` : 'Live telemetry processed') : 'Awaiting dataset upload'}
+                                        </div>
+                                    </div>
+
+                                    {/* 2. Active Feeders */}
+                                    <div className="performance-card">
+                                        <div className="performance-card-top">
+                                            <span className="performance-card-title">Active Feeders</span>
+                                            <span className={`stat-chip ${result ? 'positive' : ''}`} style={{ background: result ? '#ecfdf5' : '#f4f4f5', color: result ? '#10b981' : '#71717a' }}>
+                                                {result ? (
+                                                    <><ArrowUpRight size={12} /> {((result.transformers_at_risk?.length) || (new Set((result.results || result.anomalies || []).map(r => r.transformer_id).filter(Boolean)).size) || (result.summary?.total_transformers || 0))} Nodes</>
+                                                ) : (
+                                                    '0 Active'
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="performance-card-value">
+                                            {result ? (
+                                                ((result.transformers_at_risk?.length) || (new Set((result.results || result.anomalies || []).map(r => r.transformer_id).filter(Boolean)).size) || (result.summary?.total_transformers || 0)).toLocaleString()
+                                            ) : (
+                                                '0'
+                                            )}
+                                        </div>
+                                        <div className="performance-card-sub">
+                                            {result ? 'Monitored feeder units' : 'Awaiting dataset upload'}
+                                        </div>
+                                    </div>
+
+                                    {/* 3. Critical Anomalies */}
+                                    <div className="performance-card">
+                                        <div className="performance-card-top">
+                                            <span className="performance-card-title">Critical Anomalies</span>
+                                            {result ? (
+                                                <span className={`stat-chip ${(result.summary?.critical_cases || (result.anomalies || []).filter(a => (a.risk_class || '').toLowerCase().includes('crit')).length) > 0 ? 'negative' : 'positive'}`}>
+                                                    {(result.summary?.critical_cases || (result.anomalies || []).filter(a => (a.risk_class || '').toLowerCase().includes('crit')).length) > 0 ? (
+                                                        <><TrendingDown size={12} /> Alert</>
+                                                    ) : (
+                                                        <><ArrowUpRight size={12} /> Nominal</>
+                                                    )}
+                                                </span>
+                                            ) : (
+                                                <span className="stat-chip" style={{ background: '#f4f4f5', color: '#71717a' }}>
+                                                    0 Flagged
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="performance-card-value">
+                                            {result ? (
+                                                (result.summary?.critical_cases ?? (result.anomalies || []).filter(a => (a.risk_class || '').toLowerCase().includes('crit')).length ?? 0).toLocaleString()
+                                            ) : (
+                                                '0'
+                                            )}
+                                        </div>
+                                        <div className="performance-card-sub">
+                                            {result ? 'Immediate field action' : 'Awaiting dataset upload'}
+                                        </div>
+                                    </div>
+
+                                    {/* 4. Grid Efficiency */}
+                                    <div className="performance-card">
+                                        <div className="performance-card-top">
+                                            <span className="performance-card-title">Grid Efficiency</span>
+                                            <span className={`stat-chip ${result ? 'positive' : ''}`} style={{ background: result ? '#ecfdf5' : '#f4f4f5', color: result ? '#10b981' : '#71717a' }}>
+                                                {result ? (
+                                                    <><ArrowUpRight size={12} /> Index</>
+                                                ) : (
+                                                    '0% Index'
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="performance-card-value">
+                                            {result?.summary?.grid_health_score !== undefined 
+                                                ? `${result.summary.grid_health_score}%` 
+                                                : (result ? '80%' : '0%')
+                                            }
+                                        </div>
+                                        <div className="performance-card-sub">
+                                            {result ? 'Overall system integrity' : 'Awaiting dataset upload'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Visualizations & Segmented Period Control */}
+                            <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '700', color: '#111827', letterSpacing: '-0.01em' }}>
+                                            Telemetry & Load Analytics
+                                        </h3>
+                                        <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: '#6b7280' }}>
+                                            Comparative risk class distribution and transformer load telemetry.
+                                        </p>
+                                    </div>
+
+                                    {/* Stitch Segmented Period Switcher */}
+                                    <div className="stitch-segmented-control">
+                                        {['Day', 'Week', 'Month', 'Year'].map((period) => (
+                                            <button
+                                                key={period}
+                                                className={`stitch-segment-btn ${chartPeriod === period ? 'active' : ''}`}
+                                                onClick={() => setChartPeriod(period)}
+                                            >
+                                                {period}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {result ? (
+                                    <div className="charts-grid">
+                                        <div className="chart-card">
+                                            <h3>Risk Distribution</h3>
+                                            <div className="chart-container-inner">
+                                                <ResponsiveContainer width="100%" height={260}>
+                                                    <PieChart>
+                                                        <Pie
+                                                            data={chartData.pie}
+                                                            cx="50%"
+                                                            cy="50%"
+                                                            innerRadius={60}
+                                                            outerRadius={90}
+                                                            paddingAngle={4}
+                                                            dataKey="value"
+                                                        >
+                                                            {chartData.pie.map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                                            ))}
+                                                        </Pie>
+                                                        <Tooltip 
+                                                            contentStyle={{ 
+                                                                background: '#ffffff', 
+                                                                border: '1px solid rgba(0,0,0,0.06)', 
+                                                                borderRadius: '12px', 
+                                                                boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                                                                padding: '0.6rem 0.85rem' 
+                                                            }}
+                                                            itemStyle={{ color: '#111827', fontWeight: '600', fontSize: '0.85rem' }}
+                                                            labelStyle={{ color: '#6b7280', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                        />
+                                                        <Legend wrapperStyle={{ fontSize: '0.8rem', marginTop: '10px' }} />
+                                                    </PieChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+                                        <div className="chart-card">
+                                            <h3>Anomalies by Transformer</h3>
+                                            <div className="chart-container-inner">
+                                                <ResponsiveContainer width="100%" height={260}>
+                                                    <BarChart data={chartData.bar}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                                                        <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '0.75rem' }} />
+                                                        <YAxis stroke="#9ca3af" style={{ fontSize: '0.75rem' }} />
+                                                        <Tooltip 
+                                                            cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                                                            contentStyle={{ 
+                                                                background: '#ffffff', 
+                                                                border: '1px solid rgba(0,0,0,0.06)', 
+                                                                borderRadius: '12px', 
+                                                                boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                                                                padding: '0.6rem 0.85rem' 
+                                                            }}
+                                                            itemStyle={{ color: '#111827', fontWeight: '600', fontSize: '0.85rem' }}
+                                                            labelStyle={{ color: '#6b7280', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                        />
+                                                        <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
+                                                        <Bar dataKey="critical" name="Critical" fill="#ef4444" stackId="a" radius={[4, 4, 0, 0]} />
+                                                        <Bar dataKey="high" name="High Risk" fill="#f97316" stackId="a" radius={[4, 4, 0, 0]} />
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="charts-grid">
+                                        <div className="chart-card">
+                                            <h3>Risk Distribution</h3>
+                                            <div className="chart-container-inner" style={{ position: 'relative' }}>
+                                                <div style={{ position: 'absolute', top: '45%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '0.85rem', color: '#9ca3af', pointerEvents: 'none', textAlign: 'center' }}>
+                                                    No Data Loaded
+                                                </div>
+                                                <ResponsiveContainer width="100%" height={260}>
+                                                    <PieChart>
+                                                        <Pie
+                                                            data={[
+                                                                { name: 'Critical Risk', value: 0, color: '#ef4444' },
+                                                                { name: 'High Risk', value: 0, color: '#f97316' },
+                                                                { name: 'Normal', value: 0, color: '#10b981' }
+                                                            ]}
+                                                            cx="50%"
+                                                            cy="50%"
+                                                            innerRadius={60}
+                                                            outerRadius={90}
+                                                            paddingAngle={4}
+                                                            dataKey="value"
+                                                        >
+                                                            {[
+                                                                { color: '#ef4444' },
+                                                                { color: '#f97316' },
+                                                                { color: '#10b981' }
+                                                            ].map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                                            ))}
+                                                        </Pie>
+                                                        <Tooltip 
+                                                            contentStyle={{ 
+                                                                background: '#ffffff', 
+                                                                border: '1px solid rgba(0,0,0,0.06)', 
+                                                                borderRadius: '12px', 
+                                                                boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                                                                padding: '0.6rem 0.85rem' 
+                                                            }}
+                                                            itemStyle={{ color: '#111827', fontWeight: '600', fontSize: '0.85rem' }}
+                                                            labelStyle={{ color: '#6b7280', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                        />
+                                                        <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
+                                                    </PieChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+                                        <div className="chart-card">
+                                            <h3>Transformer Loading & Risk</h3>
+                                            <div className="chart-container-inner" style={{ position: 'relative' }}>
+                                                <div style={{ position: 'absolute', top: '45%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '0.85rem', color: '#9ca3af', pointerEvents: 'none', textAlign: 'center' }}>
+                                                    No Data Loaded
+                                                </div>
+                                                <ResponsiveContainer width="100%" height={260}>
+                                                    <BarChart data={[
+                                                        { name: 'TR-101', critical: 0, high: 0 },
+                                                        { name: 'TR-102', critical: 0, high: 0 },
+                                                        { name: 'TR-103', critical: 0, high: 0 },
+                                                        { name: 'TR-104', critical: 0, high: 0 }
+                                                    ]}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                                                        <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '0.75rem' }} />
+                                                        <YAxis stroke="#9ca3af" style={{ fontSize: '0.75rem' }} />
+                                                        <Tooltip 
+                                                            cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                                                            contentStyle={{ 
+                                                                background: '#ffffff', 
+                                                                border: '1px solid rgba(0,0,0,0.06)', 
+                                                                borderRadius: '12px', 
+                                                                boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                                                                padding: '0.6rem 0.85rem' 
+                                                            }}
+                                                            itemStyle={{ color: '#111827', fontWeight: '600', fontSize: '0.85rem' }}
+                                                            labelStyle={{ color: '#6b7280', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                        />
+                                                        <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
+                                                        <Bar dataKey="critical" name="Critical" fill="#ef4444" stackId="a" radius={[4, 4, 0, 0]} />
+                                                        <Bar dataKey="high" name="High Risk" fill="#f97316" stackId="a" radius={[4, 4, 0, 0]} />
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Dashboard Upload Dataset Section */}
                             <section className="dashboard-upload"
@@ -1611,12 +1859,12 @@ const AdminDashboard = ({
                                     <div 
                                         onClick={() => fileInputRef.current?.click()}
                                         style={{
-                                            border: '2px dashed rgba(255, 255, 255, 0.1)',
-                                            borderRadius: '8px',
-                                            padding: '1.5rem',
+                                            border: '2px dashed #e5e7eb',
+                                            borderRadius: '16px',
+                                            padding: '1.75rem',
                                             cursor: 'pointer',
-                                            background: dragActive ? 'rgba(200, 162, 97, 0.05)' : 'rgba(0, 0, 0, 0.2)',
-                                            borderColor: dragActive ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.1)',
+                                            background: dragActive ? '#f8fafc' : '#ffffff',
+                                            borderColor: dragActive ? '#18181b' : '#e5e7eb',
                                             transition: 'all 0.2s',
                                             display: 'flex',
                                             flexDirection: 'column',
@@ -1625,11 +1873,11 @@ const AdminDashboard = ({
                                             justifyContent: 'center'
                                         }}
                                     >
-                                        <UploadCloud size={32} style={{ color: 'var(--accent-blue)' }} />
-                                        <span style={{ fontSize: '0.9rem', color: '#fff', fontWeight: '500' }}>
+                                        <UploadCloud size={34} style={{ color: '#18181b' }} />
+                                        <span style={{ fontSize: '0.925rem', color: '#111827', fontWeight: '600' }}>
                                             {selectedFile ? selectedFile.name : 'Choose File or Drop Here'}
                                         </span>
-                                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                                        <span style={{ fontSize: '0.78rem', color: '#9ca3af' }}>
                                             CSV file format required
                                         </span>
                                         <input 
@@ -1645,17 +1893,19 @@ const AdminDashboard = ({
                                             onClick={handleFetch}
                                             disabled={loading || !selectedFile}
                                             style={{
-                                                padding: '0.85rem 2.2rem',
-                                                borderRadius: '8px',
+                                                padding: '0.9rem 2.5rem',
+                                                borderRadius: '9999px',
                                                 border: 'none',
-                                                background: selectedFile ? '#ffffff' : 'rgba(255,255,255,0.05)',
-                                                color: selectedFile ? '#000000' : 'rgba(255,255,255,0.3)',
+                                                background: selectedFile ? '#18181b' : '#f3f4f6',
+                                                color: selectedFile ? '#ffffff' : '#9ca3af',
                                                 fontWeight: '600',
+                                                fontSize: '0.9rem',
                                                 cursor: (loading || !selectedFile) ? 'not-allowed' : 'pointer',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: '0.75rem',
-                                                transition: 'all 0.2s ease'
+                                                transition: 'all 0.2s ease',
+                                                boxShadow: selectedFile ? '0 4px 14px rgba(0,0,0,0.12)' : 'none'
                                             }}
                                         >
                                             {loading ? <RefreshCw className="animate-spin" size={18} /> : null}
@@ -1702,16 +1952,16 @@ const AdminDashboard = ({
                                     </div>
 
                                     {/* Map Component */}
-                                    <div className="map-card" ref={mapRef} style={{ background: 'rgba(20, 18, 15, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '1.25rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                    <div className="map-card" ref={mapRef}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                                             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
                                                 <MapPin size={20} style={{ color: '#ef4444' }} /> Geographic Anomaly Mapping
                                             </h3>
-                                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
+                                            <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
                                                 Click any consumer row in table below to fly and zoom to its pin on map
                                             </span>
                                         </div>
-                                        <div style={{ height: '480px', width: '100%', borderRadius: '12px', overflow: 'hidden' }}>
+                                        <div style={{ height: '480px', width: '100%', borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.05)' }}>
                                             <MapComponent 
                                                 data={result} 
                                                 focusedConsumerId={focusedConsumerId}
@@ -1726,29 +1976,29 @@ const AdminDashboard = ({
                                         <div className="table-wrapper" style={{ maxHeight: '450px', overflowY: 'auto' }}>
                                             <table className="anomalies-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                                 <thead>
-                                                    <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                                        <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Consumer ID</th>
-                                                        <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Transformer ID</th>
-                                                        <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Risk Score</th>
-                                                        <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Risk Class</th>
-                                                        <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Inspection Status</th>
-                                                        <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Assign Inspector</th>
+                                                    <tr>
+                                                        <th>Consumer ID</th>
+                                                        <th>Transformer ID</th>
+                                                        <th>Risk Score</th>
+                                                        <th>Risk Class</th>
+                                                        <th>Inspection Status</th>
+                                                        <th>Assign Inspector</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {result.anomalies.map((item, idx) => (
-                                                        <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: item.consumer_id === focusedConsumerId ? 'rgba(200, 162, 97, 0.08)' : (idx % 2 === 0 ? 'rgba(0,0,0,0.1)' : 'transparent') }}>
-                                                            <td style={{ padding: '1rem', fontWeight: '500', fontSize: '0.9rem' }}>
+                                                        <tr key={idx} style={{ background: item.consumer_id === focusedConsumerId ? '#f0f9ff' : 'transparent' }}>
+                                                            <td style={{ fontWeight: '600' }}>
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleFocusConsumerOnMap(item.consumer_id)}
                                                                     title="Click to find and zoom to this pin on map"
                                                                     style={{
-                                                                        background: item.consumer_id === focusedConsumerId ? 'rgba(200, 162, 97, 0.25)' : 'rgba(255,255,255,0.04)',
-                                                                        border: item.consumer_id === focusedConsumerId ? '1px solid #c8a261' : '1px solid rgba(255,255,255,0.1)',
-                                                                        color: item.consumer_id === focusedConsumerId ? '#c8a261' : '#ffffff',
-                                                                        padding: '0.3rem 0.65rem',
-                                                                        borderRadius: '6px',
+                                                                        background: item.consumer_id === focusedConsumerId ? '#e0f2fe' : '#f4f5f7',
+                                                                        border: item.consumer_id === focusedConsumerId ? '1px solid #0284c7' : '1px solid #e5e7eb',
+                                                                        color: item.consumer_id === focusedConsumerId ? '#0369a1' : '#111827',
+                                                                        padding: '0.35rem 0.75rem',
+                                                                        borderRadius: '9999px',
                                                                         cursor: 'pointer',
                                                                         display: 'inline-flex',
                                                                         alignItems: 'center',
@@ -1758,20 +2008,20 @@ const AdminDashboard = ({
                                                                         transition: 'all 0.2s ease'
                                                                     }}
                                                                 >
-                                                                    <MapPin size={13} style={{ color: item.consumer_id === focusedConsumerId ? '#c8a261' : 'rgba(255,255,255,0.5)' }} />
+                                                                    <MapPin size={13} style={{ color: item.consumer_id === focusedConsumerId ? '#0284c7' : '#9ca3af' }} />
                                                                     {item.consumer_id}
                                                                 </button>
                                                             </td>
-                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>{item.transformer_id}</td>
-                                                            <td style={{ padding: '1rem', fontWeight: '600', color: item.risk_class === 'critical' ? '#ef4444' : '#f97316', fontSize: '0.9rem' }}>
+                                                            <td style={{ color: '#4b5563', fontSize: '0.9rem' }}>{item.transformer_id}</td>
+                                                            <td style={{ fontWeight: '700', color: item.risk_class === 'critical' ? '#ef4444' : '#f97316', fontSize: '0.9rem' }}>
                                                                 {((item.aggregate_risk_score || 0) * 100).toFixed(0)}%
                                                             </td>
-                                                            <td style={{ padding: '1rem' }}>
-                                                                <span className={`badge ${item.risk_class}`} style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem', borderRadius: '4px', textTransform: 'capitalize' }}>
+                                                            <td>
+                                                                <span className={`badge ${item.risk_class}`} style={{ textTransform: 'capitalize' }}>
                                                                     {item.risk_class}
                                                                 </span>
                                                             </td>
-                                                            <td style={{ padding: '1rem' }}>
+                                                            <td>
                                                                 {(() => {
                                                                     const activeInspector = assignedInspectors[item.consumer_id];
                                                                     const hasValidAssignment = !!activeInspector && inspectorsList.includes(activeInspector);
@@ -1792,24 +2042,24 @@ const AdminDashboard = ({
                                                                                 fontSize: '0.78rem',
                                                                                 fontWeight: '600',
                                                                                 padding: '0.35rem 0.75rem',
-                                                                                borderRadius: '6px',
-                                                                                background: isCompleted ? 'rgba(16, 185, 129, 0.15)' : isInProcess ? 'rgba(200, 162, 97, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                                                                                color: isCompleted ? '#10b981' : isInProcess ? '#c8a261' : 'rgba(255, 255, 255, 0.65)',
-                                                                                border: `1px solid ${isCompleted ? 'rgba(16, 185, 129, 0.3)' : isInProcess ? 'rgba(200, 162, 97, 0.3)' : 'rgba(255, 255, 255, 0.08)'}`
+                                                                                borderRadius: '9999px',
+                                                                                background: isCompleted ? '#e8f8ee' : isInProcess ? '#fef3c7' : '#f3f4f6',
+                                                                                color: isCompleted ? '#16a34a' : isInProcess ? '#d97706' : '#6b7280',
+                                                                                border: `1px solid ${isCompleted ? '#dcfce7' : isInProcess ? '#fde68a' : '#e5e7eb'}`
                                                                             }}
                                                                         >
                                                                             <span style={{
                                                                                 width: '6px',
                                                                                 height: '6px',
                                                                                 borderRadius: '50%',
-                                                                                background: isCompleted ? '#10b981' : isInProcess ? '#c8a261' : 'rgba(255, 255, 255, 0.4)'
+                                                                                background: isCompleted ? '#16a34a' : isInProcess ? '#d97706' : '#9ca3af'
                                                                             }} />
                                                                             {currentStatus}
                                                                         </span>
                                                                     );
                                                                 })()}
                                                             </td>
-                                                            <td style={{ padding: '1rem' }}>
+                                                            <td>
                                                                 {(() => {
                                                                     const activeInspector = assignedInspectors[item.consumer_id];
                                                                     const isAssigned = !!activeInspector && inspectorsList.includes(activeInspector);
@@ -1823,9 +2073,9 @@ const AdminDashboard = ({
                                                                                 onChange={(e) => handleInspectorChange(item.consumer_id, e.target.value)}
                                                                                 className="table-select"
                                                                                 style={{ 
-                                                                                    borderColor: isActivelyAssigned ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255,255,255,0.1)',
-                                                                                    color: isActivelyAssigned ? '#10b981' : 'white',
-                                                                                    background: isActivelyAssigned ? 'rgba(16, 185, 129, 0.08)' : 'rgba(18,16,14,0.9)'
+                                                                                    borderColor: isActivelyAssigned ? '#10b981' : '#e5e7eb',
+                                                                                    color: isActivelyAssigned ? '#059669' : '#111827',
+                                                                                    background: isActivelyAssigned ? '#f0fdf4' : '#ffffff'
                                                                                 }}
                                                                                 title={isActivelyAssigned ? `Assigned to ${activeInspector}. Locked until audit is cancelled.` : 'Assign an inspector'}
                                                                             >
@@ -1861,30 +2111,30 @@ const AdminDashboard = ({
                         <div className="dashboard-panel">
                             <div className="panel-card">
                                 <h3 className="panel-title">Administrator Profile</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
                                     <div className="dashboard-form-group">
                                         <label>Email Address</label>
-                                        <div className="dashboard-form-input" style={{ background: 'rgba(255,255,255,0.02)' }}>{user?.email}</div>
+                                        <div className="dashboard-form-input">{user?.email}</div>
                                     </div>
                                     <div className="dashboard-form-group">
                                         <label>Role</label>
-                                        <div className="dashboard-form-input" style={{ background: 'rgba(255,255,255,0.02)' }}>DISCOM Administrator</div>
+                                        <div className="dashboard-form-input">DISCOM Administrator</div>
                                     </div>
                                     <div className="dashboard-form-group">
                                         <label>Selected DISCOM</label>
-                                        <div className="dashboard-form-input" style={{ background: 'rgba(255,255,255,0.02)' }}>{user?.discom || 'Tata Power'}</div>
+                                        <div className="dashboard-form-input">{user?.discom || 'Tata Power'}</div>
                                     </div>
                                     <div className="dashboard-form-group">
                                         <label>State Jurisdiction</label>
-                                        <div className="dashboard-form-input" style={{ background: 'rgba(255,255,255,0.02)' }}>{user?.state || 'Delhi'}</div>
+                                        <div className="dashboard-form-input">{user?.state || 'Delhi'}</div>
                                     </div>
                                     <div className="dashboard-form-group">
                                         <label>Associated System Node ID</label>
-                                        <div className="dashboard-form-input" style={{ background: 'rgba(255,255,255,0.02)' }}>NODE-DISCOM-{getInitials(user?.discom)}-09</div>
+                                        <div className="dashboard-form-input">NODE-DISCOM-{getInitials(user?.discom)}-09</div>
                                     </div>
                                     <div className="dashboard-form-group">
                                         <label>Authentication Token Uid</label>
-                                        <div className="dashboard-form-input" style={{ background: 'rgba(255,255,255,0.02)', fontFamily: 'monospace', fontSize: '0.8rem' }}>{user?.uid}</div>
+                                        <div className="dashboard-form-input" style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{user?.uid}</div>
                                     </div>
                                 </div>
                             </div>
@@ -1895,44 +2145,48 @@ const AdminDashboard = ({
                         <div className="dashboard-panel">
                             <div className="panel-card">
                                 <h3 className="panel-title">Active Transformers Mapping</h3>
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <thead>
-                                        <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Transformer ID</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Location Zone</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Grid Load</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Health Index</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Anomalies Flagged</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {[
-                                            { id: 'TR-101', loc: 'Delhi North Central', load: '84 kW / 100 kW', health: 'Excellent', count: 0 },
-                                            { id: 'TR-102', loc: 'Rani Bagh St. 4', load: '95 kW / 100 kW', health: 'Critical Overload', count: 3 },
-                                            { id: 'TR-103', loc: 'Punjabi Bagh Ring Road', load: '62 kW / 100 kW', health: 'Good', count: 1 },
-                                            { id: 'TR-104', loc: 'Rohini Sector 7', load: '108 kW / 100 kW', health: 'Severe Surge Risk', count: 4 },
-                                            { id: 'TR-105', loc: 'Pitampura Enclave', load: '45 kW / 100 kW', health: 'Excellent', count: 0 },
-                                        ].map((tr, i) => (
-                                            <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                                <td style={{ padding: '1rem', fontWeight: '600' }}>{tr.id}</td>
-                                                <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{tr.loc}</td>
-                                                <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{tr.load}</td>
-                                                <td style={{ padding: '1rem' }}>
-                                                    <span style={{ 
-                                                        color: tr.health.includes('Excellent') || tr.health.includes('Good') ? '#10b981' : '#ef4444', 
-                                                        background: tr.health.includes('Excellent') || tr.health.includes('Good') ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', 
-                                                        padding: '0.2rem 0.5rem', 
-                                                        borderRadius: '4px',
-                                                        fontSize: '0.8rem'
-                                                    }}>
-                                                        {tr.health}
-                                                    </span>
-                                                </td>
-                                                <td style={{ padding: '1rem', fontWeight: '700', color: tr.count > 0 ? '#f97316' : '#fff' }}>{tr.count}</td>
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Transformer ID</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Location Zone</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Grid Load</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Health Index</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Anomalies Flagged</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {[
+                                                { id: 'TR-101', loc: 'Delhi North Central', load: '84 kW / 100 kW', health: 'Excellent', count: 0 },
+                                                { id: 'TR-102', loc: 'Rani Bagh St. 4', load: '95 kW / 100 kW', health: 'Critical Overload', count: 3 },
+                                                { id: 'TR-103', loc: 'Punjabi Bagh Ring Road', load: '62 kW / 100 kW', health: 'Good', count: 1 },
+                                                { id: 'TR-104', loc: 'Rohini Sector 7', load: '108 kW / 100 kW', health: 'Severe Surge Risk', count: 4 },
+                                                { id: 'TR-105', loc: 'Pitampura Enclave', load: '45 kW / 100 kW', health: 'Excellent', count: 0 },
+                                            ].map((tr, i) => (
+                                                <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                                    <td style={{ padding: '1rem', fontWeight: '600', color: '#111827' }}>{tr.id}</td>
+                                                    <td style={{ padding: '1rem', color: '#4b5563' }}>{tr.loc}</td>
+                                                    <td style={{ padding: '1rem', color: '#4b5563' }}>{tr.load}</td>
+                                                    <td style={{ padding: '1rem' }}>
+                                                        <span style={{ 
+                                                            color: tr.health.includes('Excellent') || tr.health.includes('Good') ? '#059669' : '#dc2626', 
+                                                            background: tr.health.includes('Excellent') || tr.health.includes('Good') ? '#ecfdf5' : '#fef2f2', 
+                                                            border: `1px solid ${tr.health.includes('Excellent') || tr.health.includes('Good') ? '#a7f3d0' : '#fecaca'}`,
+                                                            padding: '0.25rem 0.6rem', 
+                                                            borderRadius: '9999px',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: '600'
+                                                        }}>
+                                                            {tr.health}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '1rem', fontWeight: '700', color: tr.count > 0 ? '#ea580c' : '#111827' }}>{tr.count}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -1946,7 +2200,7 @@ const AdminDashboard = ({
                                         <h3 className="panel-title" style={{ margin: 0 }}>Add Suspended / Blacklisted Consumer</h3>
                                         <button 
                                             onClick={() => setIsAddingConsumer(false)}
-                                            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+                                            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: '4px' }}
                                         >
                                             <X size={20} />
                                         </button>
@@ -1978,9 +2232,9 @@ const AdminDashboard = ({
                                     >
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', gridColumn: challans.length > 0 ? 'span 2' : 'auto' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem' }}>Consumer ID *</label>
+                                                <label style={{ color: '#374151', fontSize: '0.8rem', fontWeight: '500' }}>Consumer ID *</label>
                                                 {challans.length > 0 && (
-                                                    <span style={{ fontSize: '0.72rem', color: '#c8a261', background: 'rgba(200,162,97,0.1)', padding: '0.15rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(200,162,97,0.25)' }}>
+                                                    <span style={{ fontSize: '0.72rem', color: '#18181b', background: '#f4f5f7', padding: '0.15rem 0.45rem', borderRadius: '9999px', border: '1px solid #e5e7eb', fontWeight: '600' }}>
                                                         {challans.length} Challan Record{challans.length === 1 ? '' : 's'} Available
                                                     </span>
                                                 )}
@@ -2009,17 +2263,17 @@ const AdminDashboard = ({
                                                     }}
                                                     style={{
                                                         padding: '0.65rem 0.8rem',
-                                                        background: '#181512',
-                                                        border: '1px solid rgba(200,162,97,0.35)',
-                                                        borderRadius: '6px',
-                                                        color: '#ffffff',
+                                                        background: '#f9fafb',
+                                                        border: '1px solid #d1d5db',
+                                                        borderRadius: '8px',
+                                                        color: '#111827',
                                                         fontSize: '0.85rem',
                                                         outline: 'none',
                                                         cursor: 'pointer',
                                                         marginBottom: '0.25rem'
                                                     }}
                                                 >
-                                                    <option value="" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                                                    <option value="" style={{ color: '#9ca3af' }}>
                                                         -- Choose Consumer from Field Penalties & Challans --
                                                     </option>
                                                     {challans.map((ch, idx) => (
@@ -2036,46 +2290,46 @@ const AdminDashboard = ({
                                                 onChange={e => setNewConsumerData({ ...newConsumerData, id: e.target.value })}
                                                 placeholder="Or type Consumer ID manually (e.g. C0133)"
                                                 required
-                                                style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#fff', outline: 'none' }}
+                                                style={{ padding: '0.6rem 0.8rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '8px', color: '#111827', outline: 'none' }}
                                             />
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                            <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Address Block *</label>
+                                            <label style={{ color: '#374151', fontSize: '0.8rem', fontWeight: '500' }}>Address Block *</label>
                                             <input 
                                                 type="text"
                                                 value={newConsumerData.addr}
                                                 onChange={e => setNewConsumerData({ ...newConsumerData, addr: e.target.value })}
                                                 placeholder="e.g. B-4, Rohini Sector 11"
                                                 required
-                                                style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#fff', outline: 'none' }}
+                                                style={{ padding: '0.6rem 0.8rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '8px', color: '#111827', outline: 'none' }}
                                             />
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                            <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Offense Severity</label>
+                                            <label style={{ color: '#374151', fontSize: '0.8rem', fontWeight: '500' }}>Offense Severity</label>
                                             <input 
                                                 type="text"
                                                 value={newConsumerData.severity}
                                                 onChange={e => setNewConsumerData({ ...newConsumerData, severity: e.target.value })}
                                                 placeholder="e.g. 3rd Repeated Bypass"
-                                                style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#fff', outline: 'none' }}
+                                                style={{ padding: '0.6rem 0.8rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '8px', color: '#111827', outline: 'none' }}
                                             />
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                            <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Fine Imposed</label>
+                                            <label style={{ color: '#374151', fontSize: '0.8rem', fontWeight: '500' }}>Fine Imposed</label>
                                             <input 
                                                 type="text"
                                                 value={newConsumerData.fine}
                                                 onChange={e => setNewConsumerData({ ...newConsumerData, fine: e.target.value })}
                                                 placeholder="e.g. ₹45,000"
-                                                style={{ padding: '0.6rem 0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#fff', outline: 'none' }}
+                                                style={{ padding: '0.6rem 0.8rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '8px', color: '#111827', outline: 'none' }}
                                             />
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                            <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Enforcement Status</label>
+                                            <label style={{ color: '#374151', fontSize: '0.8rem', fontWeight: '500' }}>Enforcement Status</label>
                                             <select 
                                                 value={newConsumerData.status}
                                                 onChange={e => setNewConsumerData({ ...newConsumerData, status: e.target.value })}
-                                                style={{ padding: '0.6rem 0.8rem', background: 'rgba(18,16,14,0.9)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#fff', outline: 'none' }}
+                                                style={{ padding: '0.6rem 0.8rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '8px', color: '#111827', outline: 'none' }}
                                             >
                                                 <option value="Meter Removed">Meter Removed</option>
                                                 <option value="Suspended Connection">Suspended Connection</option>
@@ -2085,7 +2339,8 @@ const AdminDashboard = ({
                                         </div>
                                         <button 
                                             type="submit"
-                                            style={{ padding: '0.65rem 1.25rem', background: 'white', color: 'black', fontWeight: '600', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                                            className="stitch-btn-pill"
+                                            style={{ width: 'auto', padding: '0.65rem 1.25rem', fontSize: '0.825rem' }}
                                         >
                                             Save Consumer
                                         </button>
@@ -2102,12 +2357,10 @@ const AdminDashboard = ({
                                             onClick={() => setIsAddingConsumer(true)}
                                             style={{
                                                 display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                                background: 'rgba(200, 162, 97, 0.15)', border: '1px solid rgba(200, 162, 97, 0.3)',
-                                                color: 'var(--accent-blue)', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer',
-                                                fontWeight: '600', fontSize: '0.85rem', transition: 'all 0.2s'
+                                                background: '#18181b', border: 'none',
+                                                color: '#ffffff', padding: '0.5rem 1rem', borderRadius: '9999px', cursor: 'pointer',
+                                                fontWeight: '600', fontSize: '0.825rem', transition: 'all 0.2s'
                                             }}
-                                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(200, 162, 97, 0.25)'}
-                                            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(200, 162, 97, 0.15)'}
                                         >
                                             <Plus size={16} /> Add Consumer
                                         </button>
@@ -2116,28 +2369,28 @@ const AdminDashboard = ({
                                 <div style={{ overflowX: 'auto' }}>
                                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                         <thead>
-                                            <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Consumer ID</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Address Block</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Offense Severity</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Fine Imposed</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Status</th>
-                                                <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Actions</th>
+                                            <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Consumer ID</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Address Block</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Offense Severity</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Fine Imposed</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Status</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'center', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {blacklistedConsumers.map((c, i) => (
-                                                <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
                                                     {editingConsumerId === c.id ? (
                                                         <>
                                                             {/* Inline Editing Mode */}
-                                                            <td style={{ padding: '1rem', fontWeight: '600' }}>{c.id}</td>
+                                                            <td style={{ padding: '1rem', fontWeight: '600', color: '#111827' }}>{c.id}</td>
                                                             <td style={{ padding: '0.5rem 1rem' }}>
                                                                 <input 
                                                                     type="text" 
                                                                     value={editConsumerData.addr}
                                                                     onChange={e => setEditConsumerData({ ...editConsumerData, addr: e.target.value })}
-                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontSize: '0.85rem', width: '90%' }}
                                                                 />
                                                             </td>
                                                             <td style={{ padding: '0.5rem 1rem' }}>
@@ -2145,7 +2398,7 @@ const AdminDashboard = ({
                                                                     type="text" 
                                                                     value={editConsumerData.severity}
                                                                     onChange={e => setEditConsumerData({ ...editConsumerData, severity: e.target.value })}
-                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontSize: '0.85rem', width: '90%' }}
                                                                 />
                                                             </td>
                                                             <td style={{ padding: '0.5rem 1rem' }}>
@@ -2153,14 +2406,14 @@ const AdminDashboard = ({
                                                                     type="text" 
                                                                     value={editConsumerData.fine}
                                                                     onChange={e => setEditConsumerData({ ...editConsumerData, fine: e.target.value })}
-                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontSize: '0.85rem', width: '90%' }}
                                                                 />
                                                             </td>
                                                             <td style={{ padding: '0.5rem 1rem' }}>
                                                                 <select 
                                                                     value={editConsumerData.status}
                                                                     onChange={e => setEditConsumerData({ ...editConsumerData, status: e.target.value })}
-                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(18,16,14,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem' }}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontSize: '0.85rem' }}
                                                                 >
                                                                     <option value="Meter Removed">Meter Removed</option>
                                                                     <option value="Suspended Connection">Suspended Connection</option>
@@ -2190,7 +2443,7 @@ const AdminDashboard = ({
                                                                     </button>
                                                                     <button 
                                                                         onClick={() => setEditingConsumerId(null)}
-                                                                        style={{ padding: '0.3rem 0.6rem', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                                                                        style={{ padding: '0.3rem 0.6rem', background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                                                                     >
                                                                         Cancel
                                                                     </button>
@@ -2200,12 +2453,12 @@ const AdminDashboard = ({
                                                     ) : (
                                                         <>
                                                             {/* Normal Static Mode */}
-                                                            <td style={{ padding: '1rem', fontWeight: '600' }}>{c.id}</td>
-                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{c.addr}</td>
-                                                            <td style={{ padding: '1rem', color: '#f97316', fontWeight: '500' }}>{c.severity}</td>
-                                                            <td style={{ padding: '1rem', fontWeight: '700' }}>{c.fine}</td>
+                                                            <td style={{ padding: '1rem', fontWeight: '600', color: '#111827' }}>{c.id}</td>
+                                                            <td style={{ padding: '1rem', color: '#4b5563' }}>{c.addr}</td>
+                                                            <td style={{ padding: '1rem', color: '#ea580c', fontWeight: '500' }}>{c.severity}</td>
+                                                            <td style={{ padding: '1rem', fontWeight: '700', color: '#111827' }}>{c.fine}</td>
                                                             <td style={{ padding: '1rem' }}>
-                                                                <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                                                <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '0.2rem 0.55rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '600' }}>
                                                                     {c.status}
                                                                 </span>
                                                             </td>
@@ -2216,7 +2469,7 @@ const AdminDashboard = ({
                                                                             setEditingConsumerId(c.id);
                                                                             setEditConsumerData(c);
                                                                         }}
-                                                                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                                        style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                                                                         title="Edit"
                                                                     >
                                                                         <Edit2 size={16} />
@@ -2317,86 +2570,92 @@ const AdminDashboard = ({
                         return (
                             <div className="dashboard-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 {/* Top KPI Metric Cards (Synced with Challans) */}
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
-                                    <div className="panel-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                <div className="overview-performance-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+                                    <div className="performance-card">
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', fontWeight: '500' }}>Total Assessed Penalties</span>
-                                            <span style={{ fontSize: '0.72rem', color: '#c8a261', background: 'rgba(200,162,97,0.1)', padding: '0.15rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(200,162,97,0.25)' }}>
+                                            <span className="card-top-title">Total Assessed Penalties</span>
+                                            <span className="stat-chip negative">
                                                 {challans.length} Challan{challans.length === 1 ? '' : 's'}
                                             </span>
                                         </div>
-                                        <div style={{ fontSize: '1.85rem', fontWeight: '700', color: '#ef4444' }}>
+                                        <div className="card-big-value" style={{ color: '#dc2626' }}>
                                             ₹{totalPenaltyAssessed.toLocaleString('en-IN')}
                                         </div>
-                                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                                        <div className="card-sub-info">
                                             From field inspection bypass & hooking audits
-                                        </span>
+                                        </div>
                                     </div>
 
-                                    <div className="panel-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', fontWeight: '500' }}>Realized / Collected Revenue</span>
-                                        <div style={{ fontSize: '1.85rem', fontWeight: '700', color: '#10b981' }}>
+                                    <div className="performance-card">
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span className="card-top-title">Realized / Collected</span>
+                                            <span className="stat-chip positive">+12%</span>
+                                        </div>
+                                        <div className="card-big-value" style={{ color: '#059669' }}>
                                             ₹{(realizedPenalty > 0 ? realizedPenalty : totalPenaltyAssessed).toLocaleString('en-IN')}
                                         </div>
-                                        <span style={{ fontSize: '0.75rem', color: 'rgba(16,185,129,0.7)' }}>
+                                        <div className="card-sub-info">
                                             {paidChallans.length > 0 ? `${paidChallans.length} Paid Cases` : 'Enforcement active across DISCOM'}
-                                        </span>
+                                        </div>
                                     </div>
 
-                                    <div className="panel-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', fontWeight: '500' }}>Target Recovery Scope</span>
-                                        <div style={{ fontSize: '1.85rem', fontWeight: '700', color: '#ffffff' }}>
+                                    <div className="performance-card">
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span className="card-top-title">Target Recovery Scope</span>
+                                            <span className="stat-chip neutral">Scope</span>
+                                        </div>
+                                        <div className="card-big-value">
                                             ₹{(targetRecovery >= 100000 ? (targetRecovery / 100000).toFixed(2) + ' Lakhs' : targetRecovery.toLocaleString('en-IN'))}
                                         </div>
-                                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                                        <div className="card-sub-info">
                                             Calculated from feeder & transformer grid loss
-                                        </span>
+                                        </div>
                                     </div>
 
-                                    <div className="panel-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                    <div className="performance-card">
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', fontWeight: '500' }}>Recovery Progress</span>
-                                            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>{recoveryRate}%</span>
+                                            <span className="card-top-title">Recovery Progress</span>
+                                            <span className="stat-chip positive">{recoveryRate}%</span>
                                         </div>
-                                        <div style={{ fontSize: '1.85rem', fontWeight: '700', color: '#c8a261' }}>
+                                        <div className="card-big-value">
                                             {recoveryRate}%
                                         </div>
-                                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginTop: '0.2rem' }}>
-                                            <div style={{ width: `${Math.min(100, parseFloat(recoveryRate))}%`, height: '100%', background: 'linear-gradient(90deg, #c8a261, #10b981)', borderRadius: '3px', transition: 'width 0.4s ease' }} />
+                                        <div style={{ width: '100%', height: '6px', background: '#f3f4f6', borderRadius: '3px', overflow: 'hidden', marginTop: '0.4rem' }}>
+                                            <div style={{ width: `${Math.min(100, parseFloat(recoveryRate))}%`, height: '100%', background: '#18181b', borderRadius: '3px', transition: 'width 0.4s ease' }} />
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Analytics Charts Section */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
                                     {/* Penalty Revenue by Theft Category */}
                                     <div className="panel-card">
-                                        <h4 style={{ margin: '0 0 1rem 0', color: 'white', fontSize: '0.95rem' }}>Penalty Revenue by Violation Class (₹ Thousands)</h4>
+                                        <h4 style={{ margin: '0 0 1rem 0', color: '#111827', fontSize: '0.95rem', fontWeight: '700' }}>Penalty Revenue by Violation Class (₹ Thousands)</h4>
                                         <div style={{ minHeight: '220px', width: '100%' }}>
                                             {categoryChartData.length === 0 ? (
-                                                <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
+                                                <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#6b7280', fontSize: '0.85rem' }}>
                                                     Issue challans from Inspector Portal to populate breakdown.
                                                 </div>
                                             ) : (
                                                 <ResponsiveContainer width="100%" height={220}>
                                                     <BarChart data={categoryChartData}>
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                                        <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" fontSize={11} />
-                                                        <YAxis stroke="rgba(255,255,255,0.5)" fontSize={11} />
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                                                        <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} />
+                                                        <YAxis stroke="#9ca3af" fontSize={11} />
                                                         <Tooltip 
                                                             cursor={{ fill: 'transparent' }}
                                                             contentStyle={{ 
-                                                                background: 'rgba(18, 16, 14, 0.95)', 
-                                                                border: '1px solid rgba(200, 162, 97, 0.35)', 
-                                                                borderRadius: '8px', 
-                                                                boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                                                                background: '#ffffff', 
+                                                                border: '1px solid #e5e7eb', 
+                                                                borderRadius: '12px', 
+                                                                boxShadow: '0 4px 20px -2px rgba(0,0,0,0.06)',
                                                                 padding: '0.5rem 0.75rem' 
                                                             }}
-                                                            itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
-                                                            labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                            itemStyle={{ color: '#111827', fontWeight: '600', fontSize: '0.85rem' }}
+                                                            labelStyle={{ color: '#6b7280', fontWeight: '600', marginBottom: '0.2rem' }}
                                                             formatter={(val) => [`₹${(val * 1000).toLocaleString('en-IN')}`, 'Assessed Fine']}
                                                         />
-                                                        <Bar dataKey="amount" fill="#c8a261" radius={[4, 4, 0, 0]} />
+                                                        <Bar dataKey="amount" fill="#18181b" radius={[6, 6, 0, 0]} />
                                                     </BarChart>
                                                 </ResponsiveContainer>
                                             )}
@@ -2405,7 +2664,7 @@ const AdminDashboard = ({
 
                                     {/* Monthly Recovery Trend */}
                                     <div className="panel-card">
-                                        <h4 style={{ margin: '0 0 1rem 0', color: 'white', fontSize: '0.95rem' }}>Recovery Realization Trajectory (₹ Lakhs)</h4>
+                                        <h4 style={{ margin: '0 0 1rem 0', color: '#111827', fontSize: '0.95rem', fontWeight: '700' }}>Recovery Realization Trajectory (₹ Lakhs)</h4>
                                         <div style={{ minHeight: '220px', width: '100%' }}>
                                             <ResponsiveContainer width="100%" height={220}>
                                                 <LineChart data={[
@@ -2414,23 +2673,23 @@ const AdminDashboard = ({
                                                     { month: 'Jul', Target: 2.5, Recovered: 2.1 },
                                                     { month: 'Aug', Target: 3.0, Recovered: (totalPenaltyAssessed / 100000 > 0 ? (totalPenaltyAssessed / 100000).toFixed(2) : 1.4) }
                                                 ]}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                                    <XAxis dataKey="month" stroke="rgba(255,255,255,0.5)" fontSize={11} />
-                                                    <YAxis stroke="rgba(255,255,255,0.5)" fontSize={11} />
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                                                    <XAxis dataKey="month" stroke="#9ca3af" fontSize={11} />
+                                                    <YAxis stroke="#9ca3af" fontSize={11} />
                                                     <Tooltip 
                                                         contentStyle={{ 
-                                                            background: 'rgba(18, 16, 14, 0.95)', 
-                                                            border: '1px solid rgba(200, 162, 97, 0.35)', 
-                                                            borderRadius: '8px', 
-                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                                                            background: '#ffffff', 
+                                                            border: '1px solid #e5e7eb', 
+                                                            borderRadius: '12px', 
+                                                            boxShadow: '0 4px 20px -2px rgba(0,0,0,0.06)',
                                                             padding: '0.5rem 0.75rem' 
                                                         }}
-                                                        itemStyle={{ color: '#ffffff', fontWeight: '600', fontSize: '0.85rem' }}
-                                                        labelStyle={{ color: '#c8a261', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                        itemStyle={{ color: '#111827', fontWeight: '600', fontSize: '0.85rem' }}
+                                                        labelStyle={{ color: '#6b7280', fontWeight: '600', marginBottom: '0.2rem' }}
                                                     />
                                                     <Legend />
-                                                    <Line type="monotone" dataKey="Target" stroke="#c8a261" activeDot={{ r: 6 }} strokeWidth={2} />
-                                                    <Line type="monotone" dataKey="Recovered" stroke="#10b981" activeDot={{ r: 6 }} strokeWidth={2} />
+                                                    <Line type="monotone" dataKey="Target" stroke="#9ca3af" activeDot={{ r: 6 }} strokeWidth={2} />
+                                                    <Line type="monotone" dataKey="Recovered" stroke="#18181b" activeDot={{ r: 6 }} strokeWidth={2} />
                                                 </LineChart>
                                             </ResponsiveContainer>
                                         </div>
@@ -2448,43 +2707,43 @@ const AdminDashboard = ({
                                 <div style={{ overflowX: 'auto' }}>
                                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                         <thead>
-                                            <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Consumer ID</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Zone Area</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Assigned Inspector</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Status</th>
-                                                <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Actions</th>
+                                            <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Consumer ID</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Zone Area</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Assigned Inspector</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Status</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'center', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {inspectionCalendar.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan="5" style={{ textAlign: 'center', padding: '3.5rem 1rem', color: 'rgba(255,255,255,0.4)' }}>
+                                                    <td colSpan="5" style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#6b7280' }}>
                                                         <Calendar size={32} style={{ margin: '0 auto 0.75rem auto', opacity: 0.35, display: 'block' }} />
-                                                        <div style={{ fontSize: '0.95rem', fontWeight: '500', color: 'rgba(255,255,255,0.6)' }}>No Field Inspections Scheduled</div>
-                                                        <div style={{ fontSize: '0.8rem', marginTop: '0.35rem', color: 'rgba(255,255,255,0.35)' }}>Assign an inspector to any detected anomaly in the Overview tab to schedule an inspection.</div>
+                                                        <div style={{ fontSize: '0.95rem', fontWeight: '500', color: '#374151' }}>No Field Inspections Scheduled</div>
+                                                        <div style={{ fontSize: '0.8rem', marginTop: '0.35rem', color: '#9ca3af' }}>Assign an inspector to any detected anomaly in the Overview tab to schedule an inspection.</div>
                                                     </td>
                                                 </tr>
                                             ) : (
                                                 inspectionCalendar.map((ins, idx) => (
-                                                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                    <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
                                                         {editingCalendarId === ins.consumer ? (
                                                         <>
                                                             {/* Inline Calendar Edit */}
-                                                            <td style={{ padding: '1rem', fontWeight: '600' }}>{ins.consumer}</td>
+                                                            <td style={{ padding: '1rem', fontWeight: '600', color: '#111827' }}>{ins.consumer}</td>
                                                             <td style={{ padding: '0.5rem 1rem' }}>
                                                                 <input 
                                                                     type="text"
                                                                     value={editCalendarData.zone}
                                                                     onChange={e => setEditCalendarData({ ...editCalendarData, zone: e.target.value })}
-                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontSize: '0.85rem', width: '90%' }}
                                                                 />
                                                             </td>
                                                             <td style={{ padding: '0.5rem 1rem' }}>
                                                                 <select 
                                                                     value={editCalendarData.inspector}
                                                                     onChange={e => setEditCalendarData({ ...editCalendarData, inspector: e.target.value })}
-                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(18,16,14,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem' }}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontSize: '0.85rem' }}
                                                                 >
                                                                     <option value="">-- Unassigned --</option>
                                                                     {inspectorsList.map(insp => (
@@ -2496,7 +2755,7 @@ const AdminDashboard = ({
                                                                 <select 
                                                                     value={editCalendarData.status}
                                                                     onChange={e => setEditCalendarData({ ...editCalendarData, status: e.target.value })}
-                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(18,16,14,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem' }}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontSize: '0.85rem' }}
                                                                 >
                                                                     <option value="Scheduled">Scheduled</option>
                                                                     <option value="Pending Review">Pending Review</option>
@@ -2560,7 +2819,7 @@ const AdminDashboard = ({
                                                                     </button>
                                                                     <button 
                                                                         onClick={() => setEditingCalendarId(null)}
-                                                                        style={{ padding: '0.3rem 0.6rem', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                                                                        style={{ padding: '0.3rem 0.6rem', background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                                                                     >
                                                                         Cancel
                                                                     </button>
@@ -2570,9 +2829,9 @@ const AdminDashboard = ({
                                                     ) : (
                                                         <>
                                                             {/* Normal Static Calendar View */}
-                                                            <td style={{ padding: '1rem', fontWeight: '600' }}>{ins.consumer}</td>
-                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.zone}</td>
-                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.inspector || <span style={{ color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>Unassigned</span>}</td>
+                                                            <td style={{ padding: '1rem', fontWeight: '600', color: '#111827' }}>{ins.consumer}</td>
+                                                            <td style={{ padding: '1rem', color: '#4b5563' }}>{ins.zone}</td>
+                                                            <td style={{ padding: '1rem', color: '#4b5563' }}>{ins.inspector || <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>Unassigned</span>}</td>
                                                             <td style={{ padding: '1rem' }}>
                                                                 {(() => {
                                                                     const currentStatus = ins.status || 'Initiated';
@@ -2584,19 +2843,19 @@ const AdminDashboard = ({
                                                                             display: 'inline-flex',
                                                                             alignItems: 'center',
                                                                             gap: '0.45rem',
-                                                                            fontSize: '0.8rem',
+                                                                            fontSize: '0.75rem',
                                                                             fontWeight: '600',
-                                                                            padding: '0.3rem 0.65rem',
-                                                                            borderRadius: '6px',
-                                                                            color: isCompleted ? '#10b981' : isInProcess ? '#c8a261' : '#f59e0b',
-                                                                            background: isCompleted ? 'rgba(16,185,129,0.15)' : isInProcess ? 'rgba(200,162,97,0.15)' : 'rgba(245,158,11,0.12)',
-                                                                            border: `1px solid ${isCompleted ? 'rgba(16,185,129,0.3)' : isInProcess ? 'rgba(200,162,97,0.3)' : 'rgba(245,158,11,0.25)'}`
+                                                                            padding: '0.25rem 0.6rem',
+                                                                            borderRadius: '9999px',
+                                                                            color: isCompleted ? '#059669' : isInProcess ? '#d97706' : '#ea580c',
+                                                                            background: isCompleted ? '#ecfdf5' : isInProcess ? '#fef3c7' : '#fff7ed',
+                                                                            border: `1px solid ${isCompleted ? '#a7f3d0' : isInProcess ? '#fde68a' : '#ffedd5'}`
                                                                         }}>
                                                                             <span style={{
                                                                                 width: '6px',
                                                                                 height: '6px',
                                                                                 borderRadius: '50%',
-                                                                                background: isCompleted ? '#10b981' : isInProcess ? '#c8a261' : '#f59e0b'
+                                                                                background: isCompleted ? '#059669' : isInProcess ? '#d97706' : '#ea580c'
                                                                             }} />
                                                                             {currentStatus}
                                                                         </span>
@@ -2610,7 +2869,7 @@ const AdminDashboard = ({
                                                                             setEditingCalendarId(ins.consumer);
                                                                             setEditCalendarData(ins);
                                                                         }}
-                                                                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                                        style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                                                                         title="Edit"
                                                                     >
                                                                         <Edit2 size={16} />
@@ -2740,16 +2999,12 @@ const AdminDashboard = ({
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                                     <div>
                                         <h3 className="panel-title" style={{ margin: 0 }}>Field Penalties & Bypass Challans</h3>
-                                        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)' }}>
+                                        <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
                                             Real-time stream of audit challans issued by field inspectors
                                         </span>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        <span style={{ 
-                                            fontSize: '0.85rem', fontWeight: '600', color: '#c8a261', 
-                                            background: 'rgba(200,162,97,0.1)', padding: '0.35rem 0.75rem', borderRadius: '8px',
-                                            border: '1px solid rgba(200,162,97,0.25)' 
-                                        }}>
+                                        <span className="stat-chip neutral" style={{ fontSize: '0.8rem', padding: '0.3rem 0.75rem' }}>
                                             Total Issued: {challans.length}
                                         </span>
                                     </div>
@@ -2758,42 +3013,42 @@ const AdminDashboard = ({
                                 <div style={{ overflowX: 'auto' }}>
                                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                         <thead>
-                                            <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Challan ID</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Consumer ID</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Theft Anomaly Class</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Connected Load</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Assessed Penalty</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Auditing Inspector</th>
-                                                <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Status</th>
+                                            <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Challan ID</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Consumer ID</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Theft Anomaly Class</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Connected Load</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Assessed Penalty</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Auditing Inspector</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'center', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Status</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {challans.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan="7" style={{ textAlign: 'center', padding: '3rem 1rem', color: 'rgba(255,255,255,0.4)' }}>
+                                                    <td colSpan="7" style={{ textAlign: 'center', padding: '3rem 1rem', color: '#6b7280' }}>
                                                         <AlertTriangle size={30} style={{ margin: '0 auto 0.75rem auto', opacity: 0.35, display: 'block' }} />
-                                                        <div style={{ fontSize: '0.95rem', fontWeight: '500', color: 'rgba(255,255,255,0.6)' }}>No Challans Issued Yet</div>
-                                                        <div style={{ fontSize: '0.8rem', marginTop: '0.35rem', color: 'rgba(255,255,255,0.35)' }}>
+                                                        <div style={{ fontSize: '0.95rem', fontWeight: '500', color: '#374151' }}>No Challans Issued Yet</div>
+                                                        <div style={{ fontSize: '0.8rem', marginTop: '0.35rem', color: '#9ca3af' }}>
                                                             Challans created by field inspectors during on-site audits will appear here in real-time.
                                                         </div>
                                                     </td>
                                                 </tr>
                                             ) : (
                                                 challans.map((ch, idx) => (
-                                                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                                        <td style={{ padding: '1rem', fontWeight: '600', color: '#ffffff' }}>{ch.id}</td>
-                                                        <td style={{ padding: '1rem', color: '#c8a261', fontWeight: '600' }}>{ch.consumer}</td>
-                                                        <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.85)' }}>{ch.anomaly}</td>
-                                                        <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)' }}>{ch.load}</td>
-                                                        <td style={{ padding: '1rem', color: '#ef4444', fontWeight: '700' }}>{ch.penalty}</td>
-                                                        <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)' }}>{ch.inspector || 'Field Inspector'}</td>
+                                                    <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                                        <td style={{ padding: '1rem', fontWeight: '600', color: '#111827' }}>{ch.id}</td>
+                                                        <td style={{ padding: '1rem', color: '#18181b', fontWeight: '600' }}>{ch.consumer}</td>
+                                                        <td style={{ padding: '1rem', color: '#4b5563' }}>{ch.anomaly}</td>
+                                                        <td style={{ padding: '1rem', color: '#6b7280' }}>{ch.load}</td>
+                                                        <td style={{ padding: '1rem', color: '#dc2626', fontWeight: '700' }}>{ch.penalty}</td>
+                                                        <td style={{ padding: '1rem', color: '#4b5563' }}>{ch.inspector || 'Field Inspector'}</td>
                                                         <td style={{ padding: '1rem', textAlign: 'center' }}>
                                                             <span style={{
                                                                 fontSize: '0.75rem', fontWeight: '600',
-                                                                background: 'rgba(239,68,68,0.15)', color: '#ef4444',
-                                                                border: '1px solid rgba(239,68,68,0.3)',
-                                                                padding: '0.25rem 0.65rem', borderRadius: '6px'
+                                                                background: '#fef2f2', color: '#dc2626',
+                                                                border: '1px solid #fecaca',
+                                                                padding: '0.25rem 0.65rem', borderRadius: '9999px'
                                                             }}>
                                                                 {ch.status || 'Issued'}
                                                             </span>
@@ -2809,48 +3064,48 @@ const AdminDashboard = ({
                     )}
 
                     {activeTab === 'Inspector List' && (
-                        <div className="dashboard-panel" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem' }}>
+                        <div className="dashboard-panel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem' }}>
                             {/* Inspectors directory */}
                             <div className="panel-card" style={{ height: 'fit-content' }}>
                                 <h3 className="panel-title">Field Inspectors Directory</h3>
                                 <div style={{ overflowX: 'auto' }}>
                                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                         <thead>
-                                            <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Inspector Name</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Badge ID</th>
-                                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Email</th>
-                                                <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Credentials</th>
-                                                <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Actions</th>
+                                            <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Inspector Name</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Badge ID</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Email</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'center', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Credentials</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'center', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {inspectorsDetails.map((ins, idx) => (
-                                                <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
                                                     {editingInspectorName === ins.name ? (
                                                         <>
                                                             <td style={{ padding: '0.5rem 1rem' }}>
                                                                 <input 
-                                                                    type="text"
+                                                                    type="text" 
                                                                     value={editInspectorData.name}
                                                                     onChange={e => setEditInspectorData({ ...editInspectorData, name: e.target.value })}
-                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontSize: '0.85rem', width: '90%' }}
                                                                 />
                                                             </td>
                                                             <td style={{ padding: '0.5rem 1rem' }}>
                                                                 <input 
-                                                                    type="text"
+                                                                    type="text" 
                                                                     value={editInspectorData.badgeId}
                                                                     onChange={e => setEditInspectorData({ ...editInspectorData, badgeId: e.target.value })}
-                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontSize: '0.85rem', width: '90%' }}
                                                                 />
                                                             </td>
                                                             <td style={{ padding: '0.5rem 1rem' }}>
                                                                 <input 
-                                                                    type="email"
+                                                                    type="email" 
                                                                     value={editInspectorData.email}
                                                                     onChange={e => setEditInspectorData({ ...editInspectorData, email: e.target.value })}
-                                                                    style={{ padding: '0.4rem 0.6rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.9rem', width: '90%' }}
+                                                                    style={{ padding: '0.4rem 0.6rem', background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontSize: '0.85rem', width: '90%' }}
                                                                 />
                                                             </td>
                                                             <td style={{ padding: '1rem' }}>{/* Credentials column placeholder in edit mode */}</td>
@@ -2867,7 +3122,7 @@ const AdminDashboard = ({
                                                                     </button>
                                                                     <button 
                                                                         onClick={() => setEditingInspectorName(null)}
-                                                                        style={{ padding: '0.3rem 0.6rem', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                                                                        style={{ padding: '0.3rem 0.6rem', background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                                                                     >
                                                                         Cancel
                                                                     </button>
@@ -2876,19 +3131,19 @@ const AdminDashboard = ({
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <td style={{ padding: '1rem', fontWeight: '600' }}>{ins.name}</td>
-                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.badgeId}</td>
-                                                            <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{ins.email}</td>
+                                                            <td style={{ padding: '1rem', fontWeight: '600', color: '#111827' }}>{ins.name}</td>
+                                                            <td style={{ padding: '1rem', color: '#4b5563' }}>{ins.badgeId}</td>
+                                                            <td style={{ padding: '1rem', color: '#4b5563' }}>{ins.email}</td>
                                                             <td style={{ padding: '1rem', textAlign: 'center' }}>
                                                                 <button
                                                                     onClick={() => handleSendCredentials(ins)}
                                                                     disabled={sendingCredentials[ins.email]}
                                                                     style={{
                                                                         padding: '0.35rem 0.75rem',
-                                                                        background: sendingCredentials[ins.email] ? 'rgba(200,162,97,0.2)' : 'rgba(200,162,97,0.15)',
-                                                                        color: sendingCredentials[ins.email] ? 'rgba(200,162,97,0.5)' : '#c8a261',
-                                                                        border: '1px solid rgba(200,162,97,0.3)',
-                                                                        borderRadius: '6px',
+                                                                        background: sendingCredentials[ins.email] ? '#f3f4f6' : '#18181b',
+                                                                        color: sendingCredentials[ins.email] ? '#9ca3af' : '#ffffff',
+                                                                        border: 'none',
+                                                                        borderRadius: '9999px',
                                                                         cursor: sendingCredentials[ins.email] ? 'not-allowed' : 'pointer',
                                                                         fontSize: '0.75rem',
                                                                         fontWeight: '600',
@@ -2911,7 +3166,7 @@ const AdminDashboard = ({
                                                                             setEditingInspectorName(ins.name);
                                                                             setEditInspectorData(ins);
                                                                         }}
-                                                                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                                        style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                                                                         title="Edit"
                                                                     >
                                                                         <Edit2 size={16} />
@@ -2962,7 +3217,7 @@ const AdminDashboard = ({
                                     style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
                                 >
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Full Name *</label>
+                                        <label style={{ color: '#374151', fontSize: '0.85rem', fontWeight: '500' }}>Full Name *</label>
                                         <input 
                                             type="text"
                                             value={newInspector.name}
@@ -2970,32 +3225,28 @@ const AdminDashboard = ({
                                             placeholder="e.g. S. Iyer"
                                             required
                                             style={{
-                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
-                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                                padding: '0.7rem 0.9rem', background: '#f9fafb', border: '1px solid #d1d5db',
+                                                borderRadius: '8px', color: '#111827', fontSize: '0.9rem', outline: 'none'
                                             }}
-                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
-                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
                                         />
                                     </div>
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Badge Identification ID</label>
+                                        <label style={{ color: '#374151', fontSize: '0.85rem', fontWeight: '500' }}>Badge Identification ID</label>
                                         <input 
                                             type="text"
                                             value={newInspector.badgeId}
                                             onChange={e => setNewInspector({ ...newInspector, badgeId: e.target.value })}
                                             placeholder="e.g. INS-DEL-55104"
                                             style={{
-                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
-                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                                padding: '0.7rem 0.9rem', background: '#f9fafb', border: '1px solid #d1d5db',
+                                                borderRadius: '8px', color: '#111827', fontSize: '0.9rem', outline: 'none'
                                             }}
-                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
-                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
                                         />
                                     </div>
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Email Address *</label>
+                                        <label style={{ color: '#374151', fontSize: '0.85rem', fontWeight: '500' }}>Email Address *</label>
                                         <input 
                                             type="email"
                                             value={newInspector.email}
@@ -3003,20 +3254,16 @@ const AdminDashboard = ({
                                             placeholder="e.g. iyer@vidyut.com"
                                             required
                                             style={{
-                                                padding: '0.7rem 0.9rem', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)',
-                                                borderRadius: '8px', color: 'white', fontSize: '0.9rem', outline: 'none'
+                                                padding: '0.7rem 0.9rem', background: '#f9fafb', border: '1px solid #d1d5db',
+                                                borderRadius: '8px', color: '#111827', fontSize: '0.9rem', outline: 'none'
                                             }}
-                                            onFocus={(e) => e.target.style.borderColor = 'rgba(200, 162, 97, 0.5)'}
-                                            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
                                         />
                                     </div>
 
                                     <button 
                                         type="submit"
-                                        style={{
-                                            background: 'white', color: 'black', padding: '0.75rem 1.5rem', 
-                                            borderRadius: '8px', fontWeight: '600', border: 'none', cursor: 'pointer', alignSelf: 'flex-start', marginTop: '0.5rem'
-                                        }}
+                                        className="stitch-btn-pill"
+                                        style={{ width: 'auto', padding: '0.75rem 1.5rem', alignSelf: 'flex-start', marginTop: '0.5rem' }}
                                     >
                                         Add Inspector Record
                                     </button>
@@ -3035,19 +3282,20 @@ const AdminDashboard = ({
                                         { title: 'Carbonized Terminals Probe', risk: 'HIGH', score: '89%', consumers: 'CON-33201, CON-90234', action: 'Verify customer meter box health. Install seal guards.' },
                                         { title: 'Karol Bagh Tap Bypass', risk: 'CRITICAL', score: '96%', consumers: 'CON-77402', action: 'Police-assisted site raid due to hostile commercial bypass.' },
                                     ].map((pri, i) => (
-                                        <div key={i} style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        <div key={i} style={{ padding: '1.5rem', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <h4 style={{ margin: 0, color: 'white', fontSize: '1rem' }}>{pri.title}</h4>
+                                                <h4 style={{ margin: 0, color: '#111827', fontSize: '1rem', fontWeight: '700' }}>{pri.title}</h4>
                                                 <span style={{ 
-                                                    background: pri.risk === 'CRITICAL' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(249, 115, 22, 0.15)',
-                                                    color: pri.risk === 'CRITICAL' ? '#ef4444' : '#f97316',
-                                                    padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700'
+                                                    background: pri.risk === 'CRITICAL' ? '#fef2f2' : '#fff7ed',
+                                                    color: pri.risk === 'CRITICAL' ? '#dc2626' : '#ea580c',
+                                                    border: `1px solid ${pri.risk === 'CRITICAL' ? '#fecaca' : '#ffedd5'}`,
+                                                    padding: '0.2rem 0.55rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '700'
                                                 }}>{pri.risk}</span>
                                             </div>
-                                            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
-                                                Flagged Score: <strong style={{ color: 'white' }}>{pri.score}</strong> | Target: <strong style={{ color: 'white' }}>{pri.consumers}</strong>
+                                            <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                                                Flagged Score: <strong style={{ color: '#111827' }}>{pri.score}</strong> | Target: <strong style={{ color: '#111827' }}>{pri.consumers}</strong>
                                             </div>
-                                            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '0.75rem' }}>
+                                            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#4b5563', borderTop: '1px solid #e5e7eb', paddingTop: '0.75rem', lineHeight: '1.5' }}>
                                                 {pri.action}
                                             </p>
                                         </div>
@@ -3076,8 +3324,8 @@ const AdminDashboard = ({
                                                 }
                                             }}
                                             style={{
-                                                background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                color: '#ef4444', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer',
+                                                background: '#fef2f2', border: '1px solid #fee2e2',
+                                                color: '#ef4444', padding: '0.4rem 0.85rem', borderRadius: '9999px', cursor: 'pointer',
                                                 fontWeight: '600', fontSize: '0.8rem'
                                             }}
                                         >
@@ -3085,79 +3333,81 @@ const AdminDashboard = ({
                                         </button>
                                     )}
                                 </div>
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <thead>
-                                        <tr style={{ background: 'rgba(18,16,14,0.8)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Filename</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Uploaded On</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Consumers Analyzed</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Critical Flags</th>
-                                            <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Load Results</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {uploadHistory.length === 0 ? (
-                                            <tr>
-                                                <td colSpan="5" style={{ padding: '3.5rem 1rem', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>
-                                                    <Activity size={32} style={{ margin: '0 auto 0.75rem auto', opacity: 0.35, display: 'block' }} />
-                                                    <div style={{ fontSize: '0.95rem', fontWeight: '500', color: 'rgba(255,255,255,0.6)' }}>No Analysis History Logs Found</div>
-                                                    <div style={{ fontSize: '0.8rem', marginTop: '0.35rem', color: 'rgba(255,255,255,0.35)' }}>Upload a CSV dataset on the Overview tab and click Fetch & Analyse to record dynamic logs.</div>
-                                                </td>
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Filename</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Uploaded On</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Consumers Analyzed</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Critical Flags</th>
+                                                <th style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.825rem', color: '#4b5563', fontWeight: '600' }}>Load Results</th>
                                             </tr>
-                                        ) : uploadHistory.map((hist, i) => (
-                                            <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                                <td style={{ padding: '1rem', fontWeight: '500' }}>{hist.name}</td>
-                                                <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{hist.date}</td>
-                                                <td style={{ padding: '1rem', color: 'rgba(255,255,255,0.8)' }}>{hist.count} consumers</td>
-                                                <td style={{ padding: '1rem', color: (hist.critical > 0) ? '#ef4444' : '#10b981', fontWeight: '600' }}>
-                                                    {hist.critical} {hist.critical === 1 ? 'critical' : 'critical'}
-                                                </td>
-                                                <td style={{ padding: '1rem' }}>
-                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                        <button 
-                                                            style={{ 
-                                                                background: 'rgba(200, 162, 97, 0.15)', 
-                                                                border: 'none', 
-                                                                color: 'var(--accent-blue)', 
-                                                                padding: '0.25rem 0.75rem', 
-                                                                borderRadius: '6px', 
-                                                                fontSize: '0.8rem',
-                                                                cursor: 'pointer',
-                                                                fontWeight: '600'
-                                                            }}
-                                                            onClick={() => {
-                                                                if (hist.data) {
-                                                                    setResult(hist.data);
-                                                                    setActiveTab('Overview');
-                                                                } else {
-                                                                    alert("No dynamic payload saved for this older record. Loading default visualizers instead.");
-                                                                    setActiveTab('Overview');
-                                                                }
-                                                            }}
-                                                        >
-                                                            Review
-                                                        </button>
-                                                        <button 
-                                                            style={{ 
-                                                                background: 'rgba(255, 255, 255, 0.08)', 
-                                                                border: '1px solid rgba(255,255,255,0.1)', 
-                                                                color: 'white', 
-                                                                padding: '0.25rem 0.75rem', 
-                                                                borderRadius: '6px', 
-                                                                fontSize: '0.8rem',
-                                                                cursor: 'pointer',
-                                                                fontWeight: '600'
-                                                            }}
-                                                            onClick={() => handleDownloadCSV(hist)}
-                                                        >
-                                                            Download
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {uploadHistory.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="5" style={{ padding: '3.5rem 1rem', textAlign: 'center', color: '#6b7280', fontSize: '0.9rem' }}>
+                                                        <Activity size={32} style={{ margin: '0 auto 0.75rem auto', opacity: 0.35, display: 'block' }} />
+                                                        <div style={{ fontSize: '0.95rem', fontWeight: '500', color: '#374151' }}>No Analysis History Logs Found</div>
+                                                        <div style={{ fontSize: '0.8rem', marginTop: '0.35rem', color: '#9ca3af' }}>Upload a CSV dataset on the Overview tab and click Fetch & Analyse to record dynamic logs.</div>
+                                                    </td>
+                                                </tr>
+                                            ) : uploadHistory.map((hist, i) => (
+                                                <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                                    <td style={{ padding: '1rem', fontWeight: '600', color: '#111827' }}>{hist.name}</td>
+                                                    <td style={{ padding: '1rem', color: '#4b5563' }}>{hist.date}</td>
+                                                    <td style={{ padding: '1rem', color: '#4b5563' }}>{hist.count} consumers</td>
+                                                    <td style={{ padding: '1rem', color: (hist.critical > 0) ? '#dc2626' : '#059669', fontWeight: '600' }}>
+                                                        {hist.critical} {hist.critical === 1 ? 'critical' : 'critical'}
+                                                    </td>
+                                                    <td style={{ padding: '1rem' }}>
+                                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                            <button 
+                                                                style={{ 
+                                                                    background: '#18181b', 
+                                                                    border: 'none', 
+                                                                    color: '#ffffff', 
+                                                                    padding: '0.3rem 0.8rem', 
+                                                                    borderRadius: '9999px', 
+                                                                    fontSize: '0.8rem',
+                                                                    cursor: 'pointer',
+                                                                    fontWeight: '600'
+                                                                }}
+                                                                onClick={() => {
+                                                                    if (hist.data) {
+                                                                        setResult(hist.data);
+                                                                        setActiveTab('Overview');
+                                                                    } else {
+                                                                        alert("No dynamic payload saved for this older record. Loading default visualizers instead.");
+                                                                        setActiveTab('Overview');
+                                                                    }
+                                                                }}
+                                                            >
+                                                                Review
+                                                            </button>
+                                                            <button 
+                                                                style={{ 
+                                                                    background: '#f3f4f6', 
+                                                                    border: '1px solid #d1d5db', 
+                                                                    color: '#374151', 
+                                                                    padding: '0.3rem 0.8rem', 
+                                                                    borderRadius: '9999px', 
+                                                                    fontSize: '0.8rem',
+                                                                    cursor: 'pointer',
+                                                                    fontWeight: '600'
+                                                                }}
+                                                                onClick={() => handleDownloadCSV(hist)}
+                                                            >
+                                                                Download
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -3169,11 +3419,11 @@ const AdminDashboard = ({
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                     <div className="dashboard-form-group">
                                         <label>Critical Anomaly Risk Level Threshold ({'>'}= 85%)</label>
-                                        <input type="range" min="50" max="100" defaultValue="85" style={{ cursor: 'pointer', width: '100%', accentColor: '#ef4444' }} />
+                                        <input type="range" min="50" max="100" defaultValue="85" style={{ cursor: 'pointer', width: '100%', accentColor: '#18181b' }} />
                                     </div>
                                     <div className="dashboard-form-group">
                                         <label>High Anomaly Risk Level Threshold (60% - 85%)</label>
-                                        <input type="range" min="30" max="80" defaultValue="60" style={{ cursor: 'pointer', width: '100%', accentColor: '#f97316' }} />
+                                        <input type="range" min="30" max="80" defaultValue="60" style={{ cursor: 'pointer', width: '100%', accentColor: '#18181b' }} />
                                     </div>
                                     <div className="dashboard-form-group">
                                         <label>Technical Loss Estimation Rate (INR per kWh)</label>
@@ -3182,10 +3432,10 @@ const AdminDashboard = ({
                                     <div className="dashboard-form-group">
                                         <label>Auto-Dispatch Priority Inspections</label>
                                         <div style={{ display: 'flex', gap: '1rem', marginTop: '0.25rem' }}>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#111827', fontSize: '0.85rem' }}>
                                                 <input type="radio" name="auto-dispatch" defaultChecked /> Enable
                                             </label>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#111827', fontSize: '0.85rem' }}>
                                                 <input type="radio" name="auto-dispatch" /> Disable
                                             </label>
                                         </div>
@@ -3193,20 +3443,8 @@ const AdminDashboard = ({
                                     <button 
                                         type="button" 
                                         onClick={() => alert("Settings saved successfully!")}
-                                        style={{ 
-                                            padding: '0.75rem 1.5rem', 
-                                            borderRadius: '8px', 
-                                            border: 'none', 
-                                            background: '#ffffff', 
-                                            color: '#000000', 
-                                            fontWeight: '600', 
-                                            cursor: 'pointer',
-                                            alignSelf: 'flex-start',
-                                            marginTop: '1rem',
-                                            transition: 'opacity 0.2s'
-                                        }}
-                                        onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-                                        onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                                        className="stitch-btn-pill"
+                                        style={{ width: 'auto', padding: '0.75rem 1.5rem', alignSelf: 'flex-start', marginTop: '0.5rem' }}
                                     >
                                         Save Configuration
                                     </button>
