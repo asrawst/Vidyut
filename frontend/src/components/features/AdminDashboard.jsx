@@ -2704,7 +2704,7 @@ const AdminDashboard = ({
                                             {recoveryRate}%
                                         </div>
                                         <div style={{ width: '100%', height: '6px', background: '#f3f4f6', borderRadius: '3px', overflow: 'hidden', marginTop: '0.4rem' }}>
-                                            <div style={{ width: `${Math.min(100, parseFloat(recoveryRate))}%`, height: '100%', background: '#18181b', borderRadius: '3px', transition: 'width 0.4s ease' }} />
+                                            <div style={{ width: `${Math.min(100, parseFloat(recoveryRate))}%`, height: '100%', background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)', borderRadius: '3px', transition: 'width 0.4s ease' }} />
                                         </div>
                                     </div>
                                 </div>
@@ -2713,32 +2713,62 @@ const AdminDashboard = ({
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
                                     {/* Penalty Revenue by Theft Category */}
                                     <div className="panel-card">
-                                        <h4 style={{ margin: '0 0 1rem 0', color: '#111827', fontSize: '0.95rem', fontWeight: '700' }}>Penalty Revenue by Violation Class (₹ Thousands)</h4>
-                                        <div style={{ minHeight: '220px', width: '100%' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                            <h4 style={{ margin: 0, color: '#111827', fontSize: '0.95rem', fontWeight: '700' }}>
+                                                Penalty Revenue by Violation Class
+                                            </h4>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#059669', background: '#ecfdf5', border: '1px solid #d1fae5', padding: '2px 8px', borderRadius: '6px' }}>
+                                                ₹ in Thousands
+                                            </span>
+                                        </div>
+                                        <div style={{ minHeight: '230px', width: '100%' }}>
                                             {categoryChartData.length === 0 ? (
                                                 <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#6b7280', fontSize: '0.85rem' }}>
                                                     Issue challans from Inspector Portal to populate breakdown.
                                                 </div>
                                             ) : (
-                                                <ResponsiveContainer width="100%" height={220}>
-                                                    <BarChart data={categoryChartData}>
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                                                        <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} />
-                                                        <YAxis stroke="#9ca3af" fontSize={11} />
+                                                <ResponsiveContainer width="100%" height={230}>
+                                                    <BarChart data={categoryChartData} margin={{ top: 15, right: 15, left: -10, bottom: 5 }}>
+                                                        <defs>
+                                                            <linearGradient id="emeraldBarGradient" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+                                                                <stop offset="100%" stopColor="#059669" stopOpacity={0.88} />
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                                        <XAxis 
+                                                            dataKey="name" 
+                                                            stroke="#94a3b8" 
+                                                            fontSize={11} 
+                                                            tickLine={false}
+                                                            axisLine={{ stroke: '#e2e8f0' }}
+                                                        />
+                                                        <YAxis 
+                                                            stroke="#94a3b8" 
+                                                            fontSize={11} 
+                                                            tickLine={false}
+                                                            axisLine={{ stroke: '#e2e8f0' }}
+                                                            tickFormatter={(val) => `₹${val}k`}
+                                                        />
                                                         <Tooltip 
-                                                            cursor={{ fill: 'transparent' }}
+                                                            cursor={{ fill: 'rgba(16, 185, 129, 0.06)', radius: 8 }}
                                                             contentStyle={{ 
                                                                 background: '#ffffff', 
-                                                                border: '1px solid #e5e7eb', 
+                                                                border: '1px solid #e2e8f0', 
                                                                 borderRadius: '12px', 
-                                                                boxShadow: '0 4px 20px -2px rgba(0,0,0,0.06)',
-                                                                padding: '0.5rem 0.75rem' 
+                                                                boxShadow: '0 8px 24px -4px rgba(16, 185, 129, 0.15)',
+                                                                padding: '0.6rem 0.85rem' 
                                                             }}
-                                                            itemStyle={{ color: '#111827', fontWeight: '600', fontSize: '0.85rem' }}
-                                                            labelStyle={{ color: '#6b7280', fontWeight: '600', marginBottom: '0.2rem' }}
-                                                            formatter={(val) => [`₹${(val * 1000).toLocaleString('en-IN')}`, 'Assessed Fine']}
+                                                            itemStyle={{ color: '#047857', fontWeight: '700', fontSize: '0.88rem' }}
+                                                            labelStyle={{ color: '#475569', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                            formatter={(val) => [`₹${(val * 1000).toLocaleString('en-IN')}`, 'Penalty Assessed']}
                                                         />
-                                                        <Bar dataKey="amount" fill="#18181b" radius={[6, 6, 0, 0]} />
+                                                        <Bar 
+                                                            dataKey="amount" 
+                                                            fill="url(#emeraldBarGradient)" 
+                                                            radius={[8, 8, 0, 0]} 
+                                                            maxBarSize={56}
+                                                        />
                                                     </BarChart>
                                                 </ResponsiveContainer>
                                             )}
@@ -2747,32 +2777,40 @@ const AdminDashboard = ({
 
                                     {/* Monthly Recovery Trend */}
                                     <div className="panel-card">
-                                        <h4 style={{ margin: '0 0 1rem 0', color: '#111827', fontSize: '0.95rem', fontWeight: '700' }}>Recovery Realization Trajectory (₹ Lakhs)</h4>
-                                        <div style={{ minHeight: '220px', width: '100%' }}>
-                                            <ResponsiveContainer width="100%" height={220}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                            <h4 style={{ margin: 0, color: '#111827', fontSize: '0.95rem', fontWeight: '700' }}>
+                                                Recovery Realization Trajectory
+                                            </h4>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#059669', background: '#ecfdf5', border: '1px solid #d1fae5', padding: '2px 8px', borderRadius: '6px' }}>
+                                                ₹ in Lakhs
+                                            </span>
+                                        </div>
+                                        <div style={{ minHeight: '230px', width: '100%' }}>
+                                            <ResponsiveContainer width="100%" height={230}>
                                                 <LineChart data={[
                                                     { month: 'May', Target: 1.5, Recovered: 0.9 },
                                                     { month: 'Jun', Target: 2.0, Recovered: 1.4 },
                                                     { month: 'Jul', Target: 2.5, Recovered: 2.1 },
                                                     { month: 'Aug', Target: 3.0, Recovered: (totalPenaltyAssessed / 100000 > 0 ? (totalPenaltyAssessed / 100000).toFixed(2) : 1.4) }
-                                                ]}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                                                    <XAxis dataKey="month" stroke="#9ca3af" fontSize={11} />
-                                                    <YAxis stroke="#9ca3af" fontSize={11} />
+                                                ]} margin={{ top: 15, right: 15, left: -10, bottom: 5 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                                    <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
+                                                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tickFormatter={(v) => `₹${v}L`} />
                                                     <Tooltip 
                                                         contentStyle={{ 
                                                             background: '#ffffff', 
-                                                            border: '1px solid #e5e7eb', 
+                                                            border: '1px solid #e2e8f0', 
                                                             borderRadius: '12px', 
-                                                            boxShadow: '0 4px 20px -2px rgba(0,0,0,0.06)',
-                                                            padding: '0.5rem 0.75rem' 
+                                                            boxShadow: '0 8px 24px -4px rgba(16, 185, 129, 0.15)',
+                                                            padding: '0.6rem 0.85rem' 
                                                         }}
-                                                        itemStyle={{ color: '#111827', fontWeight: '600', fontSize: '0.85rem' }}
-                                                        labelStyle={{ color: '#6b7280', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                        itemStyle={{ fontWeight: '600', fontSize: '0.85rem' }}
+                                                        labelStyle={{ color: '#475569', fontWeight: '600', marginBottom: '0.2rem' }}
+                                                        formatter={(v, name) => [`₹${v} Lakhs`, name]}
                                                     />
-                                                    <Legend />
-                                                    <Line type="monotone" dataKey="Target" stroke="#9ca3af" activeDot={{ r: 6 }} strokeWidth={2} />
-                                                    <Line type="monotone" dataKey="Recovered" stroke="#18181b" activeDot={{ r: 6 }} strokeWidth={2} />
+                                                    <Legend wrapperStyle={{ paddingTop: '8px', fontSize: '0.82rem' }} />
+                                                    <Line type="monotone" dataKey="Target" stroke="#94a3b8" strokeDasharray="4 4" dot={{ r: 4, fill: '#94a3b8' }} activeDot={{ r: 6 }} strokeWidth={2} />
+                                                    <Line type="monotone" dataKey="Recovered" stroke="#10b981" dot={{ r: 4, fill: '#10b981' }} activeDot={{ r: 7, fill: '#059669' }} strokeWidth={3} />
                                                 </LineChart>
                                             </ResponsiveContainer>
                                         </div>
