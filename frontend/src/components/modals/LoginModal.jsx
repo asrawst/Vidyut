@@ -43,8 +43,8 @@ const STATES_DISCOMS = {
 
 const LoginModal = ({ onClose, onLoginSuccess }) => {
     const [isSignUp, setIsSignUp] = useState(false);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('as.singhaditya08@gmail.com');
+    const [password, setPassword] = useState('Vidyut@2026');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [selectedState, setSelectedState] = useState('');
     const [selectedDiscom, setSelectedDiscom] = useState('');
@@ -82,11 +82,19 @@ const LoginModal = ({ onClose, onLoginSuccess }) => {
     useEffect(() => {
         setError('');
         setForgotMessage('');
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
-        setSelectedState('');
-        setSelectedDiscom('');
+        if (isSignUp) {
+            setEmail('');
+            setPassword('');
+            setConfirmPassword('');
+            setSelectedState('');
+            setSelectedDiscom('');
+        } else {
+            setEmail('as.singhaditya08@gmail.com');
+            setPassword('Vidyut@2026');
+            setConfirmPassword('');
+            setSelectedState('');
+            setSelectedDiscom('');
+        }
     }, [isSignUp]);
 
     // Handle state change to reset selected discom

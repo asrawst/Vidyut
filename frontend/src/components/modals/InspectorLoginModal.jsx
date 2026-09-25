@@ -3,8 +3,8 @@ import { X, UserCheck, KeyRound, ShieldAlert, ArrowRight } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
 const InspectorLoginModal = ({ onClose, onSuccess }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('employee@vidyut.com');
+    const [password, setPassword] = useState('Vidyut8025$D');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [forgotMode, setForgotMode] = useState(false);
