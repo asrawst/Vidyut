@@ -1992,7 +1992,6 @@ const AdminDashboard = ({
                                         onMouseEnter={e => { e.currentTarget.style.background = '#e4e4e7'; }}
                                         onMouseLeave={e => { e.currentTarget.style.background = '#f4f4f5'; }}
                                     >
-                                        <Sparkles size={13} style={{ color: '#d97706' }} />
                                         {sampleLoading ? 'Loading Sample...' : 'Quick Load Sample Dataset'}
                                     </button>
                                 </div>
