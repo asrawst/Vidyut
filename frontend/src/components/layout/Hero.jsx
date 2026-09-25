@@ -132,26 +132,6 @@ const Hero = () => {
           flexShrink: 0
         }}
       >
-        {/* Pill Tag */}
-        <div 
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            padding: '0.35rem 0.95rem',
-            borderRadius: '9999px',
-            background: '#f4f5f7',
-            border: '1px solid #e4e4e7',
-            fontSize: '0.82rem',
-            fontWeight: '600',
-            color: '#18181b',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-          }}
-        >
-          <span style={{ color: '#f59e0b', fontSize: '0.9rem' }}>⚡</span>
-          Smart Grid Anti-Theft AI Platform
-        </div>
-
         {/* Hero Headline */}
         <h1 
           style={{
