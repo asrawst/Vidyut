@@ -1161,6 +1161,26 @@ const AdminDashboard = ({
         }
     };
 
+    const [sampleLoading, setSampleLoading] = useState(false);
+
+    const handleLoadSampleDataset = async () => {
+        try {
+            setSampleLoading(true);
+            const response = await fetch('/sample_dataset.csv');
+            if (!response.ok) {
+                throw new Error('Failed to fetch sample dataset');
+            }
+            const blob = await response.blob();
+            const file = new File([blob], 'sample_dataset.csv', { type: 'text/csv' });
+            setSelectedFile(file);
+            handleFileUpload('source', file);
+        } catch (err) {
+            console.error('Failed to load sample dataset', err);
+        } finally {
+            setSampleLoading(false);
+        }
+    };
+
     // Helper for Discom Logo initials
     const getInitials = (name) => {
         if (!name) return 'DS';
@@ -1912,6 +1932,69 @@ const AdminDashboard = ({
                                             {loading ? 'Analyzing Dataset...' : 'Fetch & Analyse'}
                                         </button>
                                     </div>
+                                </div>
+
+                                {/* Download Sample Dataset & Quick Load */}
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    flexWrap: 'wrap',
+                                    gap: '0.75rem',
+                                    marginTop: '1.25rem',
+                                    paddingTop: '1rem',
+                                    borderTop: '1px dashed #e5e7eb'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', color: '#6b7280' }}>
+                                        <span>Need a test dataset?</span>
+                                        <a
+                                            href="/sample_dataset.csv"
+                                            download="sample_dataset.csv"
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.35rem',
+                                                color: '#2563eb',
+                                                fontWeight: '600',
+                                                textDecoration: 'none',
+                                                background: '#eff6ff',
+                                                border: '1px solid #dbeafe',
+                                                padding: '0.35rem 0.75rem',
+                                                borderRadius: '8px',
+                                                transition: 'all 0.15s ease'
+                                            }}
+                                            onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.background = '#eff6ff'; }}
+                                        >
+                                            <Download size={13} />
+                                            Download Sample Dataset (.csv)
+                                        </a>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleLoadSampleDataset}
+                                        disabled={sampleLoading}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '0.4rem',
+                                            color: '#18181b',
+                                            background: '#f4f4f5',
+                                            border: '1px solid #e4e4e7',
+                                            padding: '0.35rem 0.75rem',
+                                            borderRadius: '8px',
+                                            fontSize: '0.82rem',
+                                            fontWeight: '600',
+                                            cursor: sampleLoading ? 'wait' : 'pointer',
+                                            transition: 'all 0.15s ease'
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = '#e4e4e7'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = '#f4f4f5'; }}
+                                    >
+                                        <Sparkles size={13} style={{ color: '#d97706' }} />
+                                        {sampleLoading ? 'Loading Sample...' : 'Quick Load Sample Dataset'}
+                                    </button>
                                 </div>
                             </section>
 
