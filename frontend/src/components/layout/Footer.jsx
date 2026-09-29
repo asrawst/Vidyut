@@ -53,7 +53,7 @@ const Footer = ({ onAboutClick }) => {
                         <h4 className="footer-heading">Connect</h4>
                         <ul className="footer-social">
                             <li>
-                                <a href="https://github.com/asrawst/Shakti.git" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                                <a href="https://github.com/asrawst/Vidyut" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
                                     <Github size={20} />
                                 </a>
                             </li>
